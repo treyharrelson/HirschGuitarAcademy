@@ -12,14 +12,4 @@ const sequelize = new Sequelize(
     }
 );
 
-sequelize.authenticate().then(() => {
-    console.log('Connection has been established successfully.');
-    // make sure tables exist
-    sequelize.sync({ alter: true }).then(() => {
-        console.log('Tables synced successfully.');
-    });
-}).catch(err => {
-    console.error('Unable to connect to the database:', err);
-});
-
 module.exports = sequelize;

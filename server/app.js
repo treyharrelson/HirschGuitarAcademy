@@ -1,20 +1,22 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
+const path = require('path');
 
 const router = express.Router();
 
 // SQL Models for sequelize
 // All SQL queries should go through here, e.g. 
 // Models.User.create(...), Models.User.findOne(...), etc.
-const Models = require('./models');
+const Models = require('./db/models');
 
-const path = require('path');
+
 const app = express();
-const port = 3000;
 
 // Collect data sent from client
 app.use(express.urlencoded({ extended: true }));
+// handle json too
+app.use(express.json());
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -55,7 +57,7 @@ app.post('/login', async (req, res) => {
     if (!user) {
       return res.status(404).send('User not found');
     }
-    
+
 
     // Compare the hashed password
     const isMatch = await bcrypt.compare(password, user.password);
@@ -91,7 +93,4 @@ app.post('/logout', (req, res) => {
   });
 });
 
-module.exports = router;
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}/`);
-});
+module.exports = app;
