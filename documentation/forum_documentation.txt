@@ -1,0 +1,140 @@
+OVERVIEW:
+
+USER logs in
+USER navigates to forum page
+SYSTEM fetches list of threads
+SYSTEM displays threads
+
+USER selects a thread
+SYSTEM fetches all posts for that thread
+SYSTEM displays posts
+
+USER submits new thread or post
+SYSTEM validates input
+SYSTEM stores data in database
+SYSTEM refreshes content
+
+------------------------------------------
+
+Threads:
+
+FUNCTION createThread(user, title)
+
+    IF user is not authenticated
+        RETURN error "Unauthorized"
+
+    IF title is empty
+        RETURN error "Invalid title"
+
+    INSERT new thread INTO database
+        author_id = user.id
+        title = title
+        created_at = current time
+
+    RETURN success
+
+---------------------------------------------
+
+Fetching the Threads:
+
+FUNCTION getAllThreads()
+
+    QUERY database for threads
+        INCLUDE author username
+        SORT by newest first
+
+    RETURN list of threads
+
+----------------------------------------------
+
+Viewing Threads/Posts:
+
+FUNCTION viewThread(threadId)
+
+    QUERY database for thread by id
+    IF thread does not exist
+        RETURN error "Thread not found"
+
+    QUERY database for posts
+        WHERE post.thread_id = threadId
+        SORT by creation time
+
+    RETURN thread details AND associated posts
+
+----------------------------------------------
+
+Creating a Post:
+
+FUNCTION createPost(user, threadId, content)
+
+    IF user is not authenticated
+        RETURN error "Unauthorized"
+
+    IF content is empty
+        RETURN error "Invalid content"
+
+    IF thread does not exist
+        RETURN error "Thread not found"
+
+    INSERT new post INTO database
+        thread_id = threadId
+        author_id = user.id
+        content = content
+        created_at = current time
+
+    RETURN success
+
+----------------------------------------------
+
+Authenticating the Middleware:
+
+MIDDLEWARE authenticateUser(request)
+
+    READ authentication token from request
+
+    IF token is invalid or missing
+        BLOCK request
+        RETURN error "Unauthorized"
+
+    DECODE token
+    ATTACH user information to request
+
+    CONTINUE to route handler
+
+---------------------------------------------
+
+Frontend:
+
+ON forum page load
+    CALL getAllThreads()
+    DISPLAY threads
+
+ON user submits new thread form
+    SEND request to createThread()
+    IF successful
+        REFRESH thread list
+
+ON user clicks thread
+    NAVIGATE to thread page
+    CALL viewThread()
+    DISPLAY posts
+
+ON user submits post
+    SEND request to createPost()
+    IF successful
+        APPEND post to page
+
+-------------------------------------
+
+Error Handling:
+
+IF any operation fails
+    LOG error on server
+    RETURN user-friendly message
+    DO NOT expose internal details
+
+----------------------------------
+
+Features to be added:
+
+This is empty for now until we agree on what features we want to implement for sprint 3. 
