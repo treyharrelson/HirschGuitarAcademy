@@ -1,8 +1,14 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
-
+const cors = require('cors');
 const router = express.Router();
+const app = express();
+
+app.use(cors({
+  origin: 'http://localhost:5173', //Vite dev server
+  credentials: true
+}));
 
 // SQL Models for sequelize
 // All SQL queries should go through here, e.g. 
@@ -10,7 +16,7 @@ const router = express.Router();
 const Models = require('./models');
 
 const path = require('path');
-const app = express();
+
 const port = 3000;
 
 // Collect data sent from client
@@ -39,7 +45,7 @@ app.post("/register", async (req, res) => {
 
     // Insert the new user into the database
     const newUser = await Models.User.create(req.body);
-    res.redirect("/index.html");
+    res.json({success:true, message:'User registered successfully'});
   } catch (error) {
     res.status(500).send(`Error registering user: ${error}`);
   }
@@ -66,15 +72,19 @@ app.post('/login', async (req, res) => {
         name: user.name,
         email: user.email
       };
-      // Redirect based on privilage/role
-      if (user.role === 'student') {
-        res.redirect('student_dashboard.html');
-      } else if (user.role === 'admin') {
-        res.redirect('admin_dashboard.html');
-      }
+      
+      res.json({
+        success: true,
+        user: {
+          id: user._user_id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
+      })
     }
     else {
-      res.status(401).send('Invalid credentials');
+      res.status(401).json({ success: false, message: 'Invalid credentials'});
     }
   } catch (error) {
     res.status(500).send(`Error logging in: ${error}`);
