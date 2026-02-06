@@ -1,30 +1,22 @@
 {
-  "name": "test_db",
-  "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.js",
-  "directories": {
-    "lib": "lib"
-  },
+  "name": "hirsch-guitar-root",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
-    "devStart": "nodemon server.js"
-  },
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "ejs": "^3.1.10",
-    "express": "^5.2.1",
-    "express-session": "^1.18.2",
-    "pg": "^8.16.3",
-    "pg-hstore": "^2.3.4",
-    "sequelize": "^6.37.7"
+    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+    "build": "npm run build --workspace=client && npm run build --workspace=server",
+    "start": "node server/dist/index.js"
   },
   "devDependencies": {
+<<<<<<< Updated upstream
     "@faker-js/faker": "^10.2.0",
     "dotenv": "^17.2.3",
     "nodemon": "^3.1.11"
+=======
+    "concurrently": "^8.2.2"
+>>>>>>> Stashed changes
   }
 }

@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:18
     container_name: hirsh_guitar_db
-    restart: always
+    restart: no
     env_file:
       - ./.env
     ports:
