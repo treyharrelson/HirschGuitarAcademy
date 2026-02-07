@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 function Login() {
     // states for form inputs
@@ -9,6 +10,7 @@ function Login() {
     const [error, setError] = useState('');
 
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     // handle form submission
     const handleSubmit = async (e: SubmitEvent) => {
@@ -22,8 +24,17 @@ function Login() {
                 withCredentials: true // for sessions
             });
 
-            // if successful, naviage based on role
+            // if successful
             if (response.data.success) {
+                // save user to context
+                login({
+                    id: response.data.user.id,
+                    name: response.data.user.name,
+                    email: response.data.user.email,
+                    role: response.data.user.role
+                });
+                
+                // navigate based on role
                 if (response.data.user.role === 'student') {
                     navigate('/student-dashboard')
                 } else if (response.data.user.role === 'instructor') {

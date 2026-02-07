@@ -73,7 +73,7 @@ app.post('/login', async (req, res) => {
       req.session.user = {
         id: user._user_id,
         role: user.role,
-        name: user.name,
+        name: `${user.firstName} ${user.lastName}`,
         email: user.email
       };
       
@@ -81,7 +81,7 @@ app.post('/login', async (req, res) => {
         success: true,
         user: {
           id: user._user_id,
-          name: user.name,
+          name: `${user.firstName} ${user.lastName}`,
           email: user.email,
           role: user.role
         }
