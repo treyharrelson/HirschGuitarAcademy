@@ -90,7 +90,7 @@ app.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
       req.session.user = {
-        id: user._user_id,
+        id: user.id,
         role: user.role,
         name: `${user.firstName} ${user.lastName}`,
         email: user.email
@@ -99,7 +99,7 @@ app.post('/login', async (req, res) => {
       res.json({
         success: true,
         user: {
-          id: user._user_id,
+          id: user.id,
           name: `${user.firstName} ${user.lastName}`,
           email: user.email,
           role: user.role
@@ -159,6 +159,89 @@ app.post('/logout', (req, res) => {
     }
     res.redirect("/");
   });
+});
+
+// Get all threads
+app.get('/api/threads', async (req, res) => {
+  try {
+    const threads = await Models.Thread.findAll({
+      include: [{
+        model: Models.User,
+        as: 'author',
+        attributes: ['userName', 'firstName', 'lastName']
+      }],
+      order: [['createdAt', 'DESC']]
+    });
+    res.json(threads);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching threads: ${error}'});
+  }
+});
+
+// Create a thread
+app.post('/api/threads', async (req, res) => {
+  console.log('POST /api/threads called');
+  console.log('Request body:', req.body);
+  console.log('Session user:', req.session.user);
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'Must be logged in to create a thread'});
+    }
+
+    const { title } = req.body;
+    const newThread = await Models.Thread.create({
+      title,
+      authorId: req.session.user.id
+    });
+
+    res.status(201).json(newThread);
+  } catch (error) {
+    res.status(500).json({ message: `Error creating thread: ${error}` });
+  }
+});
+
+// Get posts in a thread
+app.get('/api/threads/:threadId/posts', async (req, res) => {
+  try {
+    const posts = await Models.Post.findAll({
+      where: { threadId: req.params.threadId },
+      include: [{
+        model: Models.User,
+        as: 'author',
+        attributes: ['userName', 'firstName', 'lastName']
+      }],
+      order: [['datePosted', 'ASC']]
+    });
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ message: `Error fetching posts: ${error}` });
+  }
+});
+
+// Create a post in a thread
+app.post('/api/threads/:threadId/posts', async (req, res) => {
+  console.log('POST /api/threads/:threadId/posts called');
+  console.log('Thread ID :', req.params.threadId);
+  console.log('Request body: ', req.body);
+  console.log('Session user: ', req.session.user);
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'Must be logged in to post to a thread'});
+    }
+
+    const { content } = req.body;
+    console.info(req.params.threadId)
+    const newPost = await Models.Post.create({
+      threadId: req.params.threadId,
+      userId: req.session.user.id,
+      content
+    });
+
+    res.status(201).json(newPost);
+  } catch (error) {
+    console.error('Error creating post: ', error)
+    res.status(500).json({ message: `Error creating post: ${error}` });
+  }
 });
 
 

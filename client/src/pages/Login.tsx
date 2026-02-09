@@ -1,5 +1,5 @@
 import { useState, type SubmitEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -33,7 +33,7 @@ function Login() {
                     email: response.data.user.email,
                     role: response.data.user.role
                 });
-                
+
                 // navigate based on role
                 if (response.data.user.role === 'student') {
                     navigate('/student-dashboard')
@@ -70,7 +70,7 @@ function Login() {
                 {error && <p style={{ color: 'red' }}>{error}</p>}
             </form>
             <p>
-                Don't have an account? <a href="/register">Register</a>
+                Don't have an account? <Link to="/register">Register</Link>
             </p>
         </div>
     )

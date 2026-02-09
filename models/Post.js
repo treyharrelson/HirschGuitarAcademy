@@ -10,6 +10,15 @@ const Post = sequelize.define(
 			autoIncrement: true,
 			allowNull: false,
 		},
+		threadId: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			references: {
+				model: 'Threads',
+				key: 'id',
+			},
+			field: 'thread_id'
+		},
 		userId: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
@@ -25,10 +34,12 @@ const Post = sequelize.define(
 		datePosted: {
 			type: DataTypes.DATE,
 			defaultValue: DataTypes.NOW,
+			field: 'created_at'
 		},
 		numLikes: {
 			type: DataTypes.INTEGER,
 			defaultValue: 0,
+			field: 'num_likes'
 		},
 	},
 	{

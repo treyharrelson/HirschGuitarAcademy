@@ -1,5 +1,5 @@
 import { useState, type SubmitEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 function Register() {
@@ -79,7 +79,7 @@ function Register() {
                 {error && <p style={{ color: 'red' }}>{error}</p>}
             </form>
             <p>
-                Already have an account? <a href="/">Login</a>
+                Already have an account? <Link to="/">Login</Link>
             </p>
         </div>
     );

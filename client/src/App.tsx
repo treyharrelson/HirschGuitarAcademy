@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Forum from './pages/Forum';
+import ThreadDetail from './pages/ThreadDetail';
 
 import './App.css';
 
@@ -17,6 +19,8 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/student-dashboard" element={<Dashboard />} />
           <Route path="/admin-dashboard" element={<Dashboard />} />
+          <Route path="/forum" element={<Forum />} />
+          <Route path="/forum/thread/:threadId" element={<ThreadDetail />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

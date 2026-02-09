@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 function Dashboard() {
@@ -39,8 +39,8 @@ function Dashboard() {
             <div>
                 <h2>Quick Links</h2>
                 <ul>
-                    <li><a href="/forum">Forum</a></li>
-                    <li><a href="/courses">My Courses</a></li>
+                    <li><Link to="/forum">Forum</Link></li>
+                    <li><Link to="/courses">My Courses</Link></li>
                 </ul>
             </div>
         </div>
