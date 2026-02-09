@@ -1,0 +1,54 @@
+A layout of what all the folders are for in the React App because there are a lot and it can be overwhelming
+
+-- Root level folders --
+node_moules/
+    - contains backend dependencies. This is auto-generated when you run npm install
+pgdata/
+    - where your local PostgreSQL database data from Docker is stored persistently 
+models/
+    - Sequelize database models. Defines the structure of the database tables and how to interact with them
+documentation/
+    - project docs - README files, setup instructions, etc.
+
+-- React App--
+client/
+    - the entire frontend React application. This is separate from the backend
+client/node_moules/
+    - frontend dependencies
+client/public/
+    - static assets that don't get processed by Vite
+client/src/
+    - React source code
+client/src/pages/
+    - full page components - Login, Register, Forum, etc.
+client/src/components/
+    - reusable UI pieces (React components)
+client/src/types/
+    - TypeScript type definitions - User, Thread, Post interfaces.
+client/src/api/
+    - functions that make API calls to backend
+client/src/App.tsx
+    - the root React component. Sets up routes and wraps everything
+client/src/main.tsx
+    - Entry point - renders App.tsx into HTML
+client/package.json
+    - Lists frontend dependencies
+client/vite.config.ts
+    - Vite configuration file
+client/tsconfig.json
+    - TypeScript configuration file
+
+
+--Backend Files--
+
+server.js
+    - Express server. Handles API routes, sessions, and serves the backend on port 3000
+db.js
+    - Database connection configuration - connects to PostgreSQL 
+package.json
+    - lists all backend dependencies and scripts. everything here is installed when someone runs npm install
+compose.yaml
+    - Docker configuration for running PostgreSQL in a container
+.env & .env.example
+    - Environment variables (database passwords, secrets, etc.) .env is private, .env.example shows what variables are needed?
+
