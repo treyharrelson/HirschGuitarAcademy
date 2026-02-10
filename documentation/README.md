@@ -9,7 +9,6 @@
 # You can enter "localhost:3000" into your browser with ther server active to view the "index.html" page
 
 First Time Setup:
-
     1. install backend dependencies in root folder (HirshGuitarAcademy)
         npm install
     2. install frontend dependencies
@@ -18,6 +17,8 @@ First Time Setup:
         cd ..
     3. Start Docker
         docker compose up
+    4. if you get an error on Windows saying running scripts with npm isn't allowd try running this in powershell:
+        Set-ExecutionPolicy Unrestricted -Scope CurrentUser
 
 Daily Development:
     need to run two terminals simultaneously for frontend and backend
@@ -28,6 +29,6 @@ Daily Development:
     2. frontend
         cd client
         npm run dev
-        # runs on http://localhost:5173
+        # runs on http://localhost:5173 (GO HERE TO)
 
     
