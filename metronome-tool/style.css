@@ -1,0 +1,164 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+
+  color: white;
+  font-family: sans-serif;
+  background-color: #1c3144;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: center;
+
+  height: 100%;
+  width: 100%;
+
+  gap: 50px;
+}
+.bpm-speed {
+  display: flex;
+  flex-direction: column;
+
+  gap: 10px;
+  width: 300px;
+}
+#stop {
+  display: none;
+}
+
+#timer {
+  font-size: 75px;
+}
+#score {
+  display: none;
+
+  color: #7ea16b;
+  font-weight: bolder;
+  font-size: 100px;
+}
+.bpm-slider-container {
+  width: 300px;
+}
+.bpm-slider-container input {
+  width: 100%;
+
+  -webkit-appearance: none;
+  margin-right: 15px;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 5px;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+.bpm-slider-container input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  background: #7ea16b;
+  cursor: pointer;
+  border-radius: 100%;
+}
+
+.metronome-button {
+  padding: 15px;
+  width: 75px;
+
+  cursor: pointer;
+
+  background-color: #c3d898;
+  border: none;
+  border-radius: 5px;
+}
+
+.bpm-container {
+  display: flex;
+  gap: 50px;
+}
+.bpm-display {
+  font-size: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100px;
+}
+.bpm-button {
+  cursor: pointer;
+  padding: 15px;
+  background-color: #596f62;
+  border-radius: 100%;
+
+  height: 20px;
+  width: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 32px;
+
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.sonar-wrapper {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+}
+
+#current-note {
+  font-family: serif;
+  color: #7ea16b;
+  font-weight: bolder;
+  font-size: 250px;
+
+  position: relative;
+
+  height: 300px;
+  width: 300px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
+}
+
+#sonar {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: #415e52;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sonar-on {
+  animation: sonarWave 0.5s linear;
+}
+
+@keyframes sonarWave {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
