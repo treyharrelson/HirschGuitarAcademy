@@ -24,8 +24,5 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-#db
-/pgdata
-
 # misc
 .DS_Store

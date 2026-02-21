@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { db, schema } from '../db';
 import { eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { Session } from 'hono-sessions';
 
 const auth = new Hono<{ Variables: { session: Session } }>();

@@ -1,6 +1,7 @@
 {
-  "name": "hirsch-guitar-root",
-  "private": true,
+  "name": "hirshguitaracademy",
+  "private" : true,
+  "version": "1.0.0",
   "workspaces": [
     "client",
     "server"
@@ -10,13 +11,23 @@
     "build": "npm run build --workspace=client && npm run build --workspace=server",
     "start": "node server/dist/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/treyharrelson/HirschGuitarAcademy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/treyharrelson/HirschGuitarAcademy/issues"
+  },
+  "homepage": "https://github.com/treyharrelson/HirschGuitarAcademy#readme",
   "devDependencies": {
-<<<<<<< Updated upstream
     "@faker-js/faker": "^10.2.0",
     "dotenv": "^17.2.3",
-    "nodemon": "^3.1.11"
-=======
+    "nodemon": "^3.1.11",
     "concurrently": "^8.2.2"
->>>>>>> Stashed changes
   }
 }
+
