@@ -3,7 +3,7 @@ import React from 'react'
 const MyCourses = () => {
   return (
     <div>
-      <h1>Edu My Courses Page</h1>
+      <h1>All courses published by the specific instructor</h1>
     </div>
   )
 }

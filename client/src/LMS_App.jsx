@@ -13,19 +13,17 @@ import MyCourses from './pages/instructor/MyCourses'
 import StudentsEnrolled from './pages/instructor/StudentsEnrolled'
 import Navbar from './components/student/Navbar'
 import CourseCard from './components/student/CourseCard'
+import "quill/dist/quill.snow.css";
 
 
 
-
-const App = () => {
+const LMS_App = () => {
 
   const isInstructorRoute = useMatch('/instructor/*');
 
   return (
     <div className='text-default min-h screen bg-white'>
       {!isInstructorRoute && <Navbar />}
-      <CourseCard />
-      <CourseCard />
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/course-list' element={<CourseList />} />
@@ -36,14 +34,14 @@ const App = () => {
         <Route path='/loading/:path' element={<Loading />} />
 
         <Route path='/instructor' element={<Instructor />}>
-          <Route path='instructor' element={<Dashboard />} />
+          <Route path='/instructor' element={<Dashboard />} />
           <Route path='add-course' element={<AddCourse />} />
           <Route path='my-courses' element={<MyCourses />} />
-          <Route path='student-enrolled' element={<StudentsEnrolled />} />
+          <Route path='students-enrolled' element={<StudentsEnrolled />} />
         </Route>
       </Routes>
     </div>
   )
 }
 
-export default App
+export default LMS_App

@@ -41,6 +41,7 @@ function Dashboard() {
                 <ul>
                     <li><Link to="/forum">Forum</Link></li>
                     <li><Link to="/courses">My Courses</Link></li>
+                    <li><a href="./lms.html">LMS Redirect</a></li>
                 </ul>
             </div>
         </div>

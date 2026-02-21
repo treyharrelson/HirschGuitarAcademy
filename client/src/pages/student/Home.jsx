@@ -1,9 +1,15 @@
 import React from 'react'
+import SearchBar from '../../components/student/SearchBar'
+import CoursesSection from '../../components/student/CoursesSection'
+import Sidebar from '../../components/instructor/Sidebar'
 
 const Home = () => {
   return (
-    <div>
+    <div className='flex flex-col items-center space-y-7'>
       <h1>Home Page</h1>
+      <SearchBar />
+
+      <CoursesSection />
     </div>
   )
 }
