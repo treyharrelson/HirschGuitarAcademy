@@ -3,6 +3,7 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const cors = require('cors');
+const uploadRouter = require('./routes/upload');
 const router = express.Router();
 // SQL Models for sequelize
 // All SQL queries should go through here, e.g. 
@@ -27,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // get JSON data sent from React with axios
 
 // Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
+//app.use(express.static(path.join(__dirname, 'public')));
 
 // Create session data
 // look into express-mysql-session for dedicated session storing for persistent session data via the MYSQL database
@@ -39,6 +40,9 @@ app.use(session({
 }))
 
 // -- ROUTES --
+
+// upload a file to forum
+app.use('/api/upload', uploadRouter);
 
 // Check if user is logged in (read from session)
 app.get('/api/me', (req, res) => {
@@ -114,42 +118,6 @@ app.post('/login', async (req, res) => {
     res.status(500).send(`Error logging in: ${error}`);
   }
 
-
-
-  // db.query(query, [email], async (err, results) => {
-  //   if (err) throw err;
-
-  //   if (results.length > 0) {
-  //     const user = results[0];
-
-  //     // Compare the hashed password
-  //     const isMatch = await bcrypt.compare(password, user.password);
-
-  //     if (isMatch) {
-  //       //res.status(200).send('Login successful');
-
-  //       //Create session data
-  //       req.session.user = {
-  //         id: user._user_id,
-  //         role: user.role,
-  //         name: user.name,
-  //         email: user.email
-  //       };
-
-  //       // Redirect based on privilage/role
-  //       if (user.role === 'user') {
-  //         res.redirect('user_dashboard.html');
-  //       } else if (user.role === 'admin') {
-  //         res.redirect('admin_dashboard.html');
-  //       }
-
-  //     } else {
-  //       res.status(401).send('Invalid credentials');
-  //     }
-  //   } else {
-  //     res.status(404).send('User not found');
-  //   }
-  // });
 });
 
 // User logout
@@ -210,7 +178,13 @@ app.get('/api/threads/:threadId/posts', async (req, res) => {
         model: Models.User,
         as: 'author',
         attributes: ['userName', 'firstName', 'lastName']
-      }],
+      },
+      {
+        model: Models.Attachment,
+        as: 'attachments',
+        attributes: ['fileKey', 'fileType', 'fileName']
+      }
+    ],
       order: [['datePosted', 'ASC']]
     });
     res.json(posts);
@@ -230,13 +204,25 @@ app.post('/api/threads/:threadId/posts', async (req, res) => {
       return res.status(401).json({ message: 'Must be logged in to post to a thread'});
     }
 
-    const { content } = req.body;
+    const { content, attachments } = req.body;
     console.info(req.params.threadId)
     const newPost = await Models.Post.create({
       threadId: req.params.threadId,
       userId: req.session.user.id,
       content
     });
+
+    // if the post has attachments, save them to Attachment table
+    if (attachments && attachments.length > 0) {
+      const attachmentRows = attachments.map(att => ({
+        postId: newPost.id,
+        fileKey: att.fileKey,
+        fileType: att.fileType,
+        fileName: att.fileName,
+      }));
+      
+      await Models.Attachment.bulkCreate(attachmentRows);
+    }
 
     res.status(201).json(newPost);
   } catch (error) {
