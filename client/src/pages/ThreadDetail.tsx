@@ -57,7 +57,7 @@ function ThreadDetail() {
             <p><strong>{post.author?.userName || 'Unknown'}</strong></p>
             <p>{post.content}</p>
             <p style={{ fontSize: '0.8em', color: '#666' }}>
-              {new Date(post.datePosted).toLocaleString()}
+              {new Date(post.createdAt).toLocaleString()}
             </p>
           </div>
         ))}

@@ -12,18 +12,17 @@ const User = sequelize.define(
 		},
 		firstName: {
 			type: DataTypes.STRING,
-			allowNull: false,
+			field: 'first_name',
 		},
 		lastName: {
 			type: DataTypes.STRING,
-			allowNull: false,
-		},
-		middleName: {
-			type: DataTypes.STRING,
+			field: 'last_name',
 		},
 		userName: {
 			type: DataTypes.STRING,
+			unique: true,
 			allowNull: false,
+			field: 'user_name'
 		},
 		email: {
 			type: DataTypes.STRING,
@@ -42,8 +41,9 @@ const User = sequelize.define(
 	},
 	{
 		tableName: 'Users',
+		timestamps: true,
 	}
-	
-)
+
+);
 
 module.exports = User;

@@ -17,21 +17,12 @@ const Thread = sequelize.define(
         authorId: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            references: {
-                model: 'Users',
-                key: 'id',
-            },
             field: 'author_id'
-        },
-        createdAt: {
-            type: DataTypes.DATE,
-            defaultValue: DataTypes.NOW,
-            field: 'created_at'
         },
     },
     {
         tableName: 'Threads',
-        timestamps: false
+        timestamps: true,
     }
 );
 

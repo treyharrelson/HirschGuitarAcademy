@@ -1,8 +1,8 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../db');
 
-const Class = sequelize.define(
-	'Class',
+const Enrollment = sequelize.define(
+	'Enrollment',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -10,24 +10,21 @@ const Class = sequelize.define(
 			autoIncrement: true,
 			allowNull: false,
 		},
-		name: {
-			type: DataTypes.STRING,
-			unique: true,
-			allowNull: false,
-		},
-		enrolled: {
-			type: DataTypes.INTEGER,
-			defaultValue: 0,
-		},
-		capacity: {
+		userId: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
+			field: 'user_id',
+		},
+		courseId: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			field: 'course_id'
 		},
 	},
 	{
-		tableName: 'Classes',
+		tableName: 'Enrollments',
+		timestamps: true,
 	}
-	
-)
+);
 
-module.exports = Class;
+module.exports = Enrollment;

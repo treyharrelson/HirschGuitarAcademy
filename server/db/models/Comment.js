@@ -1,8 +1,8 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../db');
 
-const Post = sequelize.define(
-	'Post',
+const Comment = sequelize.define(
+	'Comment',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -10,31 +10,19 @@ const Post = sequelize.define(
 			autoIncrement: true,
 			allowNull: false,
 		},
-		threadId: {
+		authorId: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
-			references: {
-				model: 'Threads',
-				key: 'id',
-			},
-			field: 'thread_id'
+			field: 'author_id',
 		},
-		userId: {
+		postId: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
-			references: {
-				model: 'Users',
-				key: 'id',
-			}
+			field: 'post_id',
 		},
 		content: {
-			type: DataTypes.STRING,
+			type: DataTypes.TEXT,
 			allowNull: false,
-		},
-		datePosted: {
-			type: DataTypes.DATE,
-			defaultValue: DataTypes.NOW,
-			field: 'created_at'
 		},
 		numLikes: {
 			type: DataTypes.INTEGER,
@@ -43,9 +31,9 @@ const Post = sequelize.define(
 		},
 	},
 	{
-		tableName: 'Posts',
+		tableName: 'Comments',
+		timestamps: true,
 	}
-	
-)
+);
 
-module.exports = Post;
+module.exports = Comment;
