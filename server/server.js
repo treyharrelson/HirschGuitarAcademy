@@ -11,7 +11,7 @@ const requireAuth = require('./middleware/requireAuth')
 // ROUTES
 const authRoutes = require('./routes/auth');
 const threadRoutes = require('./routes/threads');
-const courseRoutes = require('./routes/courseEdit');
+const courseRoutes = require('./routes/courses');
 
 // allows connection from frontend
 app.use(cors({

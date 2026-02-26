@@ -1,13 +1,13 @@
-const requireRole = (requiredRole) => {
+const requireRole = (roles) => {
 	return (req, res, next) => {
 		// should use in conjunction with requireAuth.js, so assume session exists
-		if (req.session.user.role === requiredRole) {
+		if (roles.includes(req.session.user.role)) {
 			next();
 		}
 		else {
 			res.status(403).json({
 				success: false,
-				message: `No access, must be ${requiredRole}.`
+				message: `No access. Required role(s): ${roles.join(', ')}.`
 			});
 		}
 	}
