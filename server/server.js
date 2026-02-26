@@ -11,6 +11,7 @@ const requireAuth = require('./middleware/requireAuth')
 // ROUTES
 const authRoutes = require('./routes/auth');
 const threadRoutes = require('./routes/threads');
+const courseRoutes = require('./routes/courseEdit');
 
 // allows connection from frontend
 app.use(cors({
@@ -25,8 +26,6 @@ const port = 3000;
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // get JSON data sent from React with axios
 
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Create session data
 // look into express-mysql-session for dedicated session storing for persistent session data via the MYSQL database
@@ -41,6 +40,7 @@ app.use(session({
 // Hook up the imported routers
 app.use('/', authRoutes);
 app.use('/api/threads', requireAuth, threadRoutes); // This prefixes all routes in threads.js with /api/threads
+app.use('/api/courses', requireAuth, courseRoutes); // Protects and prefixes course edit routing with /api/courses
 
 // -- START SERVER --
 app.listen(port, () => {

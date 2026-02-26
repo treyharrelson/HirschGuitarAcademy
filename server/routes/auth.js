@@ -76,12 +76,14 @@ router.post('/login', async (req, res) => {
 });
 
 // User logout
-router.post('/logout', (req, res) => {
+router.post('/logout', (req, res, next) => {
 	req.session.destroy(function (err) {
 		if (err) {
-			return nextTick(err);
+			return next(err);
 		}
-		res.redirect("/");
+		// Also clear the actual session cookie in the browser to make the frontend checkAuth fail
+		res.clearCookie('connect.sid');
+		res.json({ success: true, message: 'Logged out successfully' });
 	});
 });
 

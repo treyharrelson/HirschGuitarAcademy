@@ -7,8 +7,11 @@ const Post = require('./Post');
 const Comment = require('./Comment')
 const Course = require('./Course');
 const Enrollment = require('./Enrollment');
+const Message = require('./Message');
 const Notification = require('./Notification')
 const Subscription = require('./Subscription')
+const Module = require('./Module');
+const Lecture = require('./Lecture');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -38,6 +41,14 @@ Enrollment.belongsTo(User, { foreignKey: 'userId' });
 Course.hasMany(Enrollment, { foreignKey: 'courseId' });
 Enrollment.belongsTo(Course, { foreignKey: 'courseId' });
 
+// Course to Modules
+Course.hasMany(Module, { foreignKey: 'courseId', as: 'modules' });
+Module.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
+
+// Module to Lectures
+Module.hasMany(Lecture, { foreignKey: 'moduleId', as: 'lectures' });
+Lecture.belongsTo(Module, { foreignKey: 'moduleId', as: 'module' });
+
 // User to threads
 User.hasMany(Thread, { foreignKey: 'authorId', as: 'threads' });
 Thread.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
@@ -58,6 +69,13 @@ Comment.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
 User.hasMany(Comment, { foreignKey: 'authorId', as: 'comments' });
 Comment.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
 
+// User to messages
+User.hasMany(Message, { foreignKey: 'senderId', as: 'sentMessages' });
+Message.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
+
+User.hasMany(Message, { foreignKey: 'recipientId', as: 'receivedMessages' });
+Message.belongsTo(User, { foreignKey: 'recipientId', as: 'recipient' });
+
 // User to notifications
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -70,11 +88,14 @@ Subscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 module.exports = {
     sequelize,
     User,
-    Course, 
+    Course,
     Enrollment,
+    Message,
     Thread,
     Post,
     Comment,
     Notification,
-    Subscription
+    Subscription,
+    Module,
+    Lecture
 };

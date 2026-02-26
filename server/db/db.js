@@ -15,7 +15,7 @@ const sequelize = new Sequelize(
 sequelize.authenticate().then(() => {
     console.log('Connection has been established successfully.');
     // make sure tables exist
-    sequelize.sync({ alter: true }).then(() => {
+    sequelize.sync({ alter: true, logging: false }).then(() => {
         console.log('Tables synced successfully.');
     });
 }).catch(err => {
