@@ -1,8 +1,0 @@
-src/
- ├── app.js
- ├── db.js
- ├── routes/
- │    ├── threads.js
- │    └── posts.js
- └── middleware/
-      └── auth.js
