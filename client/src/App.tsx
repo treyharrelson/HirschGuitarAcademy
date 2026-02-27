@@ -5,6 +5,8 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Forum from './pages/Forum';
 import ThreadDetail from './pages/ThreadDetail';
+import AllCourses from './pages/AllCourses';
+import MyCourses from './pages/MyCourses';
 
 import './App.css';
 
@@ -21,6 +23,8 @@ function App() {
           <Route path="/admin-dashboard" element={<Dashboard />} />
           <Route path="/forum" element={<Forum />} />
           <Route path="/forum/thread/:threadId" element={<ThreadDetail />} />
+          <Route path="/all-courses" element={<AllCourses />} />
+          <Route path="/courses" element={<MyCourses />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

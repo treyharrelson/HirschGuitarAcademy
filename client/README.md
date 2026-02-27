@@ -71,3 +71,23 @@ export default defineConfig([
   },
 ])
 ```
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+
+## Dev Notes
+Always run "npm install" before launching the server to fetch any modules/updates you may be missing
+
+You launch the server with "npm run dev"
+
+Access the webpage in your browser with "localhost:5173"
+
+## To-Do
+Implement user auth via PostgreSQL
+
