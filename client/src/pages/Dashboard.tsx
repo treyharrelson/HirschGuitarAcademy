@@ -11,10 +11,11 @@ function Dashboard() {
             await axios.post('http://localhost:3000/logout', {}, {
                 withCredentials: true
             });
-            logout();
-            navigate('/');
         } catch (err) {
             console.error('Logout error:', err);
+        } finally {
+            logout();
+            window.location.href = '/';
         }
     };
 
@@ -35,13 +36,16 @@ function Dashboard() {
             <p>Role: {user.role}</p>
 
             <button onClick={handleLogout}>Logout</button>
-        
+
             <div>
                 <h2>Quick Links</h2>
                 <ul>
                     <li><Link to="/forum">Forum</Link></li>
+                    <li><Link to="/all-courses">View Available Courses</Link></li>
                     <li><Link to="/courses">My Courses</Link></li>
-                    <li><a href="./lms.html">LMS Redirect</a></li>
+                    {(user.role === 'instructor' || user.role === 'admin') && (
+                        <li><a href="./lms.html">LMS Redirect</a></li>
+                    )}
                 </ul>
             </div>
         </div>

@@ -1,7 +1,6 @@
 import React from 'react'
 import SearchBar from '../../components/student/SearchBar'
 import CoursesSection from '../../components/student/CoursesSection'
-import Sidebar from '../../components/instructor/Sidebar'
 
 const Home = () => {
   return (

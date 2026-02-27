@@ -4,7 +4,7 @@ const Models = require('../db/models');
 const requireRole = require('../middleware/requireRole');
 
 // === ALL AUTHENTICATED USERS ===
-// (requireAuth is applied at the server.js mount point)
+// (requireAuth done first)
 
 // Get all courses (Maps to GET /api/courses)
 router.get('/', async (req, res) => {
@@ -20,6 +20,21 @@ router.get('/', async (req, res) => {
         res.status(500).json({ message: `Error fetching courses: ${error.message}` });
     }
 });
+
+// Get enrollments for the current user (Maps to GET /api/courses/my-enrollments)
+router.get('/my-enrollments', async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const enrollments = await Models.Enrollment.findAll({
+            where: { userId },
+            attributes: ['courseId']
+        });
+        res.status(200).json(enrollments);
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching enrollments: ${error.message}` });
+    }
+});
+
 
 // Get a specific course by ID (Maps to GET /api/courses/:courseId)
 router.get('/:courseId', async (req, res) => {

@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -13,7 +13,7 @@ function Login() {
     const { login } = useAuth();
 
     // handle form submission
-    const handleSubmit = async (e: SubmitEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault(); // prevents page reload
         try {
             // call backend
@@ -38,9 +38,9 @@ function Login() {
                 if (response.data.user.role === 'student') {
                     navigate('/student-dashboard')
                 } else if (response.data.user.role === 'instructor') {
-                    navigate('/instructor-dashboard')
+                    window.location.href = '/lms.html'
                 } else if (response.data.user.role === 'admin') {
-                    navigate('/admin-dashboard')
+                    navigate('/student-dashboard')
                 }
             }
         } catch (err) {
