@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Practice Timer</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+    
+:root {
+  --bg: #0f0f14;
+  --card: #181820;
+  --accent: #ff9f1c;
+  --text: #ffffff;
+  --muted: #888;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background: var(--card);
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  width: 350px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+h1 {
+  font-weight: 600;
+  margin-bottom: 30px;
+}
+
+.timer-wrapper {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto 30px;
+}
+
+svg {
+  transform: rotate(-90deg);
+}
+
+circle {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.bg-circle {
+  stroke: #2a2a35;
+}
+
+.progress-circle {
+  stroke: var(--accent);
+  stroke-dasharray: 628;
+  stroke-dashoffset: 628;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.time-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 36px;
+  font-weight: 600;
+}
+
+input {
+  width: 80px;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  text-align: center;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+button {
+  flex: 1;
+  margin: 5px;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #242430;
+  color: white;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎸 Practice Timer</h1>
+
+  <div class="timer-wrapper">
+    <svg width="220" height="220">
+      <circle class="bg-circle" cx="110" cy="110" r="100"></circle>
+      <circle class="progress-circle" cx="110" cy="110" r="100"></circle>
+    </svg>
+    <div class="time-display" id="display">60:00</div>
+  </div>
+
+  <input type="number" id="minutesInput" value="60" min="1" />
+
+  <div class="buttons">
+    <button onclick="startTimer()">Start</button>
+    <button onclick="pauseTimer()">Pause</button>
+    <button onclick="resetTimer()">Reset</button>
+  </div>
+</div>
+
+<script>
+let totalSeconds = 3600;
+let remainingSeconds = totalSeconds;
+let timerInterval = null;
+const circumference = 2 * Math.PI * 100;
+const progressCircle = document.querySelector(".progress-circle");
+
+function updateDisplay() {
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+
+  document.getElementById("display").textContent =
+    String(minutes).padStart(2, '0') + ":" +
+    String(seconds).padStart(2, '0');
+
+  const progress = remainingSeconds / totalSeconds;
+  progressCircle.style.strokeDashoffset =
+    circumference - progress * circumference;
+}
+
+function startTimer() {
+  if (timerInterval) return;
+
+  totalSeconds = document.getElementById("minutesInput").value * 60;
+  if (!remainingSeconds || remainingSeconds === totalSeconds)
+    remainingSeconds = totalSeconds;
+
+  timerInterval = setInterval(() => {
+    if (remainingSeconds > 0) {
+      remainingSeconds--;
+      updateDisplay();
+    } else {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      beep();
+      alert("Session Complete 🎸");
+    }
+  }, 1000);
+}
+
+function pauseTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  totalSeconds = document.getElementById("minutesInput").value * 60;
+  remainingSeconds = totalSeconds;
+  updateDisplay();
+}
+
+function beep() {
+  const audio = new Audio("https://www.soundjay.com/buttons/sounds/beep-07.mp3");
+  audio.play();
+}
+
+updateDisplay();
+</script>
+
+</body>
+</html>
