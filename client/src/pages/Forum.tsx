@@ -46,7 +46,6 @@ function Forum() {
     return (
         <div>
             <h1>Forum</h1>
-            <Link to="/student-dashboard">Back to Dashboard</Link>
 
             {user && (
                 <form onSubmit={handleSubmit}>
@@ -74,6 +73,7 @@ function Forum() {
                 ))}
             </ul>
 
+            <Link to="/student-dashboard">Back to Dashboard</Link>
         </div>
     );
 }

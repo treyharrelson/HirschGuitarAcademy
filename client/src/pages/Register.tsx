@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
@@ -8,12 +8,11 @@ function Register() {
     const [userName, setUserName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState('student');
     const [error, setError] = useState('');
 
     const navigate = useNavigate();
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault(); // prevents page reload
 
         try {
@@ -23,7 +22,7 @@ function Register() {
                 userName,
                 email,
                 password,
-                role
+                role: 'student' // default to student role
             }, {
                 withCredentials: true
             });
@@ -41,46 +40,41 @@ function Register() {
         <div>
             <h2>Register</h2>
             <form onSubmit={handleSubmit}>
-                <input
+                <input 
                     type="text"
                     placeholder="First Name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     required
                 />
-                <input
+                <input 
                     type="text"
                     placeholder="Last Name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     required
                 />
-                <input
+                <input 
                     type="text"
                     placeholder="Username"
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
                     required
                 />
-                <input
+                <input 
                     type="email"
                     placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                 />
-                <input
+                <input 
                     type="password"
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                 />
-                <select value={role} onChange={(e) => setRole(e.target.value)}>
-                    <option value="student">Student</option>
-                    <option value="instructor">Instructor</option>
-                    <option value="admin">Admin</option>
-                </select>
                 <button type="submit">Register</button>
                 {error && <p style={{ color: 'red' }}>{error}</p>}
             </form>

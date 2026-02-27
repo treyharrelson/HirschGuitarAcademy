@@ -31,14 +31,4 @@ Daily Development:
         npm run dev
         # runs on http://localhost:5173 (GO HERE TO)
 
-# Update as of Feb 18, 2026:
-Tailwindcss has been implemented into the repository for ease of front end developement.
-You will need to verify that your version of the repo/branch you are working on has it installed.
-Instructions can be found at: https://tailwindcss.com/docs/installation/using-vite
-
-It boils down to running this command in the "client" folder: npm install tailwindcss @tailwindcss/vite
-This is to verify that the module has been installed/updated.
-The command should be run with "npm install" everytime you boot up the server/client for the first time upon development for the timeframe.
-
-# QoL To Do:
-1. Make a script that runs both the front and back-end at the same time without the need for multiple command windows or excess file navigation.
+    

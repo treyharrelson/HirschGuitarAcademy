@@ -3,7 +3,7 @@ export interface Post {
     threadId: number;
     userId: number;
     content: string;
-    createdAt: string;
+    datePosted: string;
     author?: {
         userName: string;
         firstName: string;

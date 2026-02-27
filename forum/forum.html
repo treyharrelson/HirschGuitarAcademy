@@ -1,0 +1,42 @@
+<h1>Forum</h1>
+
+<form id="new-thread">
+  <input placeholder="Thread title" required />
+  <button>Create</button>
+</form>
+
+<ul id="threads"></ul>
+
+<script>
+async function loadThreads() {
+  const res = await fetch("/api/threads");
+  const threads = await res.json();
+
+  const ul = document.getElementById("threads");
+  ul.innerHTML = "";
+
+  threads.forEach(t => {
+    const li = document.createElement("li");
+    li.innerHTML = `<a href="thread.html?id=${t.id}">${t.title}</a> — ${t.username}`;
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById("new-thread").onsubmit = async e => {
+  e.preventDefault();
+  const title = e.target.querySelector("input").value;
+
+  await fetch("/api/threads", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title })
+  });
+
+  e.target.reset();
+  loadThreads();
+};
+
+loadThreads();
+</script>
+
+
