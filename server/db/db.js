@@ -1,21 +1,23 @@
 require("dotenv").config();
 const { Sequelize } = require('sequelize');
 
+
 const sequelize = new Sequelize(
     process.env.POSTGRES_DB,
     process.env.POSTGRES_USER,
     process.env.POSTGRES_PASSWORD,
     {
-        host: process.env.DB_HOST,
+        //host: process.env.DB_HOST,
+        host: 'localhost',
         port: process.env.DB_PORT,
-        dialect: 'postgres'
+        dialect: 'postgres',
     }
 );
 
 sequelize.authenticate().then(() => {
     console.log('Connection has been established successfully.');
     // make sure tables exist
-    sequelize.sync({ alter: true, logging: false }).then(() => {
+    sequelize.sync({ alter: true }).then(() => {
         console.log('Tables synced successfully.');
     });
 }).catch(err => {

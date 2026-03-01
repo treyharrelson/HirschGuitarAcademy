@@ -18,6 +18,7 @@ const AddCourse = () => {
   const [submitting, setSubmitting] = useState(false)
   const [statusMsg, setStatusMsg] = useState('')
 
+  const [currentModuleId, setCurrentModuleId] = useState(null)
   const [moduleDetails, setModuleDetails] = useState({
     moduleTitle: ''
   })
@@ -183,7 +184,7 @@ const AddCourse = () => {
                       <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleLecture('remove', module.moduleId, lectureIndex)} />
                     </div>
                   ))}
-                  <div className='inline-flex bg-gray-100 p-2 rounded cursor-pointer mt-2' onClick={() => handleLecture('add', module.moduleId)}>
+                  <div className='inline-flex bg-gray-100 p-2 rounded cursor-pointer mt-2' onClick={()=>handleLecture('add', module.moduleId)}>
                     + Add Lecture
                   </div>
                 </div>

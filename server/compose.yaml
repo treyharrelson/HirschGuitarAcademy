@@ -11,7 +11,7 @@ services:
       - ./pgdata:/var/lib/postgresql
   
   pgadmin:
-    image: dpage/pgadmin4:9.11 # Use a specific version
+    image: dpage/pgadmin4:9.12 # Use a specific version
     container_name: pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com

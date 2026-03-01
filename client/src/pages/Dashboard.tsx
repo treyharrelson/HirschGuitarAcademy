@@ -43,7 +43,7 @@ function Dashboard() {
                     <li><Link to="/forum">Forum</Link></li>
                     <li><Link to="/all-courses">View Available Courses</Link></li>
                     <li><Link to="/courses">My Courses</Link></li>
-                    {(user.role === 'instructor' || user.role === 'admin') && (
+                    {(user.role === 'instructor' || user.role === 'admin' || user.role === 'student') && (
                         <li><a href="./lms.html">LMS Redirect</a></li>
                     )}
                 </ul>
