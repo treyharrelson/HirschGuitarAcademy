@@ -1,3 +1,9 @@
+export interface Attachment {
+    fileKey: string;
+    fileType: string;
+    fileName: string;
+}
+
 export interface Post {
     id: number,
     threadId: number;
@@ -8,5 +14,6 @@ export interface Post {
         userName: string;
         firstName: string;
         lastName: string;
-    }
+    };
+    attachments?: Attachment[];
 }
