@@ -12,6 +12,7 @@ const requireAuth = require('./middleware/requireAuth')
 const authRoutes = require('./routes/auth');
 const threadRoutes = require('./routes/threads');
 const courseRoutes = require('./routes/courses');
+const uploadRouter = require('./routes/upload')
 
 // allows connection from frontend
 app.use(cors({
@@ -41,6 +42,7 @@ app.use(session({
 app.use('/', authRoutes);
 app.use('/api/threads', requireAuth, threadRoutes); // This prefixes all routes in threads.js with /api/threads
 app.use('/api/courses', requireAuth, courseRoutes); // Protects and prefixes course edit routing with /api/courses
+app.use('/api/upload', requireAuth, uploadRouter);
 
 // -- START SERVER --
 app.listen(port, () => {
