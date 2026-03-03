@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "workspaces":[
+    "client",
+    "server"
+  ],
   "scripts": {
     "client": "npm run dev --prefix client",
     "server": "npm start --prefix server",
