@@ -36,16 +36,8 @@ const upload = multer({
     limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 }
 });
 
-// middleware to check if the user is logged in using existing session setup
-function isAuthenticated(req, res, next) {
-    if (!req.session.user) {
-        return res.status(401).json({ error: 'You must be logged in to access this' });
-    }
-    next();
-}
-
 // Upload a file to R2
-router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
 
     if (!file) {
@@ -75,7 +67,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req, res) 
 });
 
 // generate presigned URL for viewing/downloading a file
-router.get('/file-url', isAuthenticated, async (req, res) => {
+router.get('/file-url', async (req, res) => {
     const { fileKey } = req.query;
 
     if (!fileKey) {

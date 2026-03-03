@@ -40,11 +40,17 @@ router.get('/:threadId/posts', async (req, res) => {
 	try {
 		const posts = await Models.Post.findAll({
 			where: { threadId: req.params.threadId },
-			include: [{
-				model: Models.User,
-				as: 'author',
-				attributes: ['userName', 'firstName', 'lastName']
-			}],
+			include: [
+				{
+					model: Models.User,
+					as: 'author',
+					attributes: ['userName', 'firstName', 'lastName']
+				},
+				{
+					model: Models.Attachment,
+					as: 'attachments'
+				}
+			],
 			order: [['createdAt', 'ASC']]
 		});
 		res.json(posts);
@@ -60,13 +66,23 @@ router.post('/:threadId/posts', async (req, res) => {
 	console.log('Request body: ', req.body);
 	console.log('Session user: ', req.session.user);
 	try {
-		const { content } = req.body;
+		const { content, attachments } = req.body;
 		console.info(req.params.threadId)
 		const newPost = await Models.Post.create({
 			threadId: req.params.threadId,
 			authorId: req.session.user.id,
 			content
 		});
+
+		if (attachments && attachments.length > 0) {
+			const attachmentRecords = attachments.map(att => ({
+				postId: newPost.id,
+				fileKey: att.fileKey,
+				fileType: att.fileType,
+				fileName: att.fileName
+			}));
+			await Models.Attachment.bulkCreate(attachmentRecords);
+		}
 
 		res.status(201).json(newPost);
 	} catch (error) {
