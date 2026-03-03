@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Guitar Metronome Note Trainer</title>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="main">
+      <div id="timer">00:00</div>
+
+      <div id="score"></div>
+      <div id="current-note">
+        <span id="current-note-text">--</span>
+        <div id="sonar"></div>
+      </div>
+
+      <div class="bpm-container">
+        <div id="bpm-minus" class="bpm-button">-</div>
+        <div id="bpm" class="bpm-display"></div>
+        <div id="bpm-plus" class="bpm-button">+</div>
+      </div>
+
+      <div class="bpm-slider-container">
+        <input id="bpm-slider" type="range" max="200" min="20" />
+      </div>
+
+      <div class="bpm-speed">
+        <div>
+          <label for="radio-two">Two</label>
+          <input
+            checked
+            value="two"
+            name="speed"
+            type="radio"
+            id="radio-two"
+          />
+        </div>
+
+        <div>
+          <label for="radio-four">Four</label>
+          <input id="radio-four" name="speed" type="radio" value="four" />
+        </div>
+
+        <div>
+          <label for="radio-eight">Eight</label>
+          <input
+            name="speed"
+            type="radio"
+            value="eight"
+            id="radio-eight"
+          />
+        </div>
+      </div>
+
+      <button class="metronome-button" id="start">Start</button>
+      <button class="metronome-button" id="stop">Stop</button>
+    </div>
+
+    <script type="module" src="./js/script.js"></script>
+  </body>
+</html>

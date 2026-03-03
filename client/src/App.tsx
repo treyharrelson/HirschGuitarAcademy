@@ -7,6 +7,8 @@ import Forum from './pages/Forum';
 import ThreadDetail from './pages/ThreadDetail';
 import AllCourses from './pages/AllCourses';
 import MyCourses from './pages/MyCourses';
+import Metronome from './pages/student/metronome-tool/js/metronome';
+import Timer from './pages/student/metronome-tool/js/timer';
 
 import './App.css';
 
@@ -25,6 +27,8 @@ function App() {
           <Route path="/forum/thread/:threadId" element={<ThreadDetail />} />
           <Route path="/all-courses" element={<AllCourses />} />
           <Route path="/courses" element={<MyCourses />} />
+          <Route path="/metronome" element={<Metronome />} />
+          <Route path="/timer" element={<Timer />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
