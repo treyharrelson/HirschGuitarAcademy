@@ -12,6 +12,7 @@ const Notification = require('./Notification')
 const Subscription = require('./Subscription')
 const Module = require('./Module');
 const Lecture = require('./Lecture');
+const Attachment = require('./Attachment');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -65,6 +66,10 @@ Post.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
 Post.hasMany(Comment, { foreignKey: 'postId', as: 'comments' });
 Comment.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
 
+// Post to attachments
+Post.hasMany(Attachment, { foreignKey: 'postId', as: 'attachments' });
+Attachment.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
+
 // User to comments
 User.hasMany(Comment, { foreignKey: 'authorId', as: 'comments' });
 Comment.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
@@ -97,5 +102,6 @@ module.exports = {
     Notification,
     Subscription,
     Module,
-    Lecture
+    Lecture,
+    Attachment
 };
