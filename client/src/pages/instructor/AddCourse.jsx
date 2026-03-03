@@ -1,12 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import uniqid from 'uniqid';
 import Quill from 'quill';
 import axios from 'axios';
 import { assets } from '../../assets/assets'
+import { AppContext } from '../../context/AppContext'
 
 
 const AddCourse = () => {
 
+  const { fetchAllCourses } = useContext(AppContext)
   const quillRef = useRef(null);
   const editorRef = useRef(null);
 
@@ -106,6 +108,8 @@ const AddCourse = () => {
         modules
       }, { withCredentials: true });
       setStatusMsg('Course created successfully!');
+      // Refresh the course list
+      await fetchAllCourses();
       // Reset form
       setCourseTitle('');
       setCapacity(30);
@@ -184,7 +188,7 @@ const AddCourse = () => {
                       <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleLecture('remove', module.moduleId, lectureIndex)} />
                     </div>
                   ))}
-                  <div className='inline-flex bg-gray-100 p-2 rounded cursor-pointer mt-2' onClick={()=>handleLecture('add', module.moduleId)}>
+                  <div className='inline-flex bg-gray-100 p-2 rounded cursor-pointer mt-2' onClick={() => handleLecture('add', module.moduleId)}>
                     + Add Lecture
                   </div>
                 </div>
