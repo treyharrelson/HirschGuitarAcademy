@@ -38,7 +38,7 @@ function Login() {
                 if (response.data.user.role === 'student') {
                     navigate('/student-dashboard')
                 } else if (response.data.user.role === 'instructor') {
-                    window.location.href = '/lms.html'
+                    navigate('/instructor')
                 } else if (response.data.user.role === 'admin') {
                     navigate('/student-dashboard')
                 }

@@ -2,14 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { type Course } from '../types/course'
 
-const AllCourses = () => {
+
+const AllCourses: React.FC = () => {
     const { user } = useAuth();
-    const [courses, setCourses] = useState([]);
-    const [enrolledIds, setEnrolledIds] = useState(new Set());
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [enrolledIds, setEnrolledIds] = useState<Set<number>>(new Set());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [actionMsg, setActionMsg] = useState('');
+
+    interface Enrollment {
+        courseId: number;
+    }
 
     const fetchCourses = async () => {
         try {
@@ -22,11 +28,11 @@ const AllCourses = () => {
         }
     };
 
-    const fetchEnrollments = async () => {
+    const fetchEnrollments = async (): Promise<void> => {
         if (user?.role !== 'student') return;
         try {
             // Uses the new /api/courses/my-enrollments endpoint
-            const res = await axios.get('http://localhost:3000/api/courses/my-enrollments', { withCredentials: true });
+            const res = await axios.get<Enrollment[]>('http://localhost:3000/api/courses/my-enrollments', { withCredentials: true });
             setEnrolledIds(new Set(res.data.map((e) => e.courseId)));
         } catch {
             // non-critical — enrollment status just won't show
@@ -38,7 +44,7 @@ const AllCourses = () => {
         fetchEnrollments();
     }, [user]);
 
-    const handleEnroll = async (courseId) => {
+    const handleEnroll = async (courseId: number): Promise<void> => {
         try {
             await axios.post(`http://localhost:3000/api/courses/${courseId}/enroll`, {}, { withCredentials: true });
             // Update enrolledIds immediately
@@ -46,12 +52,12 @@ const AllCourses = () => {
             // Re-fetch courses so the enrolled count reflects the change
             await fetchCourses();
             setActionMsg('Successfully enrolled!');
-        } catch (err) {
+        } catch (err: any) {
             setActionMsg(err.response?.data?.message || 'Enrollment failed.');
         }
     };
 
-    const handleDrop = async (courseId) => {
+    const handleDrop = async (courseId: number): Promise<void> => {
         try {
             await axios.delete(`http://localhost:3000/api/courses/${courseId}/enroll`, { withCredentials: true });
             // Update enrolledIds immediately
@@ -63,7 +69,7 @@ const AllCourses = () => {
             // Re-fetch courses so the enrolled count reflects the change
             await fetchCourses();
             setActionMsg('Successfully dropped.');
-        } catch (err) {
+        } catch (err: any) {
             setActionMsg(err.response?.data?.message || 'Drop failed.');
         }
     };
@@ -84,14 +90,14 @@ const AllCourses = () => {
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                     {courses.map((course) => {
                         const isEnrolled = enrolledIds.has(course.id);
-                        const isFull = course.enrolled >= course.capacity;
+                        const isFull = (course.enrolled ?? 0) >= (course.capacity ?? 0);
 
                         return (
                             <li key={course.id} style={{ borderBottom: '1px solid #ddd', padding: '1rem 0' }}>
                                 <strong>{course.name}</strong>
                                 <p>
-                                    Instructor: {course.instructor
-                                        ? `${course.instructor.firstName} ${course.instructor.lastName}`
+                                    Instructor: {course.instructorId
+                                        ? `${course.instructorId} ${course.instructorId}`
                                         : 'N/A'}
                                 </p>
                                 <p>Spots: {course.enrolled} / {course.capacity}</p>

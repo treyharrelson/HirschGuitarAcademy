@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import Loading from '../../components/student/Loading'
 
-const Dashboard = () => {
+const InstrcutorDashboard = () => {
 
-  const [dashboardData, setDashboardData] = useState(null)
+  const [dashboardData, setDashboardData] = useState<string>('')
 
   const fetchDashboardData = async ()=> {
     setDashboardData("lorem ipsum")
@@ -22,4 +22,4 @@ const Dashboard = () => {
   ) : <Loading />
 }
 
-export default Dashboard
+export default InstrcutorDashboard

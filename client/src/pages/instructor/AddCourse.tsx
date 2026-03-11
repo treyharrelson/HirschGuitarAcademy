@@ -3,84 +3,96 @@ import uniqid from 'uniqid';
 import Quill from 'quill';
 import axios from 'axios';
 import { assets } from '../../assets/assets'
-import { AppContext } from '../../context/AppContext'
+import { useAppContext } from '../../context/AppContext'
+import { type Lecture, type Module, type Course } from '../../types/course';
 
 
-const AddCourse = () => {
 
-  const { fetchAllCourses } = useContext(AppContext)
-  const quillRef = useRef(null);
-  const editorRef = useRef(null);
+const AddCourse: React.FC = () => {
 
-  const [courseTitle, setCourseTitle] = useState('')
-  const [capacity, setCapacity] = useState(30)
-  const [image, setImage] = useState(null)
-  const [modules, setModules] = useState([])
-  const [showPopup, setPopup] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [statusMsg, setStatusMsg] = useState('')
+  const courseId = Number(uniqid());
+  
+  //const { fetchAllCourses } = useAppContext();
+  const quillRef = useRef<any>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
-  const [currentModuleId, setCurrentModuleId] = useState(null)
+  const [courseTitle, setCourseTitle] = useState<string>('')
+  const [capacity, setCapacity] = useState<number>(30)
+  const [image, setImage] = useState<File | null>(null)
+  const [modules, setModules] = useState<Module[]>([])
+  const [showPopup, setPopup] = useState<boolean>(false)
+  const [submitting, setSubmitting] = useState<boolean>(false)
+  const [statusMsg, setStatusMsg] = useState<string>('')
+
+  const [currentModuleId, setCurrentModuleId] = useState<number>(0)
   const [moduleDetails, setModuleDetails] = useState({
     moduleTitle: ''
   })
+  type ModuleAction = 'add' | 'remove' | 'toggle';
 
-  const [lectures, setLectures] = useState([])
-  const [currentLectureId, setCurrentLectureId] = useState(null)
+  const [lectures, setLectures] = useState<Lecture[]>([])
+  const [currentLectureId, setCurrentLectureId] = useState<number | null>(null)
   const [lectureDetails, setLectureDetails] = useState({
     lectureTitle: ''
   })
 
-  const handleModule = (action, moduleId) => {
+
+
+  const handleModule = (action: ModuleAction, moduleId?: number, currentCourseId?: number): void => {
     if (action === 'add') {
       const title = prompt('Enter Module Name: ');
-      if (title) {
+      if (title && currentCourseId !== undefined) {
         const newModule = {
-          moduleId: uniqid(),
-          moduleTitle: title,
-          moduleContent: [],
+          id: Number(uniqid()),
+          title: title,
+          content: [],
           collapsed: false,
-          moduleOrder: modules.length > 0 ? modules.slice(-1)[0].moduleOrder + 1 : 1,
+          order: modules.length > 0 ? modules.slice(-1)[0].order + 1 : 1,
+          courseId: currentCourseId
         };
         setModules([...modules, newModule]);
       }
     } else if (action === 'remove') {
-      setModules(modules.filter((module) => module.moduleId !== moduleId));
+      setModules(modules.filter((module) => module.id !== moduleId));
     } else if (action === 'toggle') {
       setModules(
         modules.map((module) =>
-          module.moduleId === moduleId ? { ...module, collapsed: !module.collapsed } : module
+          module.id === moduleId ? { ...module, collapsed: !module.collapsed } : module
         )
       );
     }
   };
 
-  const handleLecture = (action, moduleId, lectureIndex) => {
+  const handleLecture = (action: ModuleAction, moduleId?: number, lectureIndex?: number) => {
     if (action === 'add') {
-      setCurrentModuleId(moduleId);
-      setPopup(true);
+      if (moduleId !== undefined){
+        setCurrentModuleId(moduleId);
+        setPopup(true);
+      }
     } else if (action === 'remove') {
-      setModules(
-        modules.map((module) => {
-          if (module.moduleId === moduleId) {
-            module.moduleContent.splice(lectureIndex, 1);
-          }
+      if (moduleId !== undefined && lectureIndex !== undefined){
+        setModules(
+          modules.map((module) => {
+            if (module.id === moduleId) {
+              module.content.splice(lectureIndex, 1);
+            }
           return module;
         })
       );
+      }
     }
   };
 
   const addLecture = () => {
     setModules(
       modules.map((module) => {
-        if (module.moduleId === currentModuleId) {
+        if (module.id === currentModuleId) {
           const newLecture = {
             ...lectureDetails,
-            lectureOrder: module.moduleContent.length > 0 ? module.moduleContent.slice(-1)[0].lectureOrder + 1 : 1,
-            lectureId: uniqid()
+            lectureOrder: module.content.length > 0 ? module.content.slice(-1)[0].lectureOrder + 1 : 1,
+            lectureId: Number(uniqid())
           };
-          module.moduleContent.push(newLecture);
+          module.content.push(newLecture);
         }
         return module;
       })
@@ -91,7 +103,7 @@ const AddCourse = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!courseTitle.trim()) {
       setStatusMsg('Please enter a course title.');
@@ -102,6 +114,7 @@ const AddCourse = () => {
     try {
       const description = quillRef.current ? quillRef.current.getText() : '';
       await axios.post('http://localhost:3000/api/courses', {
+        id: courseId,
         name: courseTitle,
         capacity: Number(capacity),
         description,
@@ -115,7 +128,7 @@ const AddCourse = () => {
       setCapacity(30);
       setModules([]);
       if (quillRef.current) quillRef.current.setContents([]);
-    } catch (err) {
+    } catch (err: any) {
       setStatusMsg(err.response?.data?.message || 'Failed to create course.');
     } finally {
       setSubmitting(false);
@@ -147,7 +160,7 @@ const AddCourse = () => {
             type='number'
             min={1}
             value={capacity}
-            onChange={e => setCapacity(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCapacity(Number(e.target.value))}
             className='outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500 w-32'
             required
           />
@@ -163,7 +176,7 @@ const AddCourse = () => {
           <p>Course Thumbnail</p>
           <label htmlFor='thumbnailImage' className='flex items-center gap-3'>
             <img src={assets.upload_icon} alt='upload icon' className='p-3 w-10 h-10 fill-white-500 bg-blue-500 rounded' />
-            <input type='file' id='thumbnailImage' onChange={e => setImage(e.target.files[0])} accept='image/*' hidden />
+            <input type='file' id='thumbnailImage' onChange={(e: React.ChangeEvent<HTMLInputElement>) => {if (e.target.files && e.target.files.length > 0) {setImage(e.target.files[0]);}}} accept='image/*' hidden />
             <img className='max-h-10' src={image ? URL.createObjectURL(image) : ''} alt='' />
           </label>
         </div>
@@ -174,21 +187,21 @@ const AddCourse = () => {
             <div key={moduleIndex} className='bg-white border rounded-lg mb-4'>
               <div className='flex justify-between items-center p-4 border-b'>
                 <div className='flex items-center'>
-                  <img onClick={() => handleModule('toggle', module.moduleId)} src={assets.dropDown_icon} alt='dropdown icon' width={14} className={`mr-2 w-4 h-4 cursor-pointer transition-all ${module.collapsed && "-rotate-90"}`} />
-                  <span className='font-semibold'>{moduleIndex + 1} {module.moduleTitle}</span>
+                  <img onClick={() => handleModule('toggle', module.id, courseId)} src={assets.dropDown_icon} alt='dropdown icon' width={14} className={`mr-2 w-4 h-4 cursor-pointer transition-all ${module.collapsed && "-rotate-90"}`} />
+                  <span className='font-semibold'>{moduleIndex + 1} {module.title}</span>
                 </div>
-                <span className='text-gray-500'>{module.moduleContent.length} Lectures</span>
-                <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleModule('remove', module.moduleId)} />
+                <span className='text-gray-500'>{module.content.length} Lectures</span>
+                <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleModule('remove', module.id)} />
               </div>
               {!module.collapsed && (
                 <div className='p-4'>
-                  {module.moduleContent.map((lecture, lectureIndex) => (
+                  {module.content.map((lecture, lectureIndex) => (
                     <div key={lectureIndex} className='flex justify-between items-center mb-2'>
                       <span>{lectureIndex + 1} {lecture.lectureTitle}</span>
-                      <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleLecture('remove', module.moduleId, lectureIndex)} />
+                      <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleLecture('remove', module.id, lectureIndex)} />
                     </div>
                   ))}
-                  <div className='inline-flex bg-gray-100 p-2 rounded cursor-pointer mt-2' onClick={() => handleLecture('add', module.moduleId)}>
+                  <div className='inline-flex bg-gray-100 p-2 rounded cursor-pointer mt-2' onClick={() => handleLecture('add', module.id)}>
                     + Add Lecture
                   </div>
                 </div>
@@ -207,7 +220,7 @@ const AddCourse = () => {
                   <input
                     type='text'
                     className='mt-1 block w-full border rounded py-1 px-2'
-                    vlaue={lectureDetails.lectureTitle}
+                    value={lectureDetails.lectureTitle}
                     onChange={(e) => setLectureDetails({ ...lectureDetails, lectureTitle: e.target.value })}
                   />
                 </div>

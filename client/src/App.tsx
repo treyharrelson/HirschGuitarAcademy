@@ -11,6 +11,20 @@ import MyCourses from './pages/MyCourses';
 // import Timer from './pages/student/metronome-tool/js/timer';
 
 import './App.css';
+import Home from './pages/student/Home';
+import CourseList from './pages/student/CourseList';
+import CourseDetails from './pages/student/CourseDetails';
+import MyEnrollments from './pages/student/MyEnrollments';
+import Player from './pages/student/Player';
+import Loading from './components/student/Loading';
+import StudentsEnrolled from './pages/instructor/StudentsEnrolled'
+import AddCourse from './pages/instructor/AddCourse'
+import Instructor from './pages/instructor/Instructor'
+import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
+
+
+import "quill/dist/quill.snow.css";
+import Navbar from './components/student/Navbar';
 
 function App() {
   //const [count, setCount] = useState(0)
@@ -30,6 +44,21 @@ function App() {
           {/* elements set to this so it won't crash */}
           <Route path="/metronome" element={<MyCourses />} />
           <Route path="/timer" element={<MyCourses />} />
+
+          <Route path='/home' element={<Home />} />
+          <Route path='/course-list' element={<CourseList />} />
+          <Route path='/course-list/ :input' element={<CourseList />} />
+          <Route path='/course/:id' element={<CourseDetails />} />
+          <Route path='/my-enrollments' element={<MyEnrollments />} />
+          <Route path='/player/:courseId' element={<Player />} />
+          <Route path='/loading/:path' element={<Loading />} />
+          
+          <Route path='/instructor' element={<Instructor />}>
+            <Route path='/instructor' element={<InstrcutorDashboard />} />
+            <Route path='add-course' element={<AddCourse />} />
+            <Route path='my-courses' element={<MyCourses />} />
+            <Route path='students-enrolled' element={<StudentsEnrolled />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>

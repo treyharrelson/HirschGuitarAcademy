@@ -1,14 +1,15 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { AppContext } from '../../context/AppContext'
+import { useAppContext } from '../../context/AppContext'
 import { Link, useParams } from 'react-router-dom'
 import SearchBar from '../../components/student/SearchBar'
 import CourseCard from '../../components/student/CourseCard'
+import { type Course } from '../../types/course';
 
-const CourseList = () => {
+const CourseList: React.FC = () => {
 
-  const { input } = useParams()
-  const { allCourses } = useContext(AppContext)
-  const [filteredCourse, setFilteredCourse] = useState([])
+  const { input } = useParams<{ input?: string }>()
+  const { allCourses } = useAppContext();
+  const [filteredCourse, setFilteredCourse] = useState<Course[]>([])
 
   useEffect(() => {
     if (allCourses && allCourses.length > 0) {

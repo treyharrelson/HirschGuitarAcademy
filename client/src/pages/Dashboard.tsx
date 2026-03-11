@@ -46,7 +46,7 @@ function Dashboard() {
                     <li><Link to="/metronome">Metronome</Link></li>
                     <li><Link to="/timer">Timer</Link></li>
                     {(user.role === 'instructor' || user.role === 'admin' || user.role === 'student') && (
-                        <li><a href="./lms.html">LMS Redirect</a></li>
+                        <li><a href="/home">LMS Redirect</a></li>
                     )}
                 </ul>
             </div>

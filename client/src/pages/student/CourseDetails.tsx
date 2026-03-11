@@ -1,25 +1,27 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { AppContext } from '../../context/AppContext'
+import { useAppContext } from '../../context/AppContext'
 import Loading from '../../components/student/Loading'
 import axios from 'axios'
 import { useAuth } from '../../context/AuthContext' // to get user and check auth
+import { type Course } from '../../types/course'
 
-const CourseDetails = () => {
+const CourseDetails: React.FC = () => {
 
-  const { id } = useParams()
+  const { id } = useParams<{ id: string }>()
 
-  const [courseData, setCourseData] = useState(null)
-  const [isEnrolling, setIsEnrolling] = useState(false)
-  const [enrollMessage, setEnrollMessage] = useState('')
+  const [courseData, setCourseData] = useState<Course | null>(null)
+  const [isEnrolling, setIsEnrolling] = useState<boolean>(false)
+  const [enrollMessage, setEnrollMessage] = useState<string>('')
+  const { allCourses, isCoursesLoaded } = useAppContext();
 
-  const { allCourses, isCoursesLoaded } = useContext(AppContext)
+  
   const { user, isAuthenticated } = useAuth() // Need to check if auth in the future if guest views are allowed
 
   const fetchCourseData = async () => {
     // Note: The id coming from useParams is a string, but our database id is likely an integer. So use == instead of ===
-    const findCourse = allCourses.find(course => course.id == id)
-    setCourseData(findCourse)
+    const findCourse = allCourses.find((course: Course) => course.id == Number(id))
+    setCourseData(findCourse || null)
   }
 
   useEffect(() => {
@@ -27,16 +29,16 @@ const CourseDetails = () => {
   }, [allCourses, id])
 
 
-  const handleEnroll = async () => {
+  const handleEnroll = async (): Promise<void> => {
     setIsEnrolling(true)
     setEnrollMessage('')
     try {
-      const response = await axios.post(`http://localhost:3000/api/courses/${id}/enroll`, {}, {
+      await axios.post(`http://localhost:3000/api/courses/${id}/enroll`, {}, {
         withCredentials: true
       })
       setEnrollMessage("Successfully enrolled!")
       // optionally refresh courses or something here
-    } catch (err) {
+    } catch (err: any) {
       setEnrollMessage(err.response?.data?.message || "Failed to enroll")
     } finally {
       setIsEnrolling(false)
@@ -61,7 +63,7 @@ const CourseDetails = () => {
         <div className='max-w-xl z-10 text-gray-500'>
           <h1 className='font-semibold text-gray-800 text-3xl'>{courseData.name}</h1>
           <p className='pt-4 md:text-base text-sm'>
-            Instructor: {courseData.instructor ? `${courseData.instructor.firstName} ${courseData.instructor.lastName}` : "TBA"}
+            Instructor: {courseData.instructorId ? `${courseData.instructorId} ${courseData.instructorId}` : "TBA"}
           </p>
           <p className='pt-2'>Capacity: {courseData.enrolled} / {courseData.capacity}</p>
         </div>
