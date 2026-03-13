@@ -69,10 +69,6 @@ router.post('/:courseId/enroll', requireRole('student'), async (req, res) => {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        if (course.enrolled >= course.capacity) {
-            return res.status(400).json({ message: 'Course is at full capacity' });
-        }
-
         // Check if already enrolled
         const existingEnrollment = await Models.Enrollment.findOne({
             where: { userId, courseId }
@@ -110,7 +106,7 @@ router.delete('/:courseId/enroll', requireRole('student'), async (req, res) => {
 
         // Update course enrolled count
         const course = await Models.Course.findByPk(courseId);
-        if (course && course.enrolled > 0) {
+        if (course) {
             await course.decrement('enrolled');
         }
 
@@ -125,17 +121,16 @@ router.delete('/:courseId/enroll', requireRole('student'), async (req, res) => {
 // Create a new course (Maps to POST /api/courses)
 router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
     try {
-        const { name, capacity, modules } = req.body;
+        const { name, modules } = req.body;
 
-        if (!name || !capacity) {
-            return res.status(400).json({ message: 'Course name and capacity are required' });
+        if (!name) {
+            return res.status(400).json({ message: 'Course name is required' });
         }
 
         // Using a transaction to ensure all or nothing is created
         const newCourse = await Models.Course.sequelize.transaction(async (t) => {
             const course = await Models.Course.create({
                 name,
-                capacity,
                 instructorId: req.session.user.id
             }, { transaction: t });
 

@@ -1,4 +1,4 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
 
 const Course = sequelize.define(
@@ -24,9 +24,14 @@ const Course = sequelize.define(
 			type: DataTypes.INTEGER,
 			defaultValue: 0,
 		},
-		capacity: {
+		completed: {
 			type: DataTypes.INTEGER,
-			allowNull: false,
+			defaultValue: 0,
+		},
+		isPrivate: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+			field: 'is_private',
 		},
 	},
 	{
