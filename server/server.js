@@ -6,6 +6,11 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
+// FOR USERS UNTIL SERVER SET UP IN CLOUD
+const devusers = require('./db/devusers')
+const DEV = true
+//
+
 // -- MIDDLEWARE SETUP --
 const requireAuth = require('./middleware/requireAuth')
 // ROUTES
@@ -48,3 +53,11 @@ app.use('/api/upload', requireAuth, uploadRouter);
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}/`);
 });
+
+if (DEV) {
+    devusers.doit().then(() => {
+      console.log("Dev users synced");
+    }).catch((err) => {
+      console.error("Failed to sync devusers: ", err);
+    });
+};
