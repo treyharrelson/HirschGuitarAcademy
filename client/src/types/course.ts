@@ -20,5 +20,5 @@ export interface Course {
     name: string,
     instructorId: number,
     enrolled: number,
-    capacity: number
+    isPrivate: boolean
 }

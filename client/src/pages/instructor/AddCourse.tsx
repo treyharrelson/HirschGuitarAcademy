@@ -17,7 +17,7 @@ const AddCourse: React.FC = () => {
   const editorRef = useRef<HTMLDivElement>(null);
 
   const [courseTitle, setCourseTitle] = useState<string>('')
-  const [capacity, setCapacity] = useState<number>(30)
+  const [isPrivate, setIsPrivate] = useState<boolean>(false)
   const [image, setImage] = useState<File | null>(null)
   const [modules, setModules] = useState<Module[]>([])
   const [showPopup, setPopup] = useState<boolean>(false)
@@ -116,16 +116,16 @@ const AddCourse: React.FC = () => {
       await axios.post('http://localhost:3000/api/courses', {
         id: courseId,
         name: courseTitle,
-        capacity: Number(capacity),
+        isPrivate: isPrivate,
         description,
         modules
       }, { withCredentials: true });
       setStatusMsg('Course created successfully!');
       // Refresh the course list
-      await fetchAllCourses();
+      //await fetchAllCourses();
       // Reset form
       setCourseTitle('');
-      setCapacity(30);
+      setIsPrivate(false);
       setModules([]);
       if (quillRef.current) quillRef.current.setContents([]);
     } catch (err: any) {
@@ -154,17 +154,7 @@ const AddCourse: React.FC = () => {
             className='outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500' required />
         </div>
 
-        <div className='flex flex-col gap-1'>
-          <p>Capacity</p>
-          <input
-            type='number'
-            min={1}
-            value={capacity}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCapacity(Number(e.target.value))}
-            className='outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500 w-32'
-            required
-          />
-        </div>
+        
 
         <div className='flex flex-col gap-1'>
           <p>Course Description</p>
@@ -236,6 +226,17 @@ const AddCourse: React.FC = () => {
           )}
 
         </div>
+
+        {
+        // Making course private on creation?
+        }
+        <div className='flex items-center'>
+          <ul className='flex'>
+            <li><input type='checkbox' name='privateCourse' checked={isPrivate} onChange={e => setIsPrivate(e.target.checked)}/></li>
+            <li><p>Make course private?</p></li>
+          </ul>
+        </div>
+
         <button
           type='submit'
           disabled={submitting}
