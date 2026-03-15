@@ -1,15 +1,21 @@
-import React, { useState } from 'react'
+import React, { useState, type FormEvent, type SubmitEventHandler } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { assets } from '../../assets/assets'
 
-const SearchBar = ({data}) => {
+interface SearchBarProps {
+  data?: string;
+}
+
+const SearchBar: React.FC<SearchBarProps> = ({data}) => {
 
   const navigate = useNavigate()
-  const [input, setInput] = useState(data ? data : '')
+  const [input, setInput] = useState<string>(data || '')
 
-  const onSearchHandler = (e)=> {
+  const onSearchHandler: SubmitEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault()
-    navigate('/course-list/' + input)
+    if (input.trim()){
+      navigate('/course-list/' + encodeURIComponent(input))
+    }
   }
 
   return (

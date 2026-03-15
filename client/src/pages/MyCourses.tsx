@@ -2,18 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { type Course } from '../types/course';
 
-const MyCourses = () => {
+interface Enrollment {
+  courseId: number;
+}
+
+const MyCourses: React.FC = () => {
     const { user } = useAuth();
-    const [courses, setCourses] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [actionMsg, setActionMsg] = useState('');
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>('');
+    const [actionMsg, setActionMsg] = useState<string>('');
 
-    const fetchMyCourses = async () => {
+    const fetchMyCourses = async (): Promise<void> => {
         try {
             // Fetch enrolled course IDs
-            const enrollRes = await axios.get('http://localhost:3000/api/courses/my-enrollments', { withCredentials: true });
+            const enrollRes = await axios.get<Enrollment[]>('http://localhost:3000/api/courses/my-enrollments', { withCredentials: true });
             const enrolledIds = new Set(enrollRes.data.map((e) => e.courseId));
 
             if (enrolledIds.size === 0) {
@@ -23,7 +28,7 @@ const MyCourses = () => {
 
             // Fetch all courses and filter to enrolled ones
             const courseRes = await axios.get('http://localhost:3000/api/courses', { withCredentials: true });
-            const myCourses = courseRes.data.filter((c) => enrolledIds.has(c.id));
+            const myCourses = courseRes.data.filter((c: Course) => enrolledIds.has(c.id));
             setCourses(myCourses);
         } catch (err) {
             setError('Failed to load your courses.');
@@ -36,12 +41,12 @@ const MyCourses = () => {
         fetchMyCourses();
     }, [user]);
 
-    const handleDrop = async (courseId) => {
+    const handleDrop = async (courseId: number) => {
         try {
             await axios.delete(`http://localhost:3000/api/courses/${courseId}/enroll`, { withCredentials: true });
             setActionMsg('Successfully dropped.');
             await fetchMyCourses(); // refresh list
-        } catch (err) {
+        } catch (err: any) {
             setActionMsg(err.response?.data?.message || 'Drop failed.');
         }
     };
