@@ -10,6 +10,19 @@ services:
     volumes:
       - ./pgdata:/var/lib/postgresql
   
+  server:
+    build: .
+    container_name: hirsch_guitar_server
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db # points to docker service name
+
   pgadmin:
     image: dpage/pgadmin4:9.12 # Use a specific version
     container_name: pgadmin

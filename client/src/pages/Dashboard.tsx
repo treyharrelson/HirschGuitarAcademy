@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosInstance';
 
 function Dashboard() {
     const { user, logout, loading } = useAuth();
@@ -8,9 +8,7 @@ function Dashboard() {
 
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:3000/logout', {}, {
-                withCredentials: true
-            });
+            await api.post('/logout', {});
         } catch (err) {
             console.error('Logout error:', err);
         } finally {

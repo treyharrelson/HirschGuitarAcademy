@@ -15,10 +15,18 @@ export interface Module {
     content: any[]
 }
 
+export interface CourseInstructor {
+    id: number,
+    userName: string,
+    firstName: string,
+    lastName: string,
+    email: string
+}
 export interface Course {
     id: number,
     name: string,
     instructorId: number,
+    instructor?: CourseInstructor,
     enrolled: number,
     isPrivate: boolean
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Course } from '../types/course';
 
@@ -18,7 +18,7 @@ const MyCourses: React.FC = () => {
     const fetchMyCourses = async (): Promise<void> => {
         try {
             // Fetch enrolled course IDs
-            const enrollRes = await axios.get<Enrollment[]>('http://localhost:3000/api/courses/my-enrollments', { withCredentials: true });
+            const enrollRes = await api.get<Enrollment[]>('/api/courses/my-enrollments');
             const enrolledIds = new Set(enrollRes.data.map((e) => e.courseId));
 
             if (enrolledIds.size === 0) {
@@ -27,7 +27,7 @@ const MyCourses: React.FC = () => {
             }
 
             // Fetch all courses and filter to enrolled ones
-            const courseRes = await axios.get('http://localhost:3000/api/courses', { withCredentials: true });
+            const courseRes = await api.get('/api/courses');
             const myCourses = courseRes.data.filter((c: Course) => enrolledIds.has(c.id));
             setCourses(myCourses);
         } catch (err) {
@@ -43,7 +43,7 @@ const MyCourses: React.FC = () => {
 
     const handleDrop = async (courseId: number) => {
         try {
-            await axios.delete(`http://localhost:3000/api/courses/${courseId}/enroll`, { withCredentials: true });
+            await api.delete(`/api/courses/${courseId}/enroll`);
             setActionMsg('Successfully dropped.');
             await fetchMyCourses(); // refresh list
         } catch (err: any) {
@@ -76,7 +76,7 @@ const MyCourses: React.FC = () => {
                                     ? `${course.instructor.firstName} ${course.instructor.lastName}`
                                     : 'N/A'}
                             </p>
-                            <p>Spots: {course.enrolled} / {course.capacity}</p>
+                            <p>Enrolled: {course.enrolled}</p>
                             {user?.role === 'student' && (
                                 <button onClick={() => handleDrop(course.id)}>Drop Course</button>
                             )}

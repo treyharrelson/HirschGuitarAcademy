@@ -8,7 +8,7 @@ const app = express();
 
 // FOR USERS UNTIL SERVER SET UP IN CLOUD
 const devusers = require('./db/devusers')
-const DEV = true
+const DEV = process.env.NODE_ENV !== 'production';
 //
 
 // -- MIDDLEWARE SETUP --
@@ -21,12 +21,12 @@ const uploadRouter = require('./routes/upload')
 
 // allows connection from frontend
 app.use(cors({
-  origin: 'http://localhost:5173', //Vite dev server
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173', //Vite dev server
   credentials: true
 }));
 
 // what port the server listens on
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Collect data sent from client
 app.use(express.urlencoded({ extended: true }));
@@ -36,7 +36,7 @@ app.use(express.json()); // get JSON data sent from React with axios
 // Create session data
 // look into express-mysql-session for dedicated session storing for persistent session data via the MYSQL database
 app.use(session({
-  secret: "fortestingpurposes", // used to sign the session id cookie
+  secret: process.env.SESSION_SECRET || "fortestingpurposes", // used to sign the session id cookie
   resave: false, // prevents the session from being saved back to the session store
   saveUninitialized: false, // prevents a asession from being saved if it hasnt been modified
   cookie: { maxAge: 1000 * 60 * 60 * 24 } // cookie expiration time

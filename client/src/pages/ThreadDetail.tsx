@@ -1,6 +1,6 @@
 import { useState, useEffect, type SubmitEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Post, type Attachment } from '../types/post';
 import FileUpload from '../components/FileUpload';
@@ -16,9 +16,8 @@ function ThreadDetail() {
 
   const loadPosts = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:3000/api/threads/${threadId}/posts`,
-        { withCredentials: true }
+      const response = await api.get(
+        `/api/threads/${threadId}/posts`,
       );
       setPosts(response.data);
     } catch (err) {
@@ -34,10 +33,9 @@ function ThreadDetail() {
     e.preventDefault();
     
     try {
-      await axios.post(
-        `http://localhost:3000/api/threads/${threadId}/posts`,
-        { content, attachments },
-        { withCredentials: true }
+      await api.post(
+        `/api/threads/${threadId}/posts`,
+        { content, attachments }
       );
       
       setContent('');

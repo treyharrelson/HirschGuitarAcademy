@@ -1,6 +1,6 @@
 import { useState, useEffect, type SubmitEvent } from 'react'
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Thread } from '../types/thread';
 
@@ -13,9 +13,7 @@ function Forum() {
     console.log('Current user in Forum:', user);
     const loadThreads = async () => {
         try {
-            const response = await axios.get('http://localhost:3000/api/threads', {
-                withCredentials: true
-            });
+            const response = await api.get('/api/threads');
             setThreads(response.data);
         } catch (err) {
             setError('Error loading threads');
@@ -30,9 +28,8 @@ function Forum() {
         e.preventDefault();
         
         try {
-            await axios.post('http://localhost:3000/api/threads',
-                { title },
-                { withCredentials: true }
+            await api.post('/api/threads',
+                { title }
             );
 
             setTitle('');

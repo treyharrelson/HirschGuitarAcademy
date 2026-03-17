@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosInstance';
 
 function Register() {
     const [firstName, setFirstName] = useState('');
@@ -17,15 +17,13 @@ function Register() {
         e.preventDefault(); // prevents page reload
 
         try {
-            const response = await axios.post('http://localhost:3000/register', {
+            const response = await api.post('/register', {
                 firstName,
                 lastName,
                 userName,
                 email,
                 password,
                 role
-            }, {
-                withCredentials: true
             });
 
             // If successful, redirect to login

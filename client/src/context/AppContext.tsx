@@ -1,6 +1,6 @@
 import React, { useEffect, useState, type ReactNode } from 'react'
 import { createContext, useContext } from "react";
-import axios from 'axios';
+import api from '../api/axiosInstance';
 import { type Course } from '../types/course'
 
 interface AppContextInterface {
@@ -23,9 +23,7 @@ export const AppContextProvider: React.FC<AppContextProviderProps> = (props: any
     // Fetch all courses
     const fetchAllCourses = async (): Promise<void> => {
         try {
-            const response = await axios.get<Course[]>('http://localhost:3000/api/courses', {
-                withCredentials: true
-            });
+            const response = await api.get<Course[]>('/api/courses');
             setAllCourses(response.data);
         } catch (error) {
             console.error("Error fetching courses:", error);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Course } from '../types/course'
 
@@ -19,7 +19,7 @@ const AllCourses: React.FC = () => {
 
     const fetchCourses = async () => {
         try {
-            const res = await axios.get('http://localhost:3000/api/courses', { withCredentials: true });
+            const res = await api.get('/api/courses');
             setCourses(res.data);
         } catch (err) {
             setError('Failed to load courses.');
@@ -32,7 +32,7 @@ const AllCourses: React.FC = () => {
         if (user?.role !== 'student') return;
         try {
             // Uses the new /api/courses/my-enrollments endpoint
-            const res = await axios.get<Enrollment[]>('http://localhost:3000/api/courses/my-enrollments', { withCredentials: true });
+            const res = await api.get<Enrollment[]>('/api/courses/my-enrollments');
             setEnrolledIds(new Set(res.data.map((e) => e.courseId)));
         } catch {
             // non-critical — enrollment status just won't show
@@ -46,7 +46,7 @@ const AllCourses: React.FC = () => {
 
     const handleEnroll = async (courseId: number): Promise<void> => {
         try {
-            await axios.post(`http://localhost:3000/api/courses/${courseId}/enroll`, {}, { withCredentials: true });
+            await api.post(`/api/courses/${courseId}/enroll`, {});
             // Update enrolledIds immediately
             setEnrolledIds((prev) => new Set([...prev, courseId]));
             // Re-fetch courses so the enrolled count reflects the change
@@ -59,7 +59,7 @@ const AllCourses: React.FC = () => {
 
     const handleDrop = async (courseId: number): Promise<void> => {
         try {
-            await axios.delete(`http://localhost:3000/api/courses/${courseId}/enroll`, { withCredentials: true });
+            await api.delete(`/api/courses/${courseId}/enroll`);
             // Update enrolledIds immediately
             setEnrolledIds((prev) => {
                 const next = new Set(prev);
@@ -90,7 +90,6 @@ const AllCourses: React.FC = () => {
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                     {courses.map((course) => {
                         const isEnrolled = enrolledIds.has(course.id);
-                        const isFull = (course.enrolled ?? 0) >= (course.capacity ?? 0);
 
                         return (
                             <li key={course.id} style={{ borderBottom: '1px solid #ddd', padding: '1rem 0' }}>
@@ -100,15 +99,13 @@ const AllCourses: React.FC = () => {
                                         ? `${course.instructorId} ${course.instructorId}`
                                         : 'N/A'}
                                 </p>
-                                <p>Spots: {course.enrolled} / {course.capacity}</p>
+                                <p>Enrolled: {course.enrolled}</p>
 
                                 {user?.role === 'student' && (
                                     isEnrolled ? (
                                         <button onClick={() => handleDrop(course.id)}>Drop Course</button>
                                     ) : (
-                                        <button onClick={() => handleEnroll(course.id)} disabled={isFull}>
-                                            {isFull ? 'Full' : 'Enroll'}
-                                        </button>
+                                        <button onClick={() => handleEnroll(course.id)}>Enroll</button>
                                     )
                                 )}
                             </li>
