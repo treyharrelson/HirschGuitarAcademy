@@ -61,6 +61,7 @@ router.get('/:courseId', async (req, res) => {
 // Enroll in a course (Maps to POST /api/courses/:courseId/enroll)
 router.post('/:courseId/enroll', requireRole('student'), async (req, res) => {
     try {
+        const userId = req.session.user.id;
         const { courseId } = req.params;
 
         const course = await Models.Course.findByPk(courseId);
@@ -178,7 +179,7 @@ router.delete('/:courseId', requireRole('instructor', 'admin'), async (req, res)
         }
 
         // Instructors can only delete courses they own
-        if (req.session.user.role === 'instructor') {
+        if (req.session.user.role === 'instructor' && course.instructorId !== req.session.user.id) {
             return res.status(403).json({ message: 'You can only delete your own courses' });
         }
 
