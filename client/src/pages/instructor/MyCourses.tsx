@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react'
 import { useAppContext } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
-import axios from 'axios'
+import api from '../../api/axiosInstance';
 import Loading from '../../components/student/Loading'
 
 const MyCourses: React.FC = () => {
@@ -17,9 +17,7 @@ const MyCourses: React.FC = () => {
     if (!window.confirm("Are you sure you want to delete this course?")) return;
     setIsDeleting(true)
     try {
-      await axios.delete(`http://localhost:3000/api/courses/${courseId}`, {
-        withCredentials: true
-      })
+      await api.delete(`/api/courses/${courseId}`)
       // Refresh the course list from the server
       await fetchAllCourses()
       // Ideally refresh the allCourses context context here
@@ -54,7 +52,7 @@ const MyCourses: React.FC = () => {
                 <tr key={course.id}>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>#{course.id}</td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>{course.name}</td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>{course.enrolled} / {course.capacity}</td>
+                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>{course.enrolled}</td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm'>
                     <button
                       onClick={() => handleDelete(course.id)}

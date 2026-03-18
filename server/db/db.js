@@ -2,7 +2,13 @@ require("dotenv").config();
 const { Sequelize } = require('sequelize');
 
 
-const sequelize = new Sequelize(
+const sequelize = process.env.DATABASE_URL
+? new Sequelize(process.env.DATABASE_URL, { //railway docker setup
+    dialect: 'postgres',
+    dialectOptions: { ssl: { rejectUnauthorized: false } },
+    logging: false
+})
+: new Sequelize( // local Docker setup
     process.env.POSTGRES_DB,
     process.env.POSTGRES_USER,
     process.env.POSTGRES_PASSWORD,

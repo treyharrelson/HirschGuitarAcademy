@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axiosInstance';
 
 export function useFileUrl(fileKey: string | null) {
     const [url, setUrl] = useState<string | null>(null);
@@ -13,9 +13,8 @@ export function useFileUrl(fileKey: string | null) {
         const fetchUrl = async () => {
             setLoading(true);
             try {
-                const { data } = await axios.get('http://localhost:3000/api/upload/file-url', {
-                    params: { fileKey },
-                    withCredentials: true,
+                const { data } = await api.get('/api/upload/file-url', {
+                    params: { fileKey }
                 });
                 setUrl(data.presignedUrl);
             } catch {

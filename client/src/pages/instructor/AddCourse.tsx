@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import uniqid from 'uniqid';
 import Quill from 'quill';
-import axios from 'axios';
+import api from '../../api/axiosInstance';
 import { assets } from '../../assets/assets'
 import { useAppContext } from '../../context/AppContext'
 import { type Lecture, type Module, type Course } from '../../types/course';
@@ -113,13 +113,13 @@ const AddCourse: React.FC = () => {
     setStatusMsg('');
     try {
       const description = quillRef.current ? quillRef.current.getText() : '';
-      await axios.post('http://localhost:3000/api/courses', {
+      await api.post('/api/courses', {
         id: courseId,
         name: courseTitle,
         isPrivate: isPrivate,
         description,
         modules
-      }, { withCredentials: true });
+      });
       setStatusMsg('Course created successfully!');
       // Refresh the course list
       //await fetchAllCourses();

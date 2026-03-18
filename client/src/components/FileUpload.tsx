@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api/axiosInstance';
 import { type Attachment } from '../types/post';
 
 const ALLOWED_TYPES = [
@@ -49,11 +49,10 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
             formData.append('file', file);
 
             // ask backend to upload file to R2
-            const { data } = await axios.post(
-                'http://localhost:3000/api/upload/upload',
+            const { data } = await api.post(
+                '/api/upload/upload',
                 formData,
                 {
-                    withCredentials: true,
                     headers: { 'Content-Type': 'multipart/form-data' },
                     onUploadProgress: (e) => {
                     if (e.total) {

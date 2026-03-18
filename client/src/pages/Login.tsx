@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 
 function Login() {
@@ -17,11 +17,9 @@ function Login() {
         e.preventDefault(); // prevents page reload
         try {
             // call backend
-            const response = await axios.post('http://localhost:3000/login', {
+            const response = await api.post('/login', {
                 email,
                 password
-            }, {
-                withCredentials: true // for sessions
             });
 
             // if successful

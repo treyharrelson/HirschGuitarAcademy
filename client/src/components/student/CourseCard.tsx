@@ -14,7 +14,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
       <div className='p-3 text-left'>
         <h3 className='text-base font-semibold'>{course.name}</h3>
         <p className='text-gray-500'>
-          {course.instructorId ? `${course.instructorId.firstName} ${course.instructorId.lastName}` : 'Unknown Instructor'}
+          {course.instructor ? `${course.instructor.firstName} ${course.instructor.lastName}` : 'Unknown Instructor'}
         </p>
         <div>
           <p>Course Details go here</p>
