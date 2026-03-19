@@ -51,8 +51,8 @@ function Login() {
             <h2>Login</h2>
             <form onSubmit={handleSubmit}>
                 <input
-                    type="email"
-                    placeholder="Email"
+                    type="text"
+                    placeholder="Email or UserName"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)} // update state on every keystroke
                     required
