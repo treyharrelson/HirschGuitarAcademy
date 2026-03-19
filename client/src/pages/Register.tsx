@@ -30,8 +30,16 @@ function Register() {
             if (response.data.success) {
                 navigate('/');
             }
-        } catch (err) {
-            setError('Error registering user.');
+        } catch (err: any) {
+            // Should probably use all over, ? makes it so if backend completely crashes doesn't crash frontend,
+            //  err returns err.response is from server, .data is json in that, .message is what I set to be the error message
+            const errormessage = err.response?.data?.message;
+            if(errormessage) {
+                setError(errormessage);
+            }
+            else {
+                setError('Error registering user.');
+            }
         }
     };
 

@@ -1,7 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
-const Models = require('../db/models'); // Adjust path to go up one directory
+const Models = require('../db/models');
+const { Op } = require("sequelize");
 
 // Check if user is logged in (read from session)
 router.get('/api/me', (req, res) => {
@@ -20,14 +21,20 @@ router.get('/api/me', (req, res) => {
 
 // Register a new user
 router.post('/register', async (req, res) => {
-	console.log('Register request received');
-	console.log('Request body:', req.body);
 	try {
+		// better error messages
+		const user = await Models.User.findOne({ where: { [Op.or]: { email: req.body.email, userName: req.body.userName } } });
+		if (user) {
+			if (user.email === req.body.email) {
+				return res.status(400).json({ message: 'An account is already associated with that email address.' });
+			}
+			if (user.userName === req.body.userName) {
+				return res.status(400).json({ message: 'That username is already taken.' });
+			}
+		}
 		// Hash the password
 		const hashedPassword = await bcrypt.hash(req.body.password, 10);
 		req.body.password = hashedPassword;
-
-		// should probably have more validation here
 
 		// Insert the new user into the database
 		const newUser = await Models.User.create(req.body);
@@ -39,11 +46,9 @@ router.post('/register', async (req, res) => {
 
 // User login
 router.post('/login', async (req, res) => {
-	const { email, password } = req.body;
-
+	const { email: login, password } = req.body;
 	try {
-		// Find the user by email
-		const user = await Models.User.findOne({ where: { email: email } });
+		const user = await Models.User.findOne({ where: { [Op.or]: { email: login, userName: login } } });
 		if (!user) {
 			return res.status(404).send('User not found');
 		}
