@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 
-const Sidebar = () = {
+const Sidebar = () => {
     const [activeCategory, setActiveCategory] = useState('Dashboard');
 
-    const 
-};
+    return (
+        <div>
+            {/* TODO: Sidebar */}
+        </div>
+    )
+}
+
+export default Sidebar
