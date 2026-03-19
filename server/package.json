@@ -12,7 +12,8 @@
   },
   "scripts": {
     "start": "node server.js",
-    "devStart": "nodemon server.js"
+    "devStart": "nodemon server.js",
+    "dev": "node --watch server.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
