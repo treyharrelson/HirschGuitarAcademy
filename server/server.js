@@ -36,16 +36,18 @@ app.use(express.json()); // get JSON data sent from React with axios
 
 // Session store using Railway's postgres. This makes it so sessions persist when
 // Railway restarts the server container
-const sessionPool = new Pool({
-  connectionString: process.env.DATABASE_URL || {
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DB,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT
-  },
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
-});
+const sessionPool = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    })
+  : new Pool({
+      user: process.env.POSTGRES_USER,
+      password: process.env.POSTGRES_PASSWORD,
+      database: process.env.POSTGRES_DB,
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT
+    });
 
 // Create session data
 // look into express-mysql-session for dedicated session storing for persistent session data via the MYSQL database
