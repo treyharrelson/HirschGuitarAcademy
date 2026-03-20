@@ -1,13 +1,4 @@
 require('dotenv').config();
-process.on('uncaughtException', (err) => {
-    console.error('UNCAUGHT EXCEPTION:', err);
-    process.exit(1);
-});
-
-process.on('unhandledRejection', (reason) => {
-    console.error('UNHANDLED REJECTION:', reason);
-    process.exit(1);
-});
 
 const express = require("express");
 const session = require("express-session");
@@ -16,6 +7,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
 const app = express();
+app.set('trust proxy', 1); // tells Express to trust Railway proxy
 
 // FOR USERS UNTIL SERVER SET UP IN CLOUD
 const devusers = require('./db/devusers')
