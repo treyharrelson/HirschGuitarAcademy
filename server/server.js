@@ -64,6 +64,11 @@ app.use(session({
   } 
 }))
 
+// Health check for Railway
+app.get('/', (req, res) => {
+  res.status(200).json({status: 'ok' });
+})
+
 // -- ROUTES --
 // Hook up the imported routers
 app.use('/', authRoutes);
