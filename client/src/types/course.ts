@@ -20,5 +20,6 @@ export interface Course {
     name: string,
     instructorId: number,
     enrolled: number,
-    isPrivate: boolean
+    isPrivate: boolean,
+    thumbnail: File
 }
