@@ -25,7 +25,7 @@ async function doit() {
 		getrecord('m', 'm', 'guy', 'guy', 'password', 'student'),
 	]);
 	try {
-		await Models.User.bulkCreate(constusers, { ignoreDuplicates: true });
+		await Models.User.bulkCreate(constusers, { ignoreDuplicates: true, logging: false });
 	} catch (error) {
 		console.error("Error inserting dev users:", error);
 	};

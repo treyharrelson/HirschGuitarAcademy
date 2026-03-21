@@ -1,6 +1,7 @@
 const Models = require('./models')
 const { faker } = require('@faker-js/faker');
 
+// need to update
 const tableChoices = [
 	'All',
 	'User',
