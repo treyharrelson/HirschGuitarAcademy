@@ -18,7 +18,7 @@ const AddCourse: React.FC = () => {
 
   const [courseTitle, setCourseTitle] = useState<string>('')
   const [isPrivate, setIsPrivate] = useState<boolean>(false)
-  const [image, setImage] = useState<File | null>(null)
+  const [image, setImage] = useState<File | string>(assets.defaultCourseThumbnail)
   const [modules, setModules] = useState<Module[]>([])
   const [showPopup, setPopup] = useState<boolean>(false)
   const [submitting, setSubmitting] = useState<boolean>(false)
@@ -35,8 +35,6 @@ const AddCourse: React.FC = () => {
   const [lectureDetails, setLectureDetails] = useState({
     lectureTitle: ''
   })
-
-
 
   const handleModule = (action: ModuleAction, moduleId?: number, currentCourseId?: number): void => {
     if (action === 'add') {
@@ -119,7 +117,8 @@ const AddCourse: React.FC = () => {
         isPrivate: isPrivate,
         description,
         modules
-      });
+        //thumbail: image
+      }, { withCredentials: true });
       setStatusMsg('Course created successfully!');
       // Refresh the course list
       //await fetchAllCourses();
@@ -167,7 +166,7 @@ const AddCourse: React.FC = () => {
           <label htmlFor='thumbnailImage' className='flex items-center gap-3'>
             <img src={assets.upload_icon} alt='upload icon' className='p-3 w-10 h-10 fill-white-500 bg-blue-500 rounded' />
             <input type='file' id='thumbnailImage' onChange={(e: React.ChangeEvent<HTMLInputElement>) => {if (e.target.files && e.target.files.length > 0) {setImage(e.target.files[0]);}}} accept='image/*' hidden />
-            <img className='max-h-10' src={image ? URL.createObjectURL(image) : ''} alt='' />
+            <img className='max-h-40' src={typeof image === 'string' ? image:  URL.createObjectURL(image)} alt='Course Thumbnail' />
           </label>
         </div>
 

@@ -28,5 +28,6 @@ export interface Course {
     instructorId: number,
     instructor?: CourseInstructor,
     enrolled: number,
-    isPrivate: boolean
+    isPrivate: boolean,
+    thumbnail: File
 }
