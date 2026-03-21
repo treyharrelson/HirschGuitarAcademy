@@ -13,6 +13,10 @@ const Subscription = require('./Subscription')
 const Module = require('./Module');
 const Lecture = require('./Lecture');
 const Attachment = require('./Attachment');
+const Belt = require('./Belt');
+const Award = require('./Award');
+const PracticeTime = require('./PracticeTime');
+const ScoreBoard = require('./ScoreBoard');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -90,6 +94,27 @@ User.hasOne(Subscription, { foreignKey: 'userId', as: 'subscriptions' });
 Subscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 
+// Belt to Course and User
+User.hasMany(Belt, { foreignKey: 'userId', as: 'belts' });
+Belt.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+Course.hasMany(Belt, { foreignKey: 'courseId', as: 'belts' });
+Belt.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
+
+
+// Award to User, should figure out what awards are
+User.hasMany(Award, { foreignKey: 'userId', as: 'awards' });
+Award.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// PracticeTime to user, should think about how this should be set up
+// Right now has total practice time and weekly practice time, figure can be cleared at set intervals or something
+// Fine for now, just might want to change
+User.hasOne(PracticeTime, { foreignKey: 'userId', as: 'practice_time' });
+PracticeTime.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Scoreboard not linked like others, just counts what they have, might be able to make with relations, for now does nothing
+
+
 module.exports = {
     sequelize,
     User,
@@ -103,5 +128,9 @@ module.exports = {
     Subscription,
     Module,
     Lecture,
-    Attachment
+    Attachment,
+    Belt,
+    Award,
+    PracticeTime,
+    ScoreBoard,
 };
