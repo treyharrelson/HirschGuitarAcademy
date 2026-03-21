@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAppContext } from '../../context/AppContext'
 import Loading from '../../components/student/Loading'
-import axios from 'axios'
+import api from '../../api/axiosInstance'
 import { useAuth } from '../../context/AuthContext' // to get user and check auth
 import { type Course } from '../../types/course'
 
@@ -33,9 +33,7 @@ const CourseDetails: React.FC = () => {
     setIsEnrolling(true)
     setEnrollMessage('')
     try {
-      await axios.post(`http://localhost:3000/api/courses/${id}/enroll`, {}, {
-        withCredentials: true
-      })
+      await api.post(`/api/courses/${id}/enroll`, {})
       setEnrollMessage("Successfully enrolled!")
       // optionally refresh courses or something here
     } catch (err: any) {
@@ -65,7 +63,7 @@ const CourseDetails: React.FC = () => {
           <p className='pt-4 md:text-base text-sm'>
             Instructor: {courseData.instructorId ? `${courseData.instructorId} ${courseData.instructorId}` : "TBA"}
           </p>
-          <p className='pt-2'>Capacity: {courseData.enrolled} / {courseData.capacity}</p>
+          <p className='pt-2'>Enrolled: {courseData.enrolled}</p>
         </div>
 
         { /* Right Col */}
@@ -73,7 +71,7 @@ const CourseDetails: React.FC = () => {
           <h2 className='text-xl mb-4 font-semibold'>Enroll Now</h2>
           <button
             onClick={handleEnroll}
-            disabled={isEnrolling || courseData.enrolled >= courseData.capacity}
+            disabled={isEnrolling}
             className='bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition-all cursor-pointer'
           >
             {isEnrolling ? 'Enrolling...' : 'Enroll in Course'}
