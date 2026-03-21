@@ -1,21 +1,51 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../api/axiosInstance';
+import { DashButton } from '../components/generic/Buttons';
+
+type RoleLink = {
+    label: string;
+    path: string;
+    button: React.ElementType;
+}
+
+const NAV_LINKS: Record<string, RoleLink[]> = {
+    // need to populate appropriately
+    guest: [
+        { label: 'Create Account', path: '/', button: DashButton }
+    ],
+    student: [
+        { label: 'Forum', path: '/forum', button: DashButton },
+        { label: 'View Available Courses', path: '/all-courses', button: DashButton },
+        { label: 'My Courses', path: '/courses', button: DashButton },
+        { label: 'Metronome', path: '/metronome', button: DashButton },
+        { label: 'Timer', path: '/timer', button: DashButton },
+        { label: 'LMS Redirect', path: '/home', button: DashButton }
+    ],
+    instructor: [
+        { label: 'Instructor View', path: '/instructor', button: DashButton },
+        { label: 'Add Course', path: '/instructor/add-course', button: DashButton },
+    ],
+    admin: [
+        //dunno yet
+    ]
+};
+
 
 function Dashboard() {
-    const { user, logout, loading } = useAuth();
+    const { user, loading } = useAuth();
     const navigate = useNavigate();
 
-    const handleLogout = async () => {
-        try {
-            await api.post('/logout', {});
-        } catch (err) {
-            console.error('Logout error:', err);
-        } finally {
-            logout();
-            window.location.href = '/';
-        }
-    };
+    const links = user?.role ? NAV_LINKS[user.role] : NAV_LINKS['guest'];
+
+    const RenderLinks = () => (
+        <>
+            {links.map((link, index) => (
+                <link.button onClick={() => navigate(link.path)}>
+                    {link.label}
+                </link.button>
+            ))}
+        </>
+    );
 
     // show loading while checking auth
     if (loading) {
@@ -32,20 +62,10 @@ function Dashboard() {
             <h1>Welcome, {user.name}!</h1>
             <p>Email: {user.email}</p>
             <p>Role: {user.role}</p>
-
-            <button onClick={handleLogout}>Logout</button>
-
-            <div>
-                <h2>Quick Links</h2>
-                <ul>
-                    <li><Link to="/forum">Forum</Link></li>
-                    <li><Link to="/all-courses">View Available Courses</Link></li>
-                    <li><Link to="/courses">My Courses</Link></li>
-                    <li><Link to="/metronome">Metronome</Link></li>
-                    <li><Link to="/timer">Timer</Link></li>
-                    {(user.role === 'instructor' || user.role === 'admin' || user.role === 'student') && (
-                        <li><a href="/home">LMS Redirect</a></li>
-                    )}
+            <div className='mt-10 flex flex-col'>
+                <h2 className="mb-4 text-xl font-semibold">Quick Links</h2>
+                <ul className="flex flex-col gap-2 w-48">
+                    <RenderLinks />
                 </ul>
             </div>
         </div>
