@@ -11,6 +11,11 @@ import { type Lecture, type Module, type Course } from '../../types/course';
 const AddCourse: React.FC = () => {
 
   const courseId = Number(uniqid());
+
+  const newId = () => {
+    return Number(uniqid());
+  }
+  const inputRef = React.useRef<HTMLInputElement>(null);
   
   //const { fetchAllCourses } = useAppContext();
   const quillRef = useRef<any>(null);
@@ -25,13 +30,13 @@ const AddCourse: React.FC = () => {
   const [statusMsg, setStatusMsg] = useState<string>('')
 
   const [currentModuleId, setCurrentModuleId] = useState<number>(0)
-  const [moduleDetails, setModuleDetails] = useState({
-    moduleTitle: ''
-  })
+  //const [moduleDetails, setModuleDetails] = useState({
+  //  moduleTitle: ''
+  //})
   type ModuleAction = 'add' | 'remove' | 'toggle';
 
-  const [lectures, setLectures] = useState<Lecture[]>([])
-  const [currentLectureId, setCurrentLectureId] = useState<number | null>(null)
+  //const [lectures, setLectures] = useState<Lecture[]>([])
+  //const [currentLectureId, setCurrentLectureId] = useState<number | null>(null)
   const [lectureDetails, setLectureDetails] = useState({
     lectureTitle: ''
   })
@@ -67,6 +72,7 @@ const AddCourse: React.FC = () => {
         setCurrentModuleId(moduleId);
         setPopup(true);
       }
+      
     } else if (action === 'remove') {
       if (moduleId !== undefined && lectureIndex !== undefined){
         setModules(
@@ -82,16 +88,21 @@ const AddCourse: React.FC = () => {
   };
 
   const addLecture = () => {
+    
     setModules(
       modules.map((module) => {
-        if (module.id === currentModuleId) {
+        if (String(module.id) === String(currentModuleId)) {
           const newLecture = {
             ...lectureDetails,
-            lectureOrder: module.content.length > 0 ? module.content.slice(-1)[0].lectureOrder + 1 : 1,
+            lectureOrder: module.content.length > 0 ? module.content[module.content.length - 1].lectureOrder + 1 : 1,
             lectureId: Number(uniqid())
           };
-          module.content.push(newLecture);
+          return {
+            ...module,
+            content: [...module.content, newLecture]
+          };
         }
+        console.log("No match")
         return module;
       })
     );
@@ -141,7 +152,10 @@ const AddCourse: React.FC = () => {
         theme: 'snow',
       })
     }
-  }, [])
+    if (showPopup){
+      inputRef.current?.focus();
+    }
+  }, [showPopup])
 
   return (
     <div className='h-screen overflow-scroll flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pt-8 pb-0'>
@@ -153,14 +167,12 @@ const AddCourse: React.FC = () => {
             className='outline-none md:py-2.5 py-2 px-3 rounded border border-gray-500' required />
         </div>
 
-        
-
         <div className='flex flex-col gap-1'>
           <p>Course Description</p>
           <div ref={editorRef}></div>
         </div>
 
-
+        {/* COURSE THUMBNAIL */}
         <div className='flex md:flex-row flex-col items-center gap-3'>
           <p>Course Thumbnail</p>
           <label htmlFor='thumbnailImage' className='flex items-center gap-3'>
@@ -174,19 +186,29 @@ const AddCourse: React.FC = () => {
         <div>
           {modules.map((module, moduleIndex) => (
             <div key={moduleIndex} className='bg-white border rounded-lg mb-4'>
+
               <div className='flex justify-between items-center p-4 border-b'>
                 <div className='flex items-center'>
-                  <img onClick={() => handleModule('toggle', module.id, courseId)} src={assets.dropDown_icon} alt='dropdown icon' width={14} className={`mr-2 w-4 h-4 cursor-pointer transition-all ${module.collapsed && "-rotate-90"}`} />
-                  <span className='font-semibold'>{moduleIndex + 1} {module.title}</span>
+                  <img 
+                    onClick={() => handleModule('toggle', module.id, courseId)}  
+                    src={assets.dropDown_icon} 
+                    alt='dropdown icon'  
+                    width={14} 
+                    className={`mr-2 w-4 h-4 cursor-pointer transition-all ${module.collapsed && "-rotate-90"}`} 
+                  />
+                  {/* Display Module Number and Title */}
+                  <span className='font-semibold'>{moduleIndex + 1}: {module.title}</span>
                 </div>
                 <span className='text-gray-500'>{module.content.length} Lectures</span>
                 <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleModule('remove', module.id)} />
               </div>
+
               {!module.collapsed && (
                 <div className='p-4'>
                   {module.content.map((lecture, lectureIndex) => (
                     <div key={lectureIndex} className='flex justify-between items-center mb-2'>
-                      <span>{lectureIndex + 1} {lecture.lectureTitle}</span>
+                      {/* Display Lecture Number and Title */}
+                      <span>{lectureIndex + 1}: {lecture.lectureTitle}</span>
                       <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleLecture('remove', module.id, lectureIndex)} />
                     </div>
                   ))}
@@ -197,8 +219,10 @@ const AddCourse: React.FC = () => {
               )}
             </div>
           ))}
-          <div className='flex justify-center items-center bg-blue-100 p-2 rounded-lg cursor-pointer' onClick={() => handleModule('add')}>+ Add Module</div>
 
+          <div className='flex justify-center items-center bg-blue-100 p-2 rounded-lg cursor-pointer' onClick={() => handleModule('add', newId(), courseId)}>+ Add Module</div>
+          
+          {/* LECTURE TITLE POPUP */}
           {showPopup && (
             <div className='fixed inset-0 flex items-center justify-center bg-gray-800/50 '>
               <div className='bg-white text-gray-700 p-4 rounded relative w-full max-w-80'>
@@ -207,10 +231,18 @@ const AddCourse: React.FC = () => {
                 <div className='mb-2'>
                   <p>Lecture Title</p>
                   <input
+                    ref={inputRef}
                     type='text'
                     className='mt-1 block w-full border rounded py-1 px-2'
                     value={lectureDetails.lectureTitle}
                     onChange={(e) => setLectureDetails({ ...lectureDetails, lectureTitle: e.target.value })}
+                    // Prevent form submission by pressing the ENTER key
+                    onKeyDown={(e)=>{
+                      if (e.key === 'Enter'){
+                        e.preventDefault();  // Prevents the form from submitting/refreshing
+                        addLecture();
+                      }
+                    }}
                   />
                 </div>
 
@@ -226,9 +258,7 @@ const AddCourse: React.FC = () => {
 
         </div>
 
-        {
-        // Making course private on creation?
-        }
+        {/* MAKE COURSE PRIVATE??? */}
         <div className='flex items-center'>
           <ul className='flex'>
             <li><input type='checkbox' name='privateCourse' checked={isPrivate} onChange={e => setIsPrivate(e.target.checked)}/></li>
