@@ -13,9 +13,6 @@ const AllCourses: React.FC = () => {
     const [error, setError] = useState('');
     const [actionMsg, setActionMsg] = useState('');
 
-    interface Enrollment {
-        courseId: number;
-    }
 
     const fetchCourses = async () => {
         try {
@@ -32,8 +29,8 @@ const AllCourses: React.FC = () => {
         if (user?.role !== 'student') return;
         try {
             // Uses the new /api/courses/my-enrollments endpoint
-            const res = await api.get<Enrollment[]>('/api/courses/my-enrollments');
-            setEnrolledIds(new Set(res.data.map((e) => e.courseId)));
+            const res = await api.get<Course[]>('/api/courses/my-enrollments');
+            setEnrolledIds(new Set(res.data.map((e) => e.id)));
         } catch {
             // non-critical — enrollment status just won't show
         }

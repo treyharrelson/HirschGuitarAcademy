@@ -26,6 +26,7 @@ router.post('/register', async (req, res) => {
 		// Tries to find user with either matching email or username
 		const user = await Models.User.findOne({ where: { [Op.or]: { email: req.body.email, userName: req.body.userName } } });
 		// if does, sends appropriate error
+		// For debugging, should probably change to just 'Username or Email incorrect' or somthing for security purposes
 		if (user) {
 			if (user.email === req.body.email) {
 				return res.status(400).json({ message: 'An account is already associated with that email address.' });

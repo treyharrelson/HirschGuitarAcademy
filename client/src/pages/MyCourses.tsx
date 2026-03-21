@@ -4,9 +4,6 @@ import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Course } from '../types/course';
 
-interface Enrollment {
-  courseId: number;
-}
 
 const MyCourses: React.FC = () => {
     const { user } = useAuth();
@@ -18,18 +15,8 @@ const MyCourses: React.FC = () => {
     const fetchMyCourses = async (): Promise<void> => {
         try {
             // Fetch enrolled course IDs
-            const enrollRes = await api.get<Enrollment[]>('/api/courses/my-enrollments');
-            const enrolledIds = new Set(enrollRes.data.map((e) => e.courseId));
-
-            if (enrolledIds.size === 0) {
-                setCourses([]);
-                return;
-            }
-
-            // Fetch all courses and filter to enrolled ones
-            const courseRes = await api.get('/api/courses');
-            const myCourses = courseRes.data.filter((c: Course) => enrolledIds.has(c.id));
-            setCourses(myCourses);
+            const myCourses = await api.get('/api/courses/my-enrollments');
+            setCourses(myCourses.data);
         } catch (err) {
             setError('Failed to load your courses.');
         } finally {

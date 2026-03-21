@@ -3,60 +3,55 @@ const router = express.Router();
 const Models = require('../db/models');
 const requireRole = require('../middleware/requireRole');
 
-// === ALL AUTHENTICATED USERS ===
-// (requireAuth done first)
 
-// Get all courses (Maps to GET /api/courses)
-router.get('/', async (req, res) => {
-    try {
-        const courses = await Models.Course.findAll({
-            include: [
-                { model: Models.User, as: 'instructor', attributes: ['id', 'userName', 'firstName', 'lastName', 'email'] }
-            ],
-            order: [['createdAt', 'DESC']]
-        });
-        res.status(200).json(courses);
-    } catch (error) {
-        res.status(500).json({ message: `Error fetching courses: ${error.message}` });
-    }
-});
+
+// === STUDENT ONLY ===
 
 // Get enrollments for the current user (Maps to GET /api/courses/my-enrollments)
-router.get('/my-enrollments', async (req, res) => {
+router.get('/my-enrollments', requireRole('student'), async (req, res) => {
     try {
         const userId = req.session.user.id;
-        const enrollments = await Models.Enrollment.findAll({
-            where: { userId },
-            attributes: ['courseId']
+        const enrolledcourses = await Models.Enrollment.findAll({
+            // don't include enrollment table data
+            attributes: [],
+            // get all rows with userId
+            where: { userId: userId },
+            // get Courses that are in rolls
+            include: [
+                {
+                    // didn't add "as" in relations for some reason, so don't add "as" here, just returns as "Course" in object
+                    model: Models.Course,
+                    attributes: ['id', 'name', 'instructorId', 'enrolled', 'isPrivate'],
+                    include: [
+                        {
+                            // added "as" in relations, so returns as "instructor" in object
+                            model: Models.User,
+                            as: 'instructor',
+                            attributes: ['id', 'userName', 'firstName', 'lastName', 'email'],
+                        }
+                    ],
+                },
+            ],
         });
+
+        const enrollments = enrolledcourses.map(enrollment => {
+            const course = enrollment.Course;
+            const instructor = course.instructor;
+            return {
+                id: course.id,
+                name: course.name,
+                instructorId: instructor.id,
+                instructor: instructor,
+                enrolled: course.enrolled,
+                isPrivate: course.isPrivate,
+            }
+        });
+
         res.status(200).json(enrollments);
     } catch (error) {
         res.status(500).json({ message: `Error fetching enrollments: ${error.message}` });
     }
 });
-
-
-// Get a specific course by ID (Maps to GET /api/courses/:courseId)
-router.get('/:courseId', async (req, res) => {
-    try {
-        const { courseId } = req.params;
-        const course = await Models.Course.findByPk(courseId, {
-            include: [
-                { model: Models.User, as: 'instructor', attributes: ['id', 'userName', 'firstName', 'lastName', 'email'] }
-            ]
-        });
-
-        if (!course) {
-            return res.status(404).json({ message: 'Course not found' });
-        }
-
-        res.status(200).json(course);
-    } catch (error) {
-        res.status(500).json({ message: `Error fetching course: ${error.message}` });
-    }
-});
-
-// === STUDENT ONLY ===
 
 // Enroll in a course (Maps to POST /api/courses/:courseId/enroll)
 router.post('/:courseId/enroll', requireRole('student'), async (req, res) => {
@@ -126,7 +121,6 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
         if (!name) {
             return res.status(400).json({ message: 'Course name is required' });
         }
-
         // Using a transaction to ensure all or nothing is created
         const newCourse = await Models.Course.sequelize.transaction(async (t) => {
             const course = await Models.Course.create({
@@ -135,27 +129,36 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
             }, { transaction: t });
 
             // If modules exist, process them
-            if (modules && Array.isArray(modules)) {
+            if (modules) {
+                let modulestocreate = []
+                let lecturestocreate = []
                 for (let i = 0; i < modules.length; i++) {
                     const modData = modules[i];
-                    const newModule = await Models.Module.create({
+                    const newModule = await Models.Module.build({
                         title: modData.moduleTitle,
                         order: modData.moduleOrder,
                         courseId: course.id
                     }, { transaction: t });
 
+                    modulestocreate.push(newModule);
+
                     // Process lectures for this module
                     if (modData.moduleContent && Array.isArray(modData.moduleContent)) {
                         for (let j = 0; j < modData.moduleContent.length; j++) {
                             const lecData = modData.moduleContent[j];
-                            await Models.Lecture.create({
+                            const newLecture = await Models.Lecture.create({
                                 title: lecData.lectureTitle,
                                 order: lecData.lectureOrder,
                                 content: lecData.content || '',
                                 moduleId: newModule.id
                             }, { transaction: t });
+                            lecturestocreate.push(newLecture);
                         }
                     }
+                }
+                Models.Module.bulkCreate(modulestocreate);
+                if (lecturestocreate) {
+                    Models.Lecture.bulkCreate(lecturestocreate);
                 }
             }
             return course;
@@ -187,6 +190,38 @@ router.delete('/:courseId', requireRole('instructor', 'admin'), async (req, res)
         res.status(200).json({ message: 'Course deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: `Error deleting course: ${error.message}` });
+    }
+});
+
+// === ALL AUTHENTICATED USERS ===
+// (requireAuth done first)
+// had to move down because wildcard ":id" was catching post for "enrollment"
+
+// Get all courses (Maps to GET /api/courses)
+router.get('/', async (req, res) => {
+    try {
+        const courses = await Models.Course.findAll({
+            order: [['createdAt', 'DESC']],
+        });
+        res.status(200).json(courses);
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching courses: ${error.message}` });
+    }
+});
+
+// Get a specific course by ID (Maps to GET /api/courses/:courseId)
+router.get('/:courseId', async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const course = await Models.Course.findByPk(courseId);
+
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        res.status(200).json(course);
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching course: ${error.message}` });
     }
 });
 
