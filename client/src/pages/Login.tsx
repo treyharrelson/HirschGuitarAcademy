@@ -60,8 +60,8 @@ function Login() {
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                                 <input
-                                    type="email"
-                                    placeholder="Email"
+                                    type="text"
+                                    placeholder="Email or Username"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)} // update state on every keystroke
                                     required

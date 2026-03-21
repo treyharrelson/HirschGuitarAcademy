@@ -20,13 +20,15 @@ function Register() {
         e.preventDefault(); // prevents page reload
 
         try {
-            const response = await api.post('/register', {
+            const response = await axios.post('http://localhost:3000/register', {
                 firstName,
                 lastName,
                 userName,
                 email,
                 password,
                 role
+            }, {
+                withCredentials: true
             });
 
             // If successful, redirect to login
