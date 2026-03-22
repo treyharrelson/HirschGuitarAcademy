@@ -4,9 +4,7 @@ import Quill from 'quill';
 import api from '../../api/axiosInstance';
 import { assets } from '../../assets/assets'
 import { useAppContext } from '../../context/AppContext'
-import { type Lecture, type Module, type Course } from '../../types/course';
-
-
+import { type Lecture, type Module, type Course, type SubModule } from '../../types/course';
 
 const AddCourse: React.FC = () => {
 
@@ -28,12 +26,15 @@ const AddCourse: React.FC = () => {
   const [showPopup, setPopup] = useState<boolean>(false)
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [statusMsg, setStatusMsg] = useState<string>('')
+  const [contentType, setContentType] = useState<string>('')
+
 
   const [currentModuleId, setCurrentModuleId] = useState<number>(0)
+  const [currentSubModuleIndex, setCurrentSubModuleIndex] = useState<number | null>(null);
   //const [moduleDetails, setModuleDetails] = useState({
   //  moduleTitle: ''
   //})
-  type ModuleAction = 'add' | 'remove' | 'toggle';
+  type ModuleAction = 'add' | 'remove' | 'toggle' | 'save';
 
   //const [lectures, setLectures] = useState<Lecture[]>([])
   //const [currentLectureId, setCurrentLectureId] = useState<number | null>(null)
@@ -56,60 +57,137 @@ const AddCourse: React.FC = () => {
         setModules([...modules, newModule]);
       }
     } else if (action === 'remove') {
-      setModules(modules.filter((module) => module.id !== moduleId));
+      setModules(modules.filter((module) => String(module.id) !== String(moduleId)));
     } else if (action === 'toggle') {
-      setModules(
-        modules.map((module) =>
-          module.id === moduleId ? { ...module, collapsed: !module.collapsed } : module
+      setModules((prev) =>
+        prev.map((m) =>
+          String(m.id) === String(moduleId) ? { ...m, collapsed: !m.collapsed } : m
         )
       );
     }
   };
 
-  const handleLecture = (action: ModuleAction, moduleId?: number, lectureIndex?: number) => {
-    if (action === 'add') {
-      if (moduleId !== undefined){
-        setCurrentModuleId(moduleId);
-        setPopup(true);
-      }
-      
-    } else if (action === 'remove') {
-      if (moduleId !== undefined && lectureIndex !== undefined){
-        setModules(
-          modules.map((module) => {
-            if (module.id === moduleId) {
-              module.content.splice(lectureIndex, 1);
-            }
-          return module;
-        })
-      );
-      }
+  const handleLecture = (action: ModuleAction, moduleId?: number, index?: number, subIndex?: number) => {
+    if (action === 'add' && moduleId !== undefined) {
+      setCurrentModuleId(moduleId);
+      setCurrentSubModuleIndex(index !== undefined ? index : null);
+      setPopup(true);
+      return;
     }
-  };
+    if (action === 'save'){
+      setModules((prev) =>
+      prev.map((module) => {
+        if (String(module.id) === String(currentModuleId)){
+          // Adding to SubModule?
+          if (currentSubModuleIndex !== null){
+            const updateContent = module.content.map((item, idx) => {
+              if (idx === currentSubModuleIndex && 'collapsed' in item && Array.isArray(item.content)) {
+                const newLec: Lecture = {
+                  id: Number(uniqid()),
+                  title: lectureDetails.lectureTitle,
+                  order: item.content.length + 1, // Order relative to submodule
+                  content: '',
+                  module_Id: module.id
+                };
+                return { ...item, content: [...item.content, newLec] } as SubModule;
+              }
+              return item;
+            });
+            return { ...module, content: updateContent };
+          }
 
-  const addLecture = () => {
-    
-    setModules(
-      modules.map((module) => {
-        if (String(module.id) === String(currentModuleId)) {
-          const newLecture = {
-            ...lectureDetails,
-            lectureOrder: module.content.length > 0 ? module.content[module.content.length - 1].lectureOrder + 1 : 1,
-            lectureId: Number(uniqid())
+          // Case: Adding to Parent Module
+          const newLecture: Lecture = {
+            id: Number(uniqid()),
+            title: lectureDetails.lectureTitle,
+            order: module.content.length + 1,
+            content: '',
+            module_Id: module.id
           };
-          return {
-            ...module,
-            content: [...module.content, newLecture]
-          };
+          return { ...module, content: [...module.content, newLecture] };
         }
-        console.log("No match")
         return module;
       })
     );
+    // Cleanup
     setPopup(false);
-    setLectureDetails({
-      lectureTitle: ''
-    });
+    setCurrentSubModuleIndex(null);
+    setLectureDetails({ lectureTitle: '' });
+    return;
+  }
+
+  // STEP 3: REMOVE
+  if (action === 'remove' && moduleId !== undefined && index !== undefined) {
+    setModules((prev) =>
+      prev.map((module) => {
+        if (String(module.id) === String(moduleId)) {
+          
+          // Case: Remove from SubModule (requires 4th arg: subIndex)
+          if (subIndex !== undefined) {
+            return {
+              ...module,
+              content: module.content.map((item, i) => {
+                if (i === index && 'collapsed' in item && Array.isArray(item.content)) {
+                  return { ...item, content: item.content.filter((_, si) => si !== subIndex) };
+                }
+                return item;
+              })
+            };
+          }
+
+          // Case: Remove from Parent Module
+          return {
+            ...module,
+            content: module.content.filter((_, i) => i !== index)
+          };
+        }
+        return module;
+      })
+    );
+  }
+};
+
+  const handleSubModule = (action: ModuleAction, moduleId: number, index?: number): void => {
+    setModules((prevModules) => 
+      prevModules.map((module) => {
+        if (String(module.id) === String(moduleId)){
+          // ADD NEW SUBMODULE
+          if (action === 'add'){
+            const title = prompt('Enter Module Name: ');
+            if (title === null) return module;
+            const newSubModule = {
+              id: Number(uniqid()),
+              title: title,
+              content: [],
+              collapsed: false,
+              order: modules.length > 0 ? modules.slice(-1)[0].order + 1 : 1,
+              //courseId: currentCourseId
+            };
+            return { ...module, content: [...module.content, newSubModule]};
+          }
+           // REMOVE SUBMODULE
+          if (action === 'remove' && index !== undefined){
+            return {
+              ...module, content: module.content.filter((_, i) => i != index)
+            };
+          } 
+          // TOGGLE VISIBILITY
+          if (action === 'toggle' && index !== undefined){
+            return {
+              ...module, content: module.content.map((item, i) => i === index && 'collapsed' in item ? { ...item, collapsed: !item.collapsed} : item)};
+          }
+        }
+        return module;
+      })
+    );
+  };
+
+  const handleContent = (input: string, action: ModuleAction, modId?: number) => {
+    if (input === 'Lecture'){
+      handleLecture(action, modId);
+    } else if (input === 'SubModule') {
+      handleSubModule(action, Number(modId))
+    }
   };
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
@@ -199,22 +277,63 @@ const AddCourse: React.FC = () => {
                   {/* Display Module Number and Title */}
                   <span className='font-semibold'>{moduleIndex + 1}: {module.title}</span>
                 </div>
-                <span className='text-gray-500'>{module.content.length} Lectures</span>
+                <span className='text-gray-500'>Content</span>
                 <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleModule('remove', module.id)} />
               </div>
 
               {!module.collapsed && (
                 <div className='p-4'>
-                  {module.content.map((lecture, lectureIndex) => (
-                    <div key={lectureIndex} className='flex justify-between items-center mb-2'>
-                      {/* Display Lecture Number and Title */}
-                      <span>{lectureIndex + 1}: {lecture.lectureTitle}</span>
-                      <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleLecture('remove', module.id, lectureIndex)} />
-                    </div>
-                  ))}
-                  <div className='inline-flex bg-gray-100 p-2 rounded cursor-pointer mt-2' onClick={() => handleLecture('add', module.id)}>
-                    + Add Lecture
+                  {module.content.map((item, index) => {
+                    const isSubModule = 'collapsed' in item && Array.isArray(item.content);
+                    if (isSubModule){
+                      return (
+                        <div key={index} className='mb-4 ml-4 p-2 border-l-2 border-blue-200 bg-gray-50/50'>
+                          <div className='flex justify-between items-center font-semibold text-gray-700'>
+                            <img 
+                              onClick={(e) => {e.stopPropagation(); handleSubModule('toggle', item.id, index)}}  
+                              src={assets.dropDown_icon} 
+                              alt='dropdown icon'  
+                              width={14} 
+                              className={`mr-2 w-4 h-4 cursor-pointer transition-all ${item.collapsed && "-rotate-90"}`} 
+                            />
+                            <span>SubModule: {item.title}</span>
+                            <img src={assets.cross_icon} alt='cross icon' className='ml-auto cursor-pointer w-4 h-4' onClick={(e) => {e.stopPropagation(); handleSubModule('remove', item.id, index)}} />
+                            
+                          </div>
+                          <div className='ml-4 mt-2'>
+                          {!item.collapsed && Array.isArray(item.content) && item.content.map((subLecture, subIndex) => (
+                            <div key={subIndex} className='flex text-sm text-gray-500 py-1'>
+                              {index + 1}.{subIndex + 1}: {subLecture.title}
+                              <img src={assets.cross_icon} alt='cross icon' className='ml-auto cursor-pointer w-4 h-4' onClick={() => handleLecture('remove', module.id, index, subIndex)} />
+                            </div>
+                          ))}
+                          {!item.collapsed && (
+                            <div 
+                              className='inline-flex bg-gray-100 p-2 rounded cursor-pointer mt-2' 
+                              onClick={() => {handleLecture('add', module.id, index)}}>
+                              + Add Lecture
+                            </div>
+                          )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={index} className='flex justify-between items-center mb-2'>
+                        {/* Display Lecture Number and Title */}
+                        <span>{index + 1}: {item.title}</span>
+                        <img src={assets.cross_icon} alt='cross icon' className='cursor-pointer w-4 h-4' onClick={() => handleLecture('remove', module.id, index)} />
+                      </div>
+                     );
+                    })}
+                  <div className='inline-flex bg-gray-100 p-1 rounded-md cursor-pointer mt-2' onClick={() => handleContent(contentType, 'add', module.id)}>
+                    + Add Content
                   </div>
+                  <select className='border rounded-md' value={contentType} onChange={(e) => setContentType(e.target.value)}>
+                      <option value="Lecture">Lecture</option>
+                      <option value="SubModule">SubModule</option> 
+                  </select>
                 </div>
               )}
             </div>
@@ -240,7 +359,7 @@ const AddCourse: React.FC = () => {
                     onKeyDown={(e)=>{
                       if (e.key === 'Enter'){
                         e.preventDefault();  // Prevents the form from submitting/refreshing
-                        addLecture();
+                        handleLecture('save');
                       }
                     }}
                   />
@@ -248,7 +367,7 @@ const AddCourse: React.FC = () => {
 
                 {/** Other input fields come in as seperate divs, will be changing the lecture creation soon so dont worry about it */}
 
-                <button onClick={() => addLecture()} type='button' className='w-full bg-blue-400 text-white px-4 py-2 rounded cursor-pointer'>Add</button>
+                <button onClick={() => handleLecture('save')} type='button' className='w-full bg-blue-400 text-white px-4 py-2 rounded cursor-pointer'>Add</button>
 
                 <img onClick={() => setPopup(false)} src={assets.cross_icon} alt='cross icon' className='absolute top-4 right-4 w-4 h-4 cursor-pointer' />
 

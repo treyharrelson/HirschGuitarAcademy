@@ -6,13 +6,22 @@ export interface Lecture {
     module_Id: number
 }
 
+export interface SubModule {
+    id: number,
+    title: string,
+    order: number,
+    //courseId: number,
+    collapsed: boolean,
+    content: Lecture[]
+}
+
 export interface Module {
     id: number,
     title: string,
     order: number,
-    courseId: number
+    courseId: number,
     collapsed: boolean,
-    content: any[]
+    content: (SubModule | Lecture)[]
 }
 
 export interface CourseInstructor {
@@ -29,5 +38,5 @@ export interface Course {
     instructor?: CourseInstructor,
     enrolled: number,
     isPrivate: boolean,
-    thumbnail: File
+    thumbnail: File | string
 }
