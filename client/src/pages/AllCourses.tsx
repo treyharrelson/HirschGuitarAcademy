@@ -8,7 +8,7 @@ import { type Course } from '../types/course'
 const AllCourses: React.FC = () => {
     const { user } = useAuth();
     const [courses, setCourses] = useState<Course[]>([]);
-    const [enrolledIds, setEnrolledIds] = useState<Set<number>>(new Set());
+    const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [actionMsg, setActionMsg] = useState('');
@@ -41,7 +41,7 @@ const AllCourses: React.FC = () => {
         fetchEnrollments();
     }, [user]);
 
-    const handleEnroll = async (courseId: number): Promise<void> => {
+    const handleEnroll = async (courseId: string): Promise<void> => {
         try {
             await api.post(`/api/courses/${courseId}/enroll`, {});
             // Update enrolledIds immediately
@@ -54,7 +54,7 @@ const AllCourses: React.FC = () => {
         }
     };
 
-    const handleDrop = async (courseId: number): Promise<void> => {
+    const handleDrop = async (courseId: string): Promise<void> => {
         try {
             await api.delete(`/api/courses/${courseId}/enroll`);
             // Update enrolledIds immediately

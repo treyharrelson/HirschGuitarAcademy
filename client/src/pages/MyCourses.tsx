@@ -28,7 +28,7 @@ const MyCourses: React.FC = () => {
         fetchMyCourses();
     }, [user]);
 
-    const handleDrop = async (courseId: number) => {
+    const handleDrop = async (courseId: string) => {
         try {
             await api.delete(`/api/courses/${courseId}/enroll`);
             setActionMsg('Successfully dropped.');
