@@ -9,7 +9,7 @@ import AllCourses from './pages/AllCourses';
 import MyCourses from './pages/MyCourses';
 // import Metronome from './pages/student/metronome-tool/js/metronome';
 // import Timer from './pages/student/metronome-tool/js/timer';
-
+import MainLayout from './pages/MainLayout';
 import './App.css';
 import Home from './pages/student/Home';
 import CourseList from './pages/student/CourseList';
@@ -24,7 +24,7 @@ import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
 
 
 import "quill/dist/quill.snow.css";
-import Navbar from './components/student/Navbar';
+import Navbar from './components/generic/Navbar';
 
 function App() {
   //const [count, setCount] = useState(0)
@@ -35,6 +35,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route element={<MainLayout />}>
           <Route path="/student-dashboard" element={<Dashboard />} />
           <Route path="/admin-dashboard" element={<Dashboard />} />
           <Route path="/forum" element={<Forum />} />
@@ -47,7 +48,7 @@ function App() {
 
           <Route path='/home' element={<Home />} />
           <Route path='/course-list' element={<CourseList />} />
-          <Route path='/course-list/ :input' element={<CourseList />} />
+          <Route path='/course-list/:input?' element={<CourseList />} />
           <Route path='/course/:id' element={<CourseDetails />} />
           <Route path='/my-enrollments' element={<MyEnrollments />} />
           <Route path='/player/:courseId' element={<Player />} />
@@ -58,6 +59,7 @@ function App() {
             <Route path='add-course' element={<AddCourse />} />
             <Route path='my-courses' element={<MyCourses />} />
             <Route path='students-enrolled' element={<StudentsEnrolled />} />
+          </Route>
           </Route>
         </Routes>
       </BrowserRouter>
