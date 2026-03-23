@@ -8,10 +8,10 @@ import { type Lecture, type Module, type Course, type SubModule } from '../../ty
 
 const AddCourse: React.FC = () => {
 
-  const courseId = Number(uniqid());
+  const courseId = uniqid();
 
   const newId = () => {
-    return Number(uniqid());
+    return uniqid();
   }
   const inputRef = React.useRef<HTMLInputElement>(null);
   
@@ -26,10 +26,10 @@ const AddCourse: React.FC = () => {
   const [showPopup, setPopup] = useState<boolean>(false)
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [statusMsg, setStatusMsg] = useState<string>('')
-  const [contentType, setContentType] = useState<string>('')
+  const [contentType, setContentType] = useState<string>('Lecture')
 
 
-  const [currentModuleId, setCurrentModuleId] = useState<number>(0)
+  const [currentModuleId, setCurrentModuleId] = useState<string | null>(null)
   const [currentSubModuleIndex, setCurrentSubModuleIndex] = useState<number | null>(null);
   //const [moduleDetails, setModuleDetails] = useState({
   //  moduleTitle: ''
@@ -42,12 +42,12 @@ const AddCourse: React.FC = () => {
     lectureTitle: ''
   })
 
-  const handleModule = (action: ModuleAction, moduleId?: number, currentCourseId?: number): void => {
+  const handleModule = (action: ModuleAction, moduleId?: string, currentCourseId?: string): void => {
     if (action === 'add') {
       const title = prompt('Enter Module Name: ');
       if (title && currentCourseId !== undefined) {
         const newModule = {
-          id: Number(uniqid()),
+          id: uniqid(),
           title: title,
           content: [],
           collapsed: false,
@@ -67,7 +67,7 @@ const AddCourse: React.FC = () => {
     }
   };
 
-  const handleLecture = (action: ModuleAction, moduleId?: number, index?: number, subIndex?: number) => {
+  const handleLecture = (action: ModuleAction, moduleId?: string, index?: number, subIndex?: number) => {
     if (action === 'add' && moduleId !== undefined) {
       setCurrentModuleId(moduleId);
       setCurrentSubModuleIndex(index !== undefined ? index : null);
@@ -80,25 +80,28 @@ const AddCourse: React.FC = () => {
         if (String(module.id) === String(currentModuleId)){
           // Adding to SubModule?
           if (currentSubModuleIndex !== null){
-            const updateContent = module.content.map((item, idx) => {
-              if (idx === currentSubModuleIndex && 'collapsed' in item && Array.isArray(item.content)) {
-                const newLec: Lecture = {
-                  id: Number(uniqid()),
-                  title: lectureDetails.lectureTitle,
-                  order: item.content.length + 1, // Order relative to submodule
-                  content: '',
-                  module_Id: module.id
-                };
-                return { ...item, content: [...item.content, newLec] } as SubModule;
-              }
-              return item;
-            });
-            return { ...module, content: updateContent };
+            const targetItem = module.content[currentSubModuleIndex];
+            if (targetItem && 'collapsed' in targetItem && Array.isArray(targetItem.content) ){
+              const updateContent = module.content.map((item, idx) => {
+                if (idx === currentSubModuleIndex && 'collapsed' in item && Array.isArray(item.content)) {
+                  const newLec: Lecture = {
+                    id: uniqid(),
+                    title: lectureDetails.lectureTitle,
+                    order: item.content.length + 1, // Order relative to submodule
+                    content: '',
+                    module_Id: module.id
+                  };
+                  return { ...item, content: [...item.content, newLec] } as SubModule;
+                }
+                return item;
+              });
+              return { ...module, content: updateContent };
+            }            
           }
 
           // Case: Adding to Parent Module
           const newLecture: Lecture = {
-            id: Number(uniqid()),
+            id: uniqid(),
             title: lectureDetails.lectureTitle,
             order: module.content.length + 1,
             content: '',
@@ -147,7 +150,7 @@ const AddCourse: React.FC = () => {
   }
 };
 
-  const handleSubModule = (action: ModuleAction, moduleId: number, index?: number): void => {
+  const handleSubModule = (action: ModuleAction, moduleId: string, index?: number): void => {
     setModules((prevModules) => 
       prevModules.map((module) => {
         if (String(module.id) === String(moduleId)){
@@ -156,7 +159,7 @@ const AddCourse: React.FC = () => {
             const title = prompt('Enter Module Name: ');
             if (title === null) return module;
             const newSubModule = {
-              id: Number(uniqid()),
+              id: uniqid(),
               title: title,
               content: [],
               collapsed: false,
@@ -182,11 +185,11 @@ const AddCourse: React.FC = () => {
     );
   };
 
-  const handleContent = (input: string, action: ModuleAction, modId?: number) => {
+  const handleContent = (input: string, action: ModuleAction, modId?: string) => {
     if (input === 'Lecture'){
       handleLecture(action, modId);
-    } else if (input === 'SubModule') {
-      handleSubModule(action, Number(modId))
+    } else if (input === 'SubModule' && modId !== undefined) {
+      handleSubModule(action, modId)
     }
   };
 
