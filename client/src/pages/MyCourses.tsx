@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Course } from '../types/course';
+import { CourseCard } from '../components/student/CourseCard';
 
 
 const MyCourses: React.FC = () => {
@@ -38,6 +39,16 @@ const MyCourses: React.FC = () => {
         }
     };
 
+    const RenderCourses = () => (
+        <>
+            {courses.map((course, index) => (
+                <CourseCard course={course}
+                    enrolled={"Unenroll"}
+                    buttonclick={() => handleDrop(course.id)} />
+            ))}
+        </>
+    );
+
     if (loading) return <p>Loading your courses...</p>;
     if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
@@ -54,21 +65,8 @@ const MyCourses: React.FC = () => {
                     <Link to='/all-courses'>Browse available courses</Link>
                 </div>
             ) : (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {courses.map((course) => (
-                        <li key={course.id} style={{ borderBottom: '1px solid #ddd', padding: '1rem 0' }}>
-                            <strong>{course.name}</strong>
-                            <p>
-                                Instructor: {course.instructor
-                                    ? `${course.instructor.firstName} ${course.instructor.lastName}`
-                                    : 'N/A'}
-                            </p>
-                            <p>Enrolled: {course.enrolled}</p>
-                            {user?.role === 'student' && (
-                                <button onClick={() => handleDrop(course.id)}>Drop Course</button>
-                            )}
-                        </li>
-                    ))}
+                <ul className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 list-none p-0'>
+                    <RenderCourses />
                 </ul>
             )}
         </div>
