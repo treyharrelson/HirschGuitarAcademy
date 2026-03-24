@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Models = require('../db/models');
+// for Server-Sent-Events(SSE), used to map connected userId's to their response objects
+const userClients = new Map();
 
 // Get all threads (Maps to /api/threads)
 router.get('/', async (req, res) => {
@@ -31,8 +33,38 @@ router.post('/', async (req, res) => {
 
 		res.status(201).json(newThread);
 	} catch (error) {
+		if (error.name === 'SequelizeUniqueConstraintError') {
+			return res.status(409).json({ message: 'A thread with that title already exists' });
+		}
 		res.status(500).json({ message: `Error creating thread: ${error}` });
 	}
+});
+
+// SSE stream: client connects here for live feed/thread updates
+// maps to Get /api/threads/stream
+router.get('/stream', (req, res) => {
+	const userId = req.session.user.id;
+
+	res.setHeader('Content-Type', 'text/event-stream');
+	res.setHeader('Cache-Control', 'no-cache');
+	res.setHeader('Connection', 'keep-alive');
+	res.flushHeaders();
+
+	// accounts for the user having multiple tabs open
+	if (!userClients.has(userId)) userClients.set(userId, new Set());
+	userClients.get(userId).add(res);
+
+	// heartbeat every 30s: keeps Railway's proxy from closing idle connections
+	const heartbeat = process.env.NODE_ENV === 'production'
+	? setInterval(() => res.write(': heartbeat\n\n'), 30000)
+	: null;
+
+	// close handler
+	req.on('close', () => {
+		userClients.get(userId)?.delete(res);
+		if (userClients.get(userId)?.size === 0) userClients.delete(userId);
+		if (heartbeat) clearInterval(heartbeat);
+	});
 });
 
 // Get posts in a thread (Maps to /api/threads/:threadId/posts)
@@ -83,6 +115,34 @@ router.post('/:threadId/posts', async (req, res) => {
 			}));
 			await Models.Attachment.bulkCreate(attachmentRecords);
 		}
+
+		// fetch post with author included for the broadcast payload
+		const postWithAuthor = await Models.Post.findByPk(newPost.id, {
+			include: [
+				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.Attachment, as: 'attachments' }
+			]
+		});
+
+		// find who should receive this event, either users who are subscribed or everyone, if thread is global
+		const thread = await Models.Thread.findByPk(req.params.threadId);
+
+		let recipientUserIds;
+		if (thread.isGlobalFeed) {
+			// broadcast to all connected users
+			recipientUserIds = [...userClients.keys()];
+		} else {
+			// broadcast to subscribed users
+			const subs = await Models.Subscription.findAll({
+				where: { threadId: req.params.threadId }
+			});
+			recipientUserIds = subs.map(s => s.userId);
+		}
+
+		const payload = `data: ${JSON.stringify({ type: 'new_post', threadId: req.params.threadId, post: postWithAuthor })}\n\n`;
+		recipientUserIds.forEach(uid => {
+			userClients.get(uid)?.forEach(client => client.write(payload));
+		});
 
 		res.status(201).json(newPost);
 	} catch (error) {

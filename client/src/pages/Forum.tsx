@@ -34,9 +34,9 @@ function Forum() {
 
             setTitle('');
             loadThreads();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error creating thread: ', err);
-            setError('Error creating thread');
+            setError(err.response?.data?.message || 'Error creating thread');
         }
     };
 

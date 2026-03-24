@@ -13,11 +13,17 @@ const Thread = sequelize.define(
         title: {
             type: DataTypes.STRING,
             allowNull: false,
+            unique: true,
         },
         authorId: {
             type: DataTypes.INTEGER,
             allowNull: false,
             field: 'author_id'
+        },
+        isGlobalFeed: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+            field: 'is_global_feed',
         },
     },
     {

@@ -27,6 +27,20 @@ function ThreadDetail() {
 
   useEffect(() => {
     loadPosts();
+
+    const es = new EventSource(`${api.defaults.baseURL}/api/threads/stream`, { withCredentials: true });
+
+    es.onmessage = (e) => {
+      const { type, threadId: incomingThreadId, post} = JSON.parse(e.data);
+      if (type === 'new_post' && incomingThreadId === threadId) {
+        // prevents the user who posted from seeing their post twice, since loadPosts() fetches it
+        setPosts(prev => prev.some(p => p.id === post.id) ? prev : [...prev, post]);
+      }
+    };
+
+    es.onerror = () => console.warn('SSE connection lost, browser will retry...');
+
+    return () => es.close();
   }, [threadId]);
 
   const handleSubmit = async (e: SubmitEvent) => {
