@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { type Course } from '../../types/course'
 import { assets } from '../../assets/assets'
 import { BigBlueButton } from '../generic/Buttons'
+import api from '../../api/axiosInstance'
 
 type CourseCardProps = {
   course: Course;
@@ -11,21 +12,40 @@ type CourseCardProps = {
 };
 
 export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) => {
+  const [imageUrl, setImageUrl] = useState<string>(assets.defaultCourseThumbnail);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadThumbnail = async () => {
+      if (course.thumbnail && typeof course.thumbnail === 'string' && course.thumbnail.startsWith('uploads/')) {
+        try {
+          const res = await api.get(`/api/upload/file-url?fileKey=${course.thumbnail}`);
+          if (isMounted && res.data.presignedUrl) {
+            setImageUrl(res.data.presignedUrl);
+          }
+        } catch (err) {
+          console.error("Failed to fetch presigned URL for thumbnail:", err);
+        }
+      }
+    };
+    loadThumbnail();
+    return () => { isMounted = false; };
+  }, [course.thumbnail]);
+
   return (
     <div className='flex flex-col aspect-square p-5 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 bg-white overflow-hidden group'>
     <Link 
       to={`/course/${course.id}`}
       onClick={() => scrollTo(0, 0)}
-      // aspect-square forces the 1:1 ratio. Flexbox handles the internal layout.
-      
+      className='flex flex-col flex-grow'
     >
 
       {/* Top Section: Image and Title side-by-side */}
       <div className='flex items-start gap-4 mb-4'>
         <img
           className='w-16 h-16 object-cover rounded-lg flex-shrink-0 border border-gray-100'
-          src={String(course.thumbnail) ? assets.defaultCourseThumbnail : assets.defaultCourseThumbnail}
-          alt='Course Img'
+          src={imageUrl}
+          alt={`${course.name} Thumbnail`}
         />
         <div>
           <h3 className='text-base font-semibold text-gray-800 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors'>
@@ -42,7 +62,7 @@ export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) =
       </div>
       </Link>
 
-      <div>
+      <div className='mt-auto pt-4'>
         <BigBlueButton children={enrolled} onClick={buttonclick} />
       </div>
 
