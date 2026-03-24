@@ -1,6 +1,10 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { DashButton } from '../components/generic/Buttons';
+import { useState, useEffect } from 'react';
+import api from '../api/axiosInstance';
+import {type Post } from '../types/post';
+import PostCard from '../components/generic/PostCard';
 
 type RoleLink = {
     label: string;
@@ -34,6 +38,33 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
 function Dashboard() {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
+    const [feedPosts, setFeedPosts] = useState<Post[]>([]);
+
+    const loadFeed = async () => {
+        try {
+            const response = await api.get('/api/threads/feed/posts');
+            setFeedPosts(response.data);
+        } catch (err) {
+            console.error('Error loading feed');
+        }
+    };
+
+    useEffect(() => {
+        loadFeed();
+
+        const es = new EventSource(`${api.defaults.baseURL}/api/threads/stream`, { withCredentials: true });
+
+        es.onmessage = (e) => {
+            const { type, post } = JSON.parse(e.data);
+            if (type === 'new_post') {
+                setFeedPosts(prev => prev.some(p => p.id === post.id) ? prev : [post, ...prev]);
+            }
+        };
+
+        es.onerror = () => console.warn('SSE connection lost, browser will retry...');
+
+        return () => es.close();
+    }, []);
 
     const links = user?.role ? NAV_LINKS[user.role] : NAV_LINKS['guest'];
 
@@ -58,18 +89,38 @@ function Dashboard() {
     }
 
     return (
-        <div>
-            <h1>Welcome, {user.name}!</h1>
-            <p>Email: {user.email}</p>
-            <p>Role: {user.role}</p>
-            <div className='mt-10 flex flex-col'>
+    <div>
+        <h1>Welcome, {user.name}!</h1>
+        <p>Email: {user.email}</p>
+        <p>Role: {user.role}</p>
+
+        <div className='mt-10 flex gap-8'>
+
+            {/* Sidebar */}
+            <div className='w-48 flex-shrink-0'>
                 <h2 className="mb-4 text-xl font-semibold">Quick Links</h2>
-                <ul className="flex flex-col gap-2 w-48">
+                <ul className="flex flex-col gap-2">
                     <RenderLinks />
                 </ul>
             </div>
+
+            {/* Feed */}
+            <div className='flex-1'>
+                <h2 className="mb-4 text-xl font-semibold">My Feed</h2>
+                {feedPosts.length === 0 ? (
+                    <p>No posts yet. Subscribe to some threads in the forum to see them here.</p>
+                ) : (
+                    <div className="flex flex-col gap-4">
+                        {feedPosts.map(post => (
+                            <PostCard key={post.id} post={post} showThread />
+                    ))}
+                    </div>
+                )}
+            </div>
+
         </div>
-    );
+    </div>
+);
 }
 
 export default Dashboard;

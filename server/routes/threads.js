@@ -67,6 +67,45 @@ router.get('/stream', (req, res) => {
 	});
 });
 
+router.get('/feed/posts', async (req, res) => {
+	try {
+		const subs = await Models.Subscription.findAll({
+			where: { userId: req.session.user.id }
+		});
+
+		const threadIds = subs.map(s => s.threadId);
+
+		if (threadIds.length === 0) return res.json([]);
+
+		const posts = await Models.Post.findAll({
+			where: { threadId: threadIds },
+			include: [
+				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.Thread, as: 'thread', attributes: ['id', 'title'] }
+			],
+			order: [['createdAt', 'DESC']],
+			limit: 20
+		});
+
+		res.json(posts);
+	} catch (error) {
+		res.status(500).json({ message: `Error fetching feed: ${error}` });
+	}
+});
+
+// Get a single thread by ID
+router.get('/:threadId', async (req, res) => {
+	try {
+		const thread = await Models.Thread.findByPk(req.params.threadId, {
+			include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }]
+		});
+		if (!thread) return res.status(404).json({message: 'Thread not found' });
+		res.json(thread);
+	} catch (error) {
+		res.status(500).json({ message: `Error fetching thread: ${error}` });
+	}
+});
+
 // Get posts in a thread (Maps to /api/threads/:threadId/posts)
 router.get('/:threadId/posts', async (req, res) => {
 	try {
@@ -116,6 +155,14 @@ router.post('/:threadId/posts', async (req, res) => {
 			await Models.Attachment.bulkCreate(attachmentRecords);
 		}
 
+		// Auto-subscribe the poster to this thread if not already subscribed
+		await Models.Subscription.findOrCreate({
+		where: {
+			userId: req.session.user.id,
+			threadId: req.params.threadId
+		}
+		});
+
 		// fetch post with author included for the broadcast payload
 		const postWithAuthor = await Models.Post.findByPk(newPost.id, {
 			include: [
@@ -148,6 +195,51 @@ router.post('/:threadId/posts', async (req, res) => {
 	} catch (error) {
 		console.error('Error creating post: ', error)
 		res.status(500).json({ message: `Error creating post: ${error}` });
+	}
+});
+
+// Get subscription status for current user on this thread
+router.get('/:threadId/subscribe', async (req, res) => {
+	try {
+		const subscription = await Models.Subscription.findOne({
+			where: {
+				userId: req.session.user.id,
+				threadId: req.params.threadId
+			}
+		});
+		res.json({ subscribed: !!subscription });
+	} catch (error) {
+		res.status(500).json({ message: `Error checking subscription: ${error} `});
+	}
+});
+
+// Subscribe to a thread (maps to /api/threads/:threadId/subscribe)
+router.post('/:threadId/subscribe', async (req, res) => {
+	try {
+		const [subscription, created] = await Models.Subscription.findOrCreate({
+			where: {
+				userId: req.session.user.id,
+				threadId: req.params.threadId
+			}
+		});
+		res.status(created ? 201 : 200).json(subscription);
+	} catch (error) {
+		res.status(500).json({ message: `Error subscribing: ${error}` });
+	}
+});
+
+// Unsubscribe from a thread
+router.delete('/:threadId/subscribe', async (req, res) => {
+	try {
+		await Models.Subscription.destroy({
+			where: {
+				userId: req.session.user.id,
+				threadId: req.params.threadId
+			}
+		});
+		res.status(204).end();
+	} catch (error) {
+		res.status(500).json({ message: `Error unsubscribing: ${error}` });
 	}
 });
 
