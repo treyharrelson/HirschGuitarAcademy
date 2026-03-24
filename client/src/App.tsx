@@ -33,7 +33,6 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-      <ProtectedRoute>
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -64,7 +63,6 @@ function App() {
           </Route>
           </Route>
         </Routes>
-        </ProtectedRoute>
       </BrowserRouter>
     </AuthProvider>
   );
