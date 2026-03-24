@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useAppContext } from '../../context/AppContext'
 import { Link, useParams } from 'react-router-dom'
 import SearchBar from '../../components/student/SearchBar'
-import CourseCard from '../../components/student/CourseCard'
+import { CourseCard } from '../../components/student/CourseCard'
 import { type Course } from '../../types/course';
 import api from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
@@ -18,20 +18,20 @@ const CourseList: React.FC = () => {
   const [error, setError] = useState('');
 
   const fetchCourses = async () => {
-        try {
-            const res = await api.get('/api/courses');
-            setCourses(res.data);
-        } catch (err) {
-            setError('Failed to load courses.');
-        } finally {
-            setLoading(false);
-        }
-    };
-  
-  useEffect(()=> {
+    try {
+      const res = await api.get('/api/courses');
+      setCourses(res.data);
+    } catch (err) {
+      setError('Failed to load courses.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCourses();
-  },[]);
-    
+  }, []);
+
   useEffect(() => {
     if (courses && courses.length > 0) {
       const formatInput = input?.toLowerCase() || '';

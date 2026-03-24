@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { Children, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../api/axiosInstance';
-import { useAuth } from '../context/AuthContext';
-import { type Course } from '../types/course'
+import api from '../../api/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
+import { type Course } from '../../types/course'
+import { CourseCard } from '../../components/student/CourseCard';
 
 
-const AllCourses: React.FC = () => {
+const AllCourses = () => {
     const { user } = useAuth();
     const [courses, setCourses] = useState<Course[]>([]);
-    const [enrolledIds, setEnrolledIds] = useState<Set<number>>(new Set());
+    const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [actionMsg, setActionMsg] = useState('');
@@ -41,7 +42,7 @@ const AllCourses: React.FC = () => {
         fetchEnrollments();
     }, [user]);
 
-    const handleEnroll = async (courseId: number): Promise<void> => {
+    const handleEnroll = async (courseId: string): Promise<void> => {
         try {
             await api.post(`/api/courses/${courseId}/enroll`, {});
             // Update enrolledIds immediately
@@ -54,7 +55,7 @@ const AllCourses: React.FC = () => {
         }
     };
 
-    const handleDrop = async (courseId: number): Promise<void> => {
+    const handleDrop = async (courseId: string): Promise<void> => {
         try {
             await api.delete(`/api/courses/${courseId}/enroll`);
             // Update enrolledIds immediately
@@ -71,6 +72,18 @@ const AllCourses: React.FC = () => {
         }
     };
 
+
+    const RenderCourses = () => (
+        <>
+            {courses.map((course, index) => (
+                <CourseCard course={course} 
+                enrolled={enrolledIds.has(course.id) ? "Unenroll" : "Enroll"} 
+                buttonclick={enrolledIds.has(course.id) ? () => handleDrop(course.id) : () => handleEnroll(course.id)} />
+            ))}
+        </>
+    );
+
+
     if (loading) return <p>Loading courses...</p>;
     if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
@@ -84,30 +97,8 @@ const AllCourses: React.FC = () => {
             {courses.length === 0 ? (
                 <p>No courses available.</p>
             ) : (
-                <ul style={{ listStyle: 'none', padding: 0 }}>
-                    {courses.map((course) => {
-                        const isEnrolled = enrolledIds.has(course.id);
-
-                        return (
-                            <li key={course.id} style={{ borderBottom: '1px solid #ddd', padding: '1rem 0' }}>
-                                <strong>{course.name}</strong>
-                                <p>
-                                    Instructor: {course.instructorId
-                                        ? `${course.instructorId} ${course.instructorId}`
-                                        : 'N/A'}
-                                </p>
-                                <p>Enrolled: {course.enrolled}</p>
-
-                                {user?.role === 'student' && (
-                                    isEnrolled ? (
-                                        <button onClick={() => handleDrop(course.id)}>Drop Course</button>
-                                    ) : (
-                                        <button onClick={() => handleEnroll(course.id)}>Enroll</button>
-                                    )
-                                )}
-                            </li>
-                        );
-                    })}
+                <ul className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 list-none p-0'>
+                    <RenderCourses />
                 </ul>
             )}
         </div>

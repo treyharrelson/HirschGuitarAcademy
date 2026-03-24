@@ -5,7 +5,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Forum from './pages/Forum';
 import ThreadDetail from './pages/ThreadDetail';
-import AllCourses from './pages/AllCourses';
+import AllCourses from './pages/student/AllCourses';
 import MyCourses from './pages/MyCourses';
 // import Metronome from './pages/student/metronome-tool/js/metronome';
 // import Timer from './pages/student/metronome-tool/js/timer';
@@ -21,6 +21,7 @@ import StudentsEnrolled from './pages/instructor/StudentsEnrolled'
 import AddCourse from './pages/instructor/AddCourse'
 import Instructor from './pages/instructor/Instructor'
 import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
+import ProtectedRoute from './context/ProtectedRoute';
 
 
 import "quill/dist/quill.snow.css";
@@ -32,6 +33,7 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+      <ProtectedRoute>
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -62,6 +64,7 @@ function App() {
           </Route>
           </Route>
         </Routes>
+        </ProtectedRoute>
       </BrowserRouter>
     </AuthProvider>
   );
