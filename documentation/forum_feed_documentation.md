@@ -109,9 +109,27 @@ Added optional `thread` field (`{ id, title }`) to the `Post` interface to suppo
 
 ## What's still needed
 
-- **Global feed UI** — `isGlobalFeed` is fully wired on the server but there is no admin/instructor interface yet for creating or designating global feed threads.
+- **Global feed UI** — `isGlobalFeed` is fully wired on the server but there is no admin/instructor interface yet for creating or designating global feed threads. Also need admin UI to delete threads.
 
 - **Main feed post creation** — no UI or routes for adding posts to the main feed directly. I'm pretty sure this is something the sponsor wants
 
 - **image/video attachments need updating** — right now if you attach an image or video to a post, it is massive and takes up the whole screen. We
 need to add a way to have a minimized version of it so that it looks better and is more user friendly.
+
+- **Thread search bar** — add the ability to search for a thread so that one you are looking for is easy to find
+
+- **Automatic global feed post for new threads** — automatically post that a new thread has been created in the global feed to give people the option to subscribe. Have a button to subscribe in the post that shows up on the feed.
+
+- **Reply functionality** — add functionality to link 1 post to another and build the UI for a "reply" button. ALso look into reactions
+
+- **thread subscriptions page** — have a page where the user can see and manage all threads they are subscribed to
+
+- **"load more" button on home feed and Forum page** — right now the home feed shows the 20 most recent posts. Need some kind of way to view older posts, either by having pages or just having a "load more" button that loads 20 more below. Also build the same thing in the Forum pages, which lists the threads.
+
+- **Unread indicators** - some way to show a user that a thread they're subscribed to has new posts since they last visited. Could be a dot or count on the thread card
+
+- **Thread creation auto-subscribe** - right now you have to subscribe to your own thread to get notified of replies, unless you make a post.
+
+- **Empty state on ThreadDetail** - if a thread has no posts yet, add a message to state something like "No replies yet - be the first to response"
+
+- **loading states**
