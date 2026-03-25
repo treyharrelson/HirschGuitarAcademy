@@ -41,7 +41,7 @@ export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) =
     >
 
       {/* Top Section: Image and Title side-by-side */}
-      <div className='flex items-start mb-4'>
+      <div className='flex items-start'>
         <img
           className='w-full object-cover rounded-lg flex-shrink-0 border border-gray-100'
           src={imageUrl}
