@@ -1,10 +1,11 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import uniqid from 'uniqid';
 import Quill from 'quill';
+import "quill/dist/quill.snow.css";
 import api from '../../api/axiosInstance';
 import { assets } from '../../assets/assets'
 import { useAppContext } from '../../context/AppContext'
-import { type Lecture, type Module, type Course, type SubModule } from '../../types/course';
+import { type Lecture, type Module, type Course } from '../../types/course';
 
 const AddCourse: React.FC = () => {
 
@@ -15,15 +16,17 @@ const AddCourse: React.FC = () => {
   }
   const inputRef = React.useRef<HTMLInputElement>(null);
   
-  //const { fetchAllCourses } = useAppContext();
   const quillRef = useRef<any>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  const [courseTitle, setCourseTitle] = useState<string>('')
+  const { fetchAllCourses } = useAppContext();
+  
+  const [courseTitle, setCourseTitle] = useState('')
   const [isPrivate, setIsPrivate] = useState<boolean>(false)
   const [image, setImage] = useState<File | string>(assets.defaultCourseThumbnail)
   const [modules, setModules] = useState<Module[]>([])
   const [showPopup, setPopup] = useState<boolean>(false)
+  const [popupType, setPopupType] = useState<'Module' | 'SubModule' | 'Lecture'>('Lecture')
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [statusMsg, setStatusMsg] = useState<string>('')
   const [contentType, setContentType] = useState<string>('Lecture')
@@ -44,18 +47,8 @@ const AddCourse: React.FC = () => {
 
   const handleModule = (action: ModuleAction, moduleId?: string, currentCourseId?: string): void => {
     if (action === 'add') {
-      const title = prompt('Enter Module Name: ');
-      if (title && currentCourseId !== undefined) {
-        const newModule = {
-          id: uniqid(),
-          title: title,
-          content: [],
-          collapsed: false,
-          order: modules.length > 0 ? modules.slice(-1)[0].order + 1 : 1,
-          courseId: currentCourseId
-        };
-        setModules([...modules, newModule]);
-      }
+      setPopupType('Module');
+      setPopup(true);
     } else if (action === 'remove') {
       setModules(modules.filter((module) => String(module.id) !== String(moduleId)));
     } else if (action === 'toggle') {
@@ -71,53 +64,84 @@ const AddCourse: React.FC = () => {
     if (action === 'add' && moduleId !== undefined) {
       setCurrentModuleId(moduleId);
       setCurrentSubModuleIndex(index !== undefined ? index : null);
+      setPopupType('Lecture');
       setPopup(true);
       return;
     }
     if (action === 'save'){
-      setModules((prev) =>
-      prev.map((module) => {
-        if (String(module.id) === String(currentModuleId)){
-          // Adding to SubModule?
-          if (currentSubModuleIndex !== null){
-            const targetItem = module.content[currentSubModuleIndex];
-            if (targetItem && 'collapsed' in targetItem && Array.isArray(targetItem.content) ){
-              const updateContent = module.content.map((item, idx) => {
-                if (idx === currentSubModuleIndex && 'collapsed' in item && Array.isArray(item.content)) {
-                  const newLec: Lecture = {
-                    id: uniqid(),
-                    title: lectureDetails.lectureTitle,
-                    order: item.content.length + 1, // Order relative to submodule
-                    content: '',
-                    module_Id: module.id
-                  };
-                  return { ...item, content: [...item.content, newLec] } as SubModule;
-                }
-                return item;
-              });
-              return { ...module, content: updateContent };
-            }            
-          }
+      if (!lectureDetails.lectureTitle.trim()) return;
 
-          // Case: Adding to Parent Module
-          const newLecture: Lecture = {
-            id: uniqid(),
-            title: lectureDetails.lectureTitle,
-            order: module.content.length + 1,
-            content: '',
-            module_Id: module.id
-          };
-          return { ...module, content: [...module.content, newLecture] };
-        }
-        return module;
-      })
-    );
-    // Cleanup
-    setPopup(false);
-    setCurrentSubModuleIndex(null);
-    setLectureDetails({ lectureTitle: '' });
-    return;
-  }
+      if (popupType === 'Module') {
+        const newModule = {
+          id: uniqid(),
+          title: lectureDetails.lectureTitle,
+          content: [],
+          collapsed: false,
+          order: modules.length > 0 ? modules.slice(-1)[0].order + 1 : 1,
+          courseId: courseId
+        };
+        setModules([...modules, newModule]);
+      } else if (popupType === 'SubModule') {
+        setModules((prevModules) => 
+          prevModules.map((module) => {
+            if (String(module.id) === String(currentModuleId)){
+              const newSubModule: Module = {
+                id: uniqid(),
+                title: lectureDetails.lectureTitle,
+                content: [],
+                collapsed: false,
+                order: module.content.length > 0 ? module.content.length + 1 : 1,
+                courseId: courseId
+              };
+              return { ...module, content: [...module.content, newSubModule]};
+            }
+            return module;
+          })
+        );
+      } else if (popupType === 'Lecture') {
+        setModules((prev) =>
+        prev.map((module) => {
+          if (String(module.id) === String(currentModuleId)){
+            if (currentSubModuleIndex !== null){
+              const targetItem = module.content[currentSubModuleIndex];
+              if (targetItem && 'collapsed' in targetItem && Array.isArray(targetItem.content) ){
+                const updateContent = module.content.map((item, idx) => {
+                  if (idx === currentSubModuleIndex && 'collapsed' in item && Array.isArray(item.content)) {
+                    const newLec: Lecture = {
+                      id: uniqid(),
+                      title: lectureDetails.lectureTitle,
+                      order: item.content.length + 1, // Order relative to submodule
+                      content: '',
+                      module_Id: module.id
+                    };
+                    return { ...item, content: [...item.content, newLec] } as Module;
+                  }
+                  return item;
+                });
+                return { ...module, content: updateContent };
+              }            
+            }
+
+            // Adding to Parent Module
+            const newLecture: Lecture = {
+              id: uniqid(),
+              title: lectureDetails.lectureTitle,
+              order: module.content.length + 1,
+              content: '',
+              module_Id: module.id
+            };
+            return { ...module, content: [...module.content, newLecture] };
+          }
+          return module;
+        })
+      );
+      }
+
+      setPopup(false);
+      setCurrentSubModuleIndex(null);
+      setLectureDetails({ lectureTitle: '' });
+      return;
+    }
 
   // STEP 3: REMOVE
   if (action === 'remove' && moduleId !== undefined && index !== undefined) {
@@ -156,17 +180,10 @@ const AddCourse: React.FC = () => {
         if (String(module.id) === String(moduleId)){
           // ADD NEW SUBMODULE
           if (action === 'add'){
-            const title = prompt('Enter Module Name: ');
-            if (title === null) return module;
-            const newSubModule = {
-              id: uniqid(),
-              title: title,
-              content: [],
-              collapsed: false,
-              order: modules.length > 0 ? modules.slice(-1)[0].order + 1 : 1,
-              //courseId: currentCourseId
-            };
-            return { ...module, content: [...module.content, newSubModule]};
+            setCurrentModuleId(moduleId);
+            setPopupType('SubModule');
+            setPopup(true);
+            return module;
           }
            // REMOVE SUBMODULE
           if (action === 'remove' && index !== undefined){
@@ -202,18 +219,32 @@ const AddCourse: React.FC = () => {
     setSubmitting(true);
     setStatusMsg('');
     try {
+      let thumbnailKey = '';
+      if (image && typeof image !== 'string') {
+          const formData = new FormData();
+          formData.append('file', image);
+          
+          const uploadRes = await api.post('/api/upload/upload', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+              withCredentials: true
+          });
+          thumbnailKey = uploadRes.data.fileKey;
+      } else if (typeof image === 'string' && image !== assets.defaultCourseThumbnail) {
+          thumbnailKey = image;
+      }
+
       const description = quillRef.current ? quillRef.current.getText() : '';
       await api.post('/api/courses', {
         id: courseId,
         name: courseTitle,
         isPrivate: isPrivate,
         description,
-        modules
-        //thumbail: image
+        modules,
+        thumbnail: thumbnailKey || null
       }, { withCredentials: true });
       setStatusMsg('Course created successfully!');
       // Refresh the course list
-      //await fetchAllCourses();
+      await fetchAllCourses();
       // Reset form
       setCourseTitle('');
       setIsPrivate(false);
@@ -344,14 +375,14 @@ const AddCourse: React.FC = () => {
 
           <div className='flex justify-center items-center bg-blue-100 p-2 rounded-lg cursor-pointer' onClick={() => handleModule('add', newId(), courseId)}>+ Add Module</div>
           
-          {/* LECTURE TITLE POPUP */}
+          {/* CONTENT TITLE POPUP */}
           {showPopup && (
             <div className='fixed inset-0 flex items-center justify-center bg-gray-800/50 '>
               <div className='bg-white text-gray-700 p-4 rounded relative w-full max-w-80'>
-                <h2 className='text-lg font-semibold mb-4'>Add Lecture</h2>
+                <h2 className='text-lg font-semibold mb-4'>Add {popupType}</h2>
 
                 <div className='mb-2'>
-                  <p>Lecture Title</p>
+                  <p>{popupType} Title</p>
                   <input
                     ref={inputRef}
                     type='text'

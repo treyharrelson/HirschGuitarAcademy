@@ -6,22 +6,13 @@ export interface Lecture {
     module_Id: string
 }
 
-export interface SubModule {
-    id: string,
-    title: string,
-    order: number,
-    //courseId: number,
-    collapsed: boolean,
-    content: Lecture[]
-}
-
 export interface Module {
     id: string,
     title: string,
     order: number,
     courseId: string,
     collapsed: boolean,
-    content: (SubModule | Lecture)[]
+    content: (Module | Lecture)[]
 }
 
 export interface CourseInstructor {

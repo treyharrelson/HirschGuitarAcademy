@@ -21,7 +21,7 @@ router.get('/my-enrollments', requireRole('student'), async (req, res) => {
                 {
                     // didn't add "as" in relations for some reason, so don't add "as" here, just returns as "Course" in object
                     model: Models.Course,
-                    attributes: ['id', 'name', 'instructorId', 'enrolled', 'isPrivate'],
+                    attributes: ['id', 'name', 'instructorId', 'enrolled', 'isPrivate', 'thumbnail', 'description'],
                     include: [
                         {
                             // added "as" in relations, so returns as "instructor" in object
@@ -44,6 +44,8 @@ router.get('/my-enrollments', requireRole('student'), async (req, res) => {
                 instructor: instructor,
                 enrolled: course.enrolled,
                 isPrivate: course.isPrivate,
+                thumbnail: course.thumbnail,
+                description: course.description
             }
         });
 
@@ -116,7 +118,7 @@ router.delete('/:courseId/enroll', requireRole('student'), async (req, res) => {
 // Create a new course (Maps to POST /api/courses)
 router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
     try {
-        const { name, modules } = req.body;
+        const { name, modules, description, isPrivate, thumbnail } = req.body;
 
         if (!name) {
             return res.status(400).json({ message: 'Course name is required' });
@@ -125,40 +127,54 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
         const newCourse = await Models.Course.sequelize.transaction(async (t) => {
             const course = await Models.Course.create({
                 name,
-                instructorId: req.session.user.id
+                instructorId: req.session.user.id,
+                description: description || null,
+                isPrivate: isPrivate || false,
+                thumbnail: thumbnail || null
             }, { transaction: t });
 
             // If modules exist, process them
             if (modules) {
-                let modulestocreate = []
-                let lecturestocreate = []
                 for (let i = 0; i < modules.length; i++) {
                     const modData = modules[i];
-                    const newModule = await Models.Module.build({
-                        title: modData.moduleTitle,
-                        order: modData.moduleOrder,
-                        courseId: course.id
+                    const newModule = await Models.Module.create({
+                        title: modData.title || 'Untitled Module',
+                        order: modData.order || i + 1,
+                        courseId: course.id,
+                        parentModuleId: null
                     }, { transaction: t });
 
-                    modulestocreate.push(newModule);
+                    if (modData.content && Array.isArray(modData.content)) {
+                        for (let j = 0; j < modData.content.length; j++) {
+                            const item = modData.content[j];
+                            
+                            if (Array.isArray(item.content)) {
+                                const newSubModule = await Models.Module.create({
+                                    title: item.title || 'Untitled Submodule',
+                                    order: item.order || j + 1,
+                                    courseId: course.id,
+                                    parentModuleId: newModule.id
+                                }, { transaction: t });
 
-                    // Process lectures for this module
-                    if (modData.moduleContent && Array.isArray(modData.moduleContent)) {
-                        for (let j = 0; j < modData.moduleContent.length; j++) {
-                            const lecData = modData.moduleContent[j];
-                            const newLecture = await Models.Lecture.create({
-                                title: lecData.lectureTitle,
-                                order: lecData.lectureOrder,
-                                content: lecData.content || '',
-                                moduleId: newModule.id
-                            }, { transaction: t });
-                            lecturestocreate.push(newLecture);
+                                for (let k = 0; k < item.content.length; k++) {
+                                    const subLec = item.content[k];
+                                    await Models.Lecture.create({
+                                        title: subLec.title || 'Untitled Lecture',
+                                        order: subLec.order || k + 1, 
+                                        content: subLec.content || '',
+                                        moduleId: newSubModule.id
+                                    }, { transaction: t });
+                                }
+                            } else {
+                                await Models.Lecture.create({
+                                    title: item.title || 'Untitled Lecture',
+                                    order: item.order || j + 1,
+                                    content: item.content || '',
+                                    moduleId: newModule.id
+                                }, { transaction: t });
+                            }
                         }
                     }
-                }
-                Models.Module.bulkCreate(modulestocreate);
-                if (lecturestocreate) {
-                    Models.Lecture.bulkCreate(lecturestocreate);
                 }
             }
             return course;
@@ -166,6 +182,10 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
 
         res.status(201).json(newCourse);
     } catch (error) {
+        if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+            const messages = error.errors.map(e => e.message).join(', ');
+            return res.status(400).json({ message: `Validation error: ${messages}` });
+        }
         res.status(500).json({ message: `Error creating course: ${error.message}` });
     }
 });
@@ -209,17 +229,95 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Get a specific course by ID (Maps to GET /api/courses/:courseId)
+// Get a specific course by ID with its modules and lectures (Maps to GET /api/courses/:courseId)
 router.get('/:courseId', async (req, res) => {
     try {
         const { courseId } = req.params;
-        const course = await Models.Course.findByPk(courseId);
+        const course = await Models.Course.findByPk(courseId, {
+            include: [
+                {
+                    model: Models.Module,
+                    as: 'modules',
+                    where: { parentModuleId: null },
+                    required: false,
+                    include: [
+                        {
+                            model: Models.Lecture,
+                            as: 'lectures'
+                        },
+                        {
+                            model: Models.Module,
+                            as: 'subModules',
+                            include: [
+                                {
+                                    model: Models.Lecture,
+                                    as: 'lectures'
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            order: [
+                [{ model: Models.Module, as: 'modules' }, 'order', 'ASC'],
+                [{ model: Models.Module, as: 'modules' }, { model: Models.Lecture, as: 'lectures' }, 'order', 'ASC'],
+                [{ model: Models.Module, as: 'modules' }, { model: Models.Module, as: 'subModules' }, 'order', 'ASC'],
+                [{ model: Models.Module, as: 'modules' }, { model: Models.Module, as: 'subModules' }, { model: Models.Lecture, as: 'lectures' }, 'order', 'ASC']
+            ]
+        });
 
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        res.status(200).json(course);
+        let mappedModules = [];
+        if (course.modules) {
+            mappedModules = course.modules.map(mod => {
+                return {
+                    id: mod.id.toString(),
+                    title: mod.title,
+                    order: mod.order,
+                    courseId: mod.courseId.toString(),
+                    collapsed: false,
+                    content: [
+                        ...(mod.subModules ? mod.subModules.map(subMod => ({
+                            id: subMod.id.toString(),
+                            title: subMod.title,
+                            order: subMod.order,
+                            courseId: subMod.courseId.toString(),
+                            collapsed: false,
+                            content: subMod.lectures ? subMod.lectures.map(lec => ({
+                                id: lec.id.toString(),
+                                title: lec.title,
+                                order: lec.order,
+                                content: lec.content,
+                                moduleId: lec.moduleId.toString()
+                            })).sort((a,b)=>a.order - b.order) : []
+                        })) : []),
+                        ...(mod.lectures ? mod.lectures.map(lec => ({
+                            id: lec.id.toString(),
+                            title: lec.title,
+                            order: lec.order,
+                            content: lec.content,
+                            moduleId: lec.moduleId.toString()
+                        })) : [])
+                    ].sort((a,b)=>a.order - b.order)
+                };
+            });
+        }
+
+        const courseData = {
+            id: course.id.toString(),
+            name: course.name,
+            instructorId: course.instructorId,
+            enrolled: course.enrolled,
+            isPrivate: course.isPrivate,
+            description: course.description,
+            thumbnail: course.thumbnail,
+            modules: mappedModules
+        };
+
+        res.status(200).json(courseData);
     } catch (error) {
         res.status(500).json({ message: `Error fetching course: ${error.message}` });
     }

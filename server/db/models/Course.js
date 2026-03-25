@@ -33,6 +33,14 @@ const Course = sequelize.define(
 			defaultValue: false,
 			field: 'is_private',
 		},
+		description: {
+			type: DataTypes.TEXT,
+			allowNull: true,
+		},
+		thumbnail: {
+			type: DataTypes.STRING,
+			allowNull: true,
+		},
 	},
 	{
 		tableName: 'Courses',

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { AppContextProvider } from './context/AppContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -15,10 +16,11 @@ import Home from './pages/student/Home';
 import CourseList from './pages/student/CourseList';
 import CourseDetails from './pages/student/CourseDetails';
 import MyEnrollments from './pages/student/MyEnrollments';
-import Player from './pages/student/Player';
+import CourseView from './pages/student/CourseView';
 import Loading from './components/student/Loading';
 import StudentsEnrolled from './pages/instructor/StudentsEnrolled'
 import AddCourse from './pages/instructor/AddCourse'
+import InstructorMyCourses from './pages/instructor/MyCourses'
 import Instructor from './pages/instructor/Instructor'
 import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
 import ProtectedRoute from './context/ProtectedRoute';
@@ -32,6 +34,7 @@ function App() {
 
   return (
     <AuthProvider>
+      <AppContextProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Login />} />
@@ -50,20 +53,21 @@ function App() {
           <Route path='/home' element={<Home />} />
           <Route path='/course-list' element={<CourseList />} />
           <Route path='/course-list/:input?' element={<CourseList />} />
-          <Route path='/course/:id' element={<CourseDetails />} />
+          <Route path='/course-info/:id' element={<CourseDetails />} />
           <Route path='/my-enrollments' element={<MyEnrollments />} />
-          <Route path='/player/:courseId' element={<Player />} />
+          <Route path='/course/:courseId' element={<CourseView />} />
           <Route path='/loading/:path' element={<Loading />} />
           
           <Route path='/instructor' element={<Instructor />}>
             <Route path='/instructor' element={<InstrcutorDashboard />} />
             <Route path='add-course' element={<AddCourse />} />
-            <Route path='my-courses' element={<MyCourses />} />
+            <Route path='my-courses' element={<InstructorMyCourses />} />
             <Route path='students-enrolled' element={<StudentsEnrolled />} />
           </Route>
           </Route>
         </Routes>
       </BrowserRouter>
+      </AppContextProvider>
     </AuthProvider>
   );
 }
