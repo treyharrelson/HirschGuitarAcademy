@@ -324,14 +324,14 @@ const AddCourse: React.FC = () => {
                         <div key={index} className='mb-4 ml-4 p-2 border-l-2 border-blue-200 bg-gray-50/50'>
                           <div className='flex justify-between items-center font-semibold text-gray-700'>
                             <img 
-                              onClick={(e) => {e.stopPropagation(); handleSubModule('toggle', item.id, index)}}  
+                              onClick={(e) => {e.stopPropagation(); handleSubModule('toggle', module.id, index)}}  
                               src={assets.dropDown_icon} 
                               alt='dropdown icon'  
                               width={14} 
                               className={`mr-2 w-4 h-4 cursor-pointer transition-all ${item.collapsed && "-rotate-90"}`} 
                             />
                             <span>SubModule: {item.title}</span>
-                            <img src={assets.cross_icon} alt='cross icon' className='ml-auto cursor-pointer w-4 h-4' onClick={(e) => {e.stopPropagation(); handleSubModule('remove', item.id, index)}} />
+                            <img src={assets.cross_icon} alt='cross icon' className='ml-auto cursor-pointer w-4 h-4' onClick={(e) => {e.stopPropagation(); handleSubModule('remove', module.id, index)}} />
                             
                           </div>
                           <div className='ml-4 mt-2'>
