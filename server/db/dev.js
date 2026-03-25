@@ -51,7 +51,7 @@ async function generateFakeData(table, amount) {
 				break;
 
 			case 'Course':
-				const instructorId = await getRandomId(Models.User) || 1;
+				const instructorId = await getRandomId(Models.User, {where: {role: 'instructor'}}) || 1;
 				record = {
 					name: faker.company.catchPhrase() + ' ' + Math.random().toString(36).substring(7),
 					instructorId,
