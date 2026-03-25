@@ -43,7 +43,7 @@ export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) =
       {/* Top Section: Image and Title side-by-side */}
       <div className='flex items-start gap-4 mb-4'>
         <img
-          className='w-16 h-16 object-cover rounded-lg flex-shrink-0 border border-gray-100'
+          className='w-full object-cover rounded-lg flex-shrink-0 border border-gray-100'
           src={imageUrl}
           alt={`${course.name} Thumbnail`}
         />
