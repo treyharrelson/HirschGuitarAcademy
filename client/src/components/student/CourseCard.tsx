@@ -47,14 +47,14 @@ export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) =
           src={imageUrl}
           alt={`${course.name} Thumbnail`}
         />
-        <div>
+      </div>
+      <div>
           <h3 className='text-base font-semibold text-gray-800 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors'>
             {course.name}
           </h3>
           <p className='text-sm text-gray-500 mt-1'>
             {course.instructor ? `${course.instructor.firstName} ${course.instructor.lastName}` : 'Unknown Instructor'}
           </p>
-        </div>
       </div>
 
       <div className='flex-grow text-sm text-gray-600'>
