@@ -14,7 +14,7 @@ const MyCourses: React.FC = () => {
   // Assuming the user object has the same integer id as the DB
   const myCourses = allCourses ? allCourses.filter(c => c.instructorId == user?.id) : []
 
-  const handleDelete = async (courseId: string | number): Promise<void> => {
+  const handleDelete = async (courseId: string): Promise<void> => {
     if (!window.confirm("Are you sure you want to delete this course?")) return;
     setIsDeleting(true)
     try {

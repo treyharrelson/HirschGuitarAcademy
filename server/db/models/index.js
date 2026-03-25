@@ -93,10 +93,11 @@ Message.belongsTo(User, { foreignKey: 'recipientId', as: 'recipient' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
-// User to subscriptions
-User.hasOne(Subscription, { foreignKey: 'userId', as: 'subscriptions' });
+// User to thread subscriptions
+User.hasMany(Subscription, { foreignKey: 'userId', as: 'subscriptions' });
+Thread.hasMany(Subscription, { foreignKey: 'threadId', as: 'subscriptions'})
 Subscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-
+Subscription.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
 
 // Belt to Course and User
 User.hasMany(Belt, { foreignKey: 'userId', as: 'belts' });

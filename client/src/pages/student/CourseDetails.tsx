@@ -20,7 +20,7 @@ const CourseDetails: React.FC = () => {
 
   const fetchCourseData = async () => {
     // Note: The id coming from useParams is a string, but our database id is likely an integer. So use == instead of ===
-    const findCourse = allCourses.find((course: Course) => course.id == id)
+    const findCourse = allCourses.find((course: Course) => course.id === id)
     setCourseData(findCourse || null)
   }
 

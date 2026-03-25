@@ -16,4 +16,8 @@ export interface Post {
         lastName: string;
     };
     attachments?: Attachment[];
+    thread?: {
+        id: number;
+        title: string;
+    };
 }

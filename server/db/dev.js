@@ -103,7 +103,8 @@ async function generateFakeData(table, amount) {
 
 			case 'Subscription':
 				record = {
-					userId: await getRandomId(Models.User) || 1
+					userId: await getRandomId(Models.User) || 1,
+					threadId: await getRandomId(Models.Thread) || 1,
 				};
 				break;
 
