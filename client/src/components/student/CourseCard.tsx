@@ -62,7 +62,7 @@ export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) =
       </div>
       </Link>
 
-      <div className='mt-auto pt-4'>
+      <div className=''>
         <BigBlueButton children={enrolled} onClick={buttonclick} />
       </div>
 
