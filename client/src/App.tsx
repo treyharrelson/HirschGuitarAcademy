@@ -13,7 +13,6 @@ import MyCourses from './pages/MyCourses';
 import MainLayout from './pages/MainLayout';
 import './App.css';
 import Home from './pages/student/Home';
-import CourseList from './pages/student/CourseList';
 import CourseDetails from './pages/student/CourseDetails';
 import MyEnrollments from './pages/student/MyEnrollments';
 import CourseView from './pages/student/CourseView';
@@ -51,8 +50,6 @@ function App() {
           <Route path="/timer" element={<MyCourses />} />
 
           <Route path='/home' element={<Home />} />
-          <Route path='/course-list' element={<CourseList />} />
-          <Route path='/course-list/:input?' element={<CourseList />} />
           <Route path='/course-info/:id' element={<CourseDetails />} />
           <Route path='/my-enrollments' element={<MyEnrollments />} />
           <Route path='/course/:courseId' element={<CourseView />} />
