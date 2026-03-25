@@ -24,6 +24,14 @@ const Module = sequelize.define(
             allowNull: false,
             field: 'course_id'
         },
+        parentModuleId: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: 'Modules',
+                key: 'id'
+            }
+        }
     },
     {
         tableName: 'Modules',

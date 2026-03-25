@@ -50,6 +50,10 @@ Enrollment.belongsTo(Course, { foreignKey: 'courseId' });
 Course.hasMany(Module, { foreignKey: 'courseId', as: 'modules' });
 Module.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
 
+// Module to SubModules (Self-reference)
+Module.hasMany(Module, { foreignKey: 'parentModuleId', as: 'subModules' });
+Module.belongsTo(Module, { foreignKey: 'parentModuleId', as: 'parentModule' });
+
 // Module to Lectures
 Module.hasMany(Lecture, { foreignKey: 'moduleId', as: 'lectures' });
 Lecture.belongsTo(Module, { foreignKey: 'moduleId', as: 'module' });
