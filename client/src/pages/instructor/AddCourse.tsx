@@ -7,7 +7,7 @@ import { useAppContext } from '../../context/AppContext'
 import { useCourseEditor } from '../../hooks/useCourseEditor'
 
 const AddCourse: React.FC = () => {
-  const { state, handlers, refs, setters, newId } = useCourseEditor();
+  const { state, handlers, refs, setters } = useCourseEditor();
   const { fetchAllCourses } = useAppContext();
 
   const [submitting, setSubmitting] = useState<boolean>(false)
