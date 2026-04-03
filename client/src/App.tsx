@@ -11,7 +11,6 @@ import MyCourses from './pages/MyCourses';
 // import Metronome from './pages/student/metronome-tool/js/metronome';
 // import Timer from './pages/student/metronome-tool/js/timer';
 import MainLayout from './pages/MainLayout';
-import './App.css';
 import CourseDetails from './pages/student/CourseDetails';
 import MyEnrollments from './pages/student/MyEnrollments';
 import CourseView from './pages/student/CourseView';
