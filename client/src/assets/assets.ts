@@ -8,6 +8,8 @@ import upload_icon from './upload-outline.png'
 import logo from './HGA_Logo.png'
 import logoNoBackground from './HGA_Logo_No_Background.png'
 import defaultCourseThumbnail from './defaultCourseThumbnail.jpg'
+import userIcon from './userIcon.svg'
+import logoutIcon from './logout.svg'
 
 export const assets = {
     book_icon,
@@ -19,5 +21,7 @@ export const assets = {
     upload_icon,
     logo,
     defaultCourseThumbnail,
-    logoNoBackground
+    logoNoBackground,
+    userIcon,
+    logoutIcon
 }

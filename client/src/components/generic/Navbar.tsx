@@ -4,6 +4,7 @@ import logo from '../../assets/HGA_Logo_No_Background.png'
 import { useAuth } from '../../context/AuthContext'
 import { NavBarButton, BigBlueButton } from './Buttons'
 import api from '../../api/axiosInstance';
+import { assets } from '../../assets/assets'
 
 type RoleLink = {
   label: string;
@@ -79,7 +80,7 @@ const Navbar = () => {
         <div>
           <RenderLinks />
         </div>
-        <button><img src='' alt='User Icon' /></button>
+        <button onClick={handleLogout}><img src={assets.logoutIcon} alt='Logout Icon' className='w-6 h-6' /></button>
       </div>
     </div>
   )

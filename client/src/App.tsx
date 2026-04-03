@@ -38,7 +38,10 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
+          {/** THIS IS THE MAIN RENDERED PAGE */}
           <Route element={<MainLayout />}>
+          
           <Route path="/student-dashboard" element={<Dashboard />} />
           <Route path="/admin-dashboard" element={<Dashboard />} />
           <Route path="/forum" element={<Forum />} />
