@@ -148,6 +148,5 @@ export const useCourseEditor = (initialData?: any) => {
     setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails },
     refs: { inputRef, quillRef, editorRef },
     handlers: { handleModule, handleSubModule, handleLecture, handleContent },
-    newId
   };
 };
