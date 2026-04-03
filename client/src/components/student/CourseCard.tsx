@@ -33,12 +33,12 @@ export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) =
   }, [course.thumbnail]);
 
   return (
-    <div className='pb-2 flex flex-col aspect-square border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 bg-white group'>
-    <Link 
-      to={`/course/${course.id}`}
-      onClick={() => scrollTo(0, 0)}
-      className='flex flex-col flex-grow'
-    >
+    <div className='pb-2 flex flex-col w-60 aspect-square border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 bg-white group'>
+      <Link 
+        to={`/course/${course.id}`}
+        onClick={() => scrollTo(0, 0)}
+        className='flex flex-col flex-grow'
+      >
 
       {/* Top Section: Image */}
       <div className='flex items-start'>
