@@ -5,7 +5,7 @@ import "quill/dist/quill.snow.css";
 import api from '../../api/axiosInstance';
 import { assets } from '../../assets/assets'
 import { useAppContext } from '../../context/AppContext'
-import { type Lecture, type Module, type Course } from '../../types/course';
+import { type Lecture, type Module } from '../../types/course';
 
 const AddCourse: React.FC = () => {
 
@@ -34,18 +34,12 @@ const AddCourse: React.FC = () => {
 
   const [currentModuleId, setCurrentModuleId] = useState<string | null>(null)
   const [currentSubModuleIndex, setCurrentSubModuleIndex] = useState<number | null>(null);
-  //const [moduleDetails, setModuleDetails] = useState({
-  //  moduleTitle: ''
-  //})
+  
   type ModuleAction = 'add' | 'remove' | 'toggle' | 'save';
 
-  //const [lectures, setLectures] = useState<Lecture[]>([])
-  //const [currentLectureId, setCurrentLectureId] = useState<number | null>(null)
-  const [lectureDetails, setLectureDetails] = useState({
-    lectureTitle: ''
-  })
+  const [lectureDetails, setLectureDetails] = useState({ lectureTitle: '' })
 
-  const handleModule = (action: ModuleAction, moduleId?: string, currentCourseId?: string): void => {
+  const handleModule = (action: ModuleAction, moduleId?: string): void => {
     if (action === 'add') {
       setPopupType('Module');
       setPopup(true);
@@ -302,7 +296,7 @@ const AddCourse: React.FC = () => {
               <div className='flex justify-between items-center p-4 border-b'>
                 <div className='flex items-center'>
                   <img 
-                    onClick={() => handleModule('toggle', module.id, courseId)}  
+                    onClick={() => handleModule('toggle', module.id)}  
                     src={assets.dropDown_icon} 
                     alt='dropdown icon'  
                     width={14} 
@@ -373,7 +367,7 @@ const AddCourse: React.FC = () => {
             </div>
           ))}
 
-          <div className='flex justify-center items-center bg-blue-100 p-2 rounded-lg cursor-pointer' onClick={() => handleModule('add', newId(), courseId)}>+ Add Module</div>
+          <div className='flex justify-center items-center bg-blue-100 p-2 rounded-lg cursor-pointer' onClick={() => handleModule('add', newId())}>+ Add Module</div>
           
           {/* CONTENT TITLE POPUP */}
           {showPopup && (
