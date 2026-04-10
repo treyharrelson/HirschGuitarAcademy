@@ -4,11 +4,14 @@ import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Thread } from '../types/thread';
 import ThreadCard from '../components/generic/ThreadCard';
+import SkeletonPostCard from '../components/generic/SkeletonPostCard';
+import SkeletonThreadCard from '../components/generic/SkeletonThreadCard';
 
 function Forum() {
     const [threads, setThreads] = useState<Thread[]>([]);
     const [title, setTitle] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
     const { user } = useAuth();
 
     console.log('Current user in Forum:', user);
@@ -18,6 +21,8 @@ function Forum() {
             setThreads(response.data);
         } catch (err) {
             setError('Error loading threads');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -78,9 +83,10 @@ function Forum() {
 
         {/* Thread list */}
         <div className="flex flex-col gap-3">
-        {threads.map(thread => (
-            <ThreadCard key={thread.id} thread={thread} />
-        ))}
+            {loading
+                ? Array.from({ length: 3}).map((_, i) => <SkeletonThreadCard key={i} />)
+                : threads.map(thread => <ThreadCard key={thread.id} thread={thread} />)
+            }
         </div>
     </div>
     );

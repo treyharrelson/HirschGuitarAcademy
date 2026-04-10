@@ -4,6 +4,7 @@ import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Course } from '../types/course';
 import { CourseCard } from '../components/student/CourseCard';
+import Loading from '../components/student/Loading';
 
 
 const MyCourses: React.FC = () => {
@@ -49,7 +50,7 @@ const MyCourses: React.FC = () => {
         </>
     );
 
-    if (loading) return <p>Loading your courses...</p>;
+    if (loading) return <Loading />;
     if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
     return (
