@@ -20,6 +20,7 @@ import AddCourse from './pages/instructor/AddCourse'
 import InstructorMyCourses from './pages/instructor/MyCourses'
 import Instructor from './pages/instructor/Instructor'
 import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
+import EditCourse from './pages/instructor/EditCourse'
 
 import "quill/dist/quill.snow.css";
 
@@ -57,6 +58,7 @@ function App() {
             <Route path='add-course' element={<AddCourse />} />
             <Route path='my-courses' element={<InstructorMyCourses />} />
             <Route path='students-enrolled' element={<StudentsEnrolled />} />
+            <Route path='edit-course/:courseId' element={<EditCourse />}/>
           </Route>
           </Route>
         </Routes>

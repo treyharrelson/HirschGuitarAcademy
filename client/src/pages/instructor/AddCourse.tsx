@@ -5,8 +5,10 @@ import api from '../../api/axiosInstance';
 import { assets } from '../../assets/assets'
 import { useAppContext } from '../../context/AppContext'
 import { useCourseEditor } from '../../hooks/useCourseEditor'
+import { useNavigate } from 'react-router-dom'
 
 const AddCourse: React.FC = () => {
+  const navigate = useNavigate();
   const { state, handlers, refs, setters } = useCourseEditor();
   const { fetchAllCourses } = useAppContext();
 
@@ -22,6 +24,7 @@ const AddCourse: React.FC = () => {
     }
     setSubmitting(true);
     setStatusMsg('');
+
     try {
       let thumbnailKey = '';
       if (state.image && typeof state.image !== 'string') {
@@ -38,22 +41,31 @@ const AddCourse: React.FC = () => {
       }
 
       const description = refs.quillRef.current ? refs.quillRef.current.getText() : '';
-      await api.post('/api/courses', {
-        //id: state.courseId,
+
+      const response = await api.post('/api/courses', {
         name: state.courseTitle,
         isPrivate: state.isPrivate,
         description,
         modules: state.modules,
         thumbnail: thumbnailKey || null
       }, { withCredentials: true });
+
       setStatusMsg('Course created successfully!');
+
       // Refresh the course list
       await fetchAllCourses();
-      // Reset form
-      setters.setCourseTitle('');
-      setters.setIsPrivate(false);
-      setters.setModules([]);
-      if (refs.quillRef.current) refs.quillRef.current.setContents([]);
+
+      const newCourseId = response.data.course?._id || response.data._id || response.data.id;
+      if(newCourseId){
+        navigate(`/instructor/edit-course/${newCourseId}`)
+      } else {
+        // Reset form
+        setters.setCourseTitle('');
+        setters.setIsPrivate(false);
+        setters.setModules([]);
+        if (refs.quillRef.current) refs.quillRef.current.setContents([]);
+      }
+      
     } catch (err: any) {
       setStatusMsg(err.response?.data?.message || 'Failed to create course.');
     } finally {
