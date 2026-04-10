@@ -15,6 +15,7 @@ function ThreadDetail() {
   const [postsLoaded, setPostsLoaded] = useState(false);
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploadKey, setUploadKey] = useState(0);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [thread, setThread] = useState<Thread | null>(null);
   const [error, setError] = useState('');
@@ -97,6 +98,7 @@ function ThreadDetail() {
       
       setContent('');
       setAttachments([]);
+      setUploadKey(k => k + 1);
       loadPosts();
     } catch (err) {
       setError('Error creating post');
@@ -157,7 +159,7 @@ function ThreadDetail() {
           style={{ width: '100%' }}
         />
 
-        <FileUpload onUploadComplete={(file) => setAttachments((prev) => [...prev, file])} />
+        <FileUpload key={uploadKey} onUploadComplete={(file) => setAttachments((prev) => [...prev, file])} />
 
         {attachments.length > 0 && (
           <div style={{ marginTop: '8px' }}>
@@ -166,7 +168,11 @@ function ThreadDetail() {
               <div key={i} style={{ fontSize: '0.85em' }}>
                 📎{att.fileName}
                 <button
-                  onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
+                  onClick={() => {
+                    setAttachments((prev) => prev.filter((_, j) => j !== i));
+                    setUploadKey(k => k + 1);
+                  }}
+                  
                   style={{ marginLeft: '8px', color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   Remove
