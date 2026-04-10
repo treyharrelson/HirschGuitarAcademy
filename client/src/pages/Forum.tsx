@@ -15,7 +15,6 @@ function Forum() {
     const [searchQuery, setSearchQuery] = useState('');
     const { user } = useAuth();
 
-    console.log('Current user in Forum:', user);
     const loadThreads = async () => {
         try {
             const response = await api.get('/api/threads');
@@ -50,7 +49,7 @@ function Forum() {
     const filteredThreads = threads.filter(thread =>
         thread.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    console.log('searchQuery:', searchQuery, 'filtered:', filteredThreads.length);
+    
     return (
     <div>
         {/* Header */}
