@@ -3,22 +3,25 @@ const router = express.Router();
 const Models = require('../db/models');
 // for Server-Sent-Events(SSE), used to map connected userId's to their response objects
 const userClients = new Map();
+const { Op } = require('sequelize');
 
-// Get all threads (Maps to /api/threads)
+// Get a # of threads at a time with offset pagination logic (Maps to /api/threads)
 router.get('/', async (req, res) => {
-	try {
-		const threads = await Models.Thread.findAll({
-			include: [{
-				model: Models.User,
-				as: 'author',
-				attributes: ['userName', 'firstName', 'lastName']
-			}],
-			order: [['createdAt', 'DESC']]
-		});
-		res.json(threads);
-	} catch (error) {
-		res.status(500).json({ message: `Error fetching threads: ${error}` });
-	}
+    try {
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = parseInt(req.query.offset) || 0;
+
+        const { count, rows: threads } = await Models.Thread.findAndCountAll({
+            include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }],
+            order: [['createdAt', 'DESC']],
+            limit,
+            offset
+        });
+
+        res.json({ threads, total: count, hasMore: offset + limit < count });
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching threads: ${error}` });
+    }
 });
 
 // Create a thread (Maps to /api/threads)
@@ -67,30 +70,83 @@ router.get('/stream', (req, res) => {
 	});
 });
 
+// gets a # of posts at a time to put on user's main feed based on the threads they are
+// subscribed to. Uses offset pagination logic
+// maps to Get /api/threads/feed/posts
 router.get('/feed/posts', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 20;
+        const offset = parseInt(req.query.offset) || 0;
+
+        const subs = await Models.Subscription.findAll({
+            where: { userId: req.session.user.id }
+        });
+        const threadIds = subs.map(s => s.threadId);
+        if (threadIds.length === 0) return res.json({ posts: [], total: 0, hasMore: false });
+
+        const { count, rows: posts } = await Models.Post.findAndCountAll({
+            where: { threadId: threadIds },
+            include: [
+                { model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+                { model: Models.Thread, as: 'thread', attributes: ['id', 'title'] }
+            ],
+            order: [['createdAt', 'DESC']],
+            limit,
+            offset
+        });
+
+        res.json({ posts, total: count, hasMore: offset + limit < count });
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching feed: ${error}` });
+    }
+});
+
+// Get a user's followed threads (maps to /api/threads/follows)
+router.get('/follows', async (req, res) => {
 	try {
-		const subs = await Models.Subscription.findAll({
-			where: { userId: req.session.user.id }
+		const follows = await Models.Subscription.findAll({
+			where: { userId: req.session.user.id },
+			include: [{
+				model: Models.Thread,
+				as: 'thread',
+				include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName']}]
+			}],
+			order: [['createdAt', 'DESC']]
 		});
 
-		const threadIds = subs.map(s => s.threadId);
+		const followsWithUnread = await Promise.all(follows.map(async (follows) => {
+            const since = follows.lastReadAt || follows.createdAt;
+            const unreadCount = await Models.Post.count({
+                where: { threadId: follows.threadId, createdAt: { [Op.gt]: since } }
+            });
+            return { ...follows.toJSON(), unreadCount };
+        }));
 
-		if (threadIds.length === 0) return res.json([]);
-
-		const posts = await Models.Post.findAll({
-			where: { threadId: threadIds },
-			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
-				{ model: Models.Thread, as: 'thread', attributes: ['id', 'title'] }
-			],
-			order: [['createdAt', 'DESC']],
-			limit: 20
-		});
-
-		res.json(posts);
-	} catch (error) {
-		res.status(500).json({ message: `Error fetching feed: ${error}` });
+		res.json(followsWithUnread);
+	}	catch (error) {
+		res.status(500).json({ message: `Error fetching followed threads: ${error}` });
 	}
+});
+
+// get unread count for all followed threads (maps to /api/threads/unread-counts)
+router.get('/unread-counts', async (req, res) => {
+    try {
+        const follows = await Models.Subscription.findAll({
+            where: { userId: req.session.user.id }
+        });
+
+        const entries = await Promise.all(follows.map(async (follows) => {
+            const since = follows.lastReadAt || follows.createdAt;
+            const count = await Models.Post.count({
+                where: { threadId: follows.threadId, createdAt: { [Op.gt]: since } }
+            });
+            return [follows.threadId, count];
+        }));
+
+        res.json(Object.fromEntries(entries));
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching unread counts: ${error}` });
+    }
 });
 
 // Get a single thread by ID
@@ -241,6 +297,19 @@ router.delete('/:threadId/subscribe', async (req, res) => {
 	} catch (error) {
 		res.status(500).json({ message: `Error unsubscribing: ${error}` });
 	}
+});
+
+// updates lastReadAt on the followed thread
+router.post('/:threadId/read', async (req, res) => {
+    try {
+        const [follow] = await Models.Subscription.findOrCreate({
+            where: { userId: req.session.user.id, threadId: req.params.threadId }
+        });
+        await follow.update({ lastReadAt: new Date() });
+        res.json({ lastReadAt: follow.lastReadAt });
+    } catch (error) {
+        res.status(500).json({ message: `Error marking as read: ${error}` });
+    }
 });
 
 module.exports = router;

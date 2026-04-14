@@ -6,25 +6,53 @@ import { type Thread } from '../types/thread';
 import ThreadCard from '../components/generic/ThreadCard';
 
 function Forum() {
+    const LIMIT = 20;
     const [threads, setThreads] = useState<Thread[]>([]);
+    const [offset, setOffset] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [unreadCounts, setUnreadCounts] = useState<Record<number, number>>({});
     const [title, setTitle] = useState('');
     const [error, setError] = useState('');
     const { user } = useAuth();
 
-    console.log('Current user in Forum:', user);
-    const loadThreads = async () => {
+    const loadThreads = async (currentOffset = 0, append = false) => {
         try {
-            const response = await api.get('/api/threads');
-            setThreads(response.data);
+            const response = await api.get('/api/threads', {
+                params: { limit: LIMIT, offset: currentOffset }
+            });
+            const {threads: newThreads, hasMore: more } = response.data;
+            setThreads(prev => append ? [...prev, ...newThreads] : newThreads);
+            setHasMore(more);
         } catch (err) {
             setError('Error loading threads');
         }
     };
 
+    const loadUnreadCounts = async () => {
+        try {
+            const res = await api.get('/api/threads/unread-counts');
+            setUnreadCounts(res.data);
+        } catch {
+            // silently skip
+        }
+    }
+
+    // submit event for the load more button
+    const handleLoadMore = async () => {
+        setLoadingMore(true);
+        const newOffset = offset + LIMIT;
+        await loadThreads(newOffset, true);
+        setOffset(newOffset);
+        setLoadingMore(false);
+    }
+
     useEffect(() => {
-        loadThreads();
+        loadThreads(0, false);
+        loadUnreadCounts();
     }, []);
 
+    // submit event for creating a new thread
     const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
         
@@ -34,7 +62,8 @@ function Forum() {
             );
 
             setTitle('');
-            loadThreads();
+            setOffset(0);
+            loadThreads(0, false); // reset to top after creating
         } catch (err: any) {
             console.error('Error creating thread: ', err);
             setError(err.response?.data?.message || 'Error creating thread');
@@ -79,9 +108,19 @@ function Forum() {
         {/* Thread list */}
         <div className="flex flex-col gap-3">
         {threads.map(thread => (
-            <ThreadCard key={thread.id} thread={thread} />
+            <ThreadCard key={thread.id} thread={thread} unreadCount={unreadCounts[thread.id]} />
         ))}
         </div>
+
+        {hasMore && (
+            <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="w-full mt-4 py-2 text-sm text-blue-600 font-semibold border border-blue-200 rounded-full hover:bg-blue-50 transition-all disabled:opacity-50"
+            >
+                {loadingMore ? 'Loading...' : 'Load More'}
+            </button>
+        )}
     </div>
     );
 }

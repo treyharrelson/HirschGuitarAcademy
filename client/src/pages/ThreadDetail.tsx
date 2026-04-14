@@ -61,7 +61,16 @@ function ThreadDetail() {
     }
   };
 
+  const markAsRead = async () => {
+    try {
+        await api.post(`/api/threads/${threadId}/read`);
+    } catch {
+        // non-critical
+    }
+  };
+
   useEffect(() => {
+    markAsRead();
     loadSubscriptionStatus();
     loadPosts();
     loadThread();
@@ -120,7 +129,7 @@ function ThreadDetail() {
               : 'bg-blue-600 text-white hover:bg-blue-700 border-transparent'
           }`}
         >
-          {isSubscribed ? '✓ Subscribed' : '+ Subscribe'}
+          {isSubscribed ? '✓ Following' : '+ Follow'}
         </button>
       </div>
     </div>

@@ -19,6 +19,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     ],
     student: [
         { label: 'Forum', path: '/forum', button: DashButton },
+        { label: 'Followed Threads', path: '/follows', button: DashButton },
         { label: 'View Available Courses', path: '/all-courses', button: DashButton },
         { label: 'My Courses', path: '/courses', button: DashButton },
         { label: 'Metronome', path: '/metronome', button: DashButton },
@@ -36,21 +37,38 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
 
 
 function Dashboard() {
+    const LIMIT = 20;
     const { user, loading } = useAuth();
     const navigate = useNavigate();
+    const [feedOffset, setFeedOffset] = useState(0);
+    const [feedHasMore, setFeedHasMore] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [feedPosts, setFeedPosts] = useState<Post[]>([]);
 
-    const loadFeed = async () => {
+    const loadFeed = async (currentOffset = 0, append = false) => {
         try {
-            const response = await api.get('/api/threads/feed/posts');
-            setFeedPosts(response.data);
+            const response = await api.get('/api/threads/feed/posts', {
+                params: { limit: LIMIT, offset: currentOffset }
+            });
+            const { posts, hasMore } = response.data;
+            setFeedPosts(prev => append ? [...prev, ...posts] : posts);
+            setFeedHasMore(hasMore);
         } catch (err) {
             console.error('Error loading feed');
         }
     };
 
+    // submit event for the load more button
+    const handleLoadMore = async () => {
+        setLoadingMore(true);
+        const newOffset = feedOffset + LIMIT;
+        await loadFeed(newOffset, true);
+        setFeedOffset(newOffset);
+        setLoadingMore(false);
+    }
+
     useEffect(() => {
-        loadFeed();
+        loadFeed(0, false);
 
         const es = new EventSource(`${api.defaults.baseURL}/api/threads/stream`, { withCredentials: true });
 
@@ -116,6 +134,17 @@ function Dashboard() {
                     ))}
                     </div>
                 )}
+            
+                {feedHasMore && (
+                    <button
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                        className="w-full mt-4 py-2 text-sm text-blue-600 font-semibold border border-blue-200 rounded-full hover:bg-blue-50 transition-all disabled:opacity-50"
+                    >
+                        {loadingMore ? 'Loading...' : 'Load More'}
+                    </button>
+                )}
+
             </div>
 
         </div>
