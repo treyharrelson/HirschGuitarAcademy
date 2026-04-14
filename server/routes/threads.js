@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
 		// auto subscribe the thread author
 		await Models.Subscription.findOrCreate({
 			where: {
-				userId: req.sessionStore.user.id,
+				userId: req.session.user.id,
 				threadId: newThread.id
 			}
 		});
