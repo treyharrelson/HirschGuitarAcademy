@@ -31,6 +31,14 @@ router.post('/', async (req, res) => {
 			authorId: req.session.user.id
 		});
 
+		// auto subscribe the thread author
+		await Models.Subscription.findOrCreate({
+			where: {
+				userId: req.session.user.id,
+				threadId: newThread.id
+			}
+		});
+
 		res.status(201).json(newThread);
 	} catch (error) {
 		if (error.name === 'SequelizeUniqueConstraintError') {
