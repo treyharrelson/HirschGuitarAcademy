@@ -12,8 +12,6 @@ import ThreadFollows from './pages/ThreadFollows';
 // import Metronome from './pages/student/metronome-tool/js/metronome';
 // import Timer from './pages/student/metronome-tool/js/timer';
 import MainLayout from './pages/MainLayout';
-import './App.css';
-import Home from './pages/student/Home';
 import CourseDetails from './pages/student/CourseDetails';
 import MyEnrollments from './pages/student/MyEnrollments';
 import CourseView from './pages/student/CourseView';
@@ -23,11 +21,9 @@ import AddCourse from './pages/instructor/AddCourse'
 import InstructorMyCourses from './pages/instructor/MyCourses'
 import Instructor from './pages/instructor/Instructor'
 import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
-import ProtectedRoute from './context/ProtectedRoute';
-
+import EditCourse from './pages/instructor/EditCourse'
 
 import "quill/dist/quill.snow.css";
-import Navbar from './components/generic/Navbar';
 
 function App() {
   //const [count, setCount] = useState(0)
@@ -39,9 +35,11 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
+          {/** THIS IS THE MAIN RENDERED PAGE */}
           <Route element={<MainLayout />}>
-          <Route path="/student-dashboard" element={<Dashboard />} />
-          <Route path="/admin-dashboard" element={<Dashboard />} />
+
+          <Route path="/home" element={<Dashboard />} />
           <Route path="/forum" element={<Forum />} />
           <Route path="/forum/thread/:threadId" element={<ThreadDetail />} />
           <Route path="/follows" element={<ThreadFollows />} />
@@ -51,7 +49,7 @@ function App() {
           <Route path="/metronome" element={<MyCourses />} />
           <Route path="/timer" element={<MyCourses />} />
 
-          <Route path='/home' element={<Home />} />
+          {/**<Route path='/home' element={<Home />} /> */}
           <Route path='/course-info/:id' element={<CourseDetails />} />
           <Route path='/my-enrollments' element={<MyEnrollments />} />
           <Route path='/course/:courseId' element={<CourseView />} />
@@ -62,6 +60,7 @@ function App() {
             <Route path='add-course' element={<AddCourse />} />
             <Route path='my-courses' element={<InstructorMyCourses />} />
             <Route path='students-enrolled' element={<StudentsEnrolled />} />
+            <Route path='edit-course/:courseId' element={<EditCourse />}/>
           </Route>
           </Route>
         </Routes>
