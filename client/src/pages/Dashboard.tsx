@@ -52,7 +52,7 @@ function Dashboard() {
             const response = await api.get('/api/threads/feed/posts', {
                 params: { limit: LIMIT, offset: currentOffset }
             });
-            const { posts, hasMore } = response.data;
+            const { posts = [], hasMore = false } = response.data || {};
             setFeedPosts(prev => append ? [...prev, ...posts] : posts);
             setFeedHasMore(hasMore);
         } catch (err) {
@@ -148,11 +148,11 @@ function Dashboard() {
                         ? Array.from({ length: 3 }).map((_, i) => (
                             <SkeletonPostCard key={i} />
                         ))
-                        : feedPosts.length === 0
+                        : (feedPosts || []).length === 0
                             ? <p>No posts yet. Subscribe to some threads in the forum to see them here.</p>
                             : (
                                 <div className="flex flex-col gap-4">
-                                    {feedPosts.map(post => (
+                                    {(feedPosts || []).map(post => (
                                         <PostCard
                                             key={post.id}
                                             post={post}
