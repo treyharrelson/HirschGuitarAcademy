@@ -9,7 +9,7 @@ const Thread = sequelize.define(
             autoIncrement: true,
             primaryKey: true, // <--- This line is missing!
             allowNull: false
-        },,
+        },
         title: {
             type: DataTypes.STRING,
             allowNull: false,
