@@ -37,11 +37,14 @@ export const useCourseEditor = (initialData?: any) => {
     );
   };
 
-  const createItem = (title: string, currentLength: number, type: 'Module' | 'Lecture', parentId?: string) => ({
+  const createItem = (title: string, currentLength: number, type: 'Module' | 'SubModule' | 'Lecture', parentId?: string) => ({
     id: uniqid(),
     title,
     order: currentLength + 1,
-    ...(type === 'Module' ? { content: [], collapsed: false, courseId } : { content: '', module_Id: parentId })
+    // Both 'Module' and 'SubModule' need an empty array []
+    ...(type === 'Module' || type === 'SubModule'
+      ? { content: [], collapsed: false, courseId }
+      : { content: '', module_Id: parentId })
   });
 
   const handleModule = (action: ModuleAction, moduleId?: string): void => {
@@ -68,13 +71,12 @@ export const useCourseEditor = (initialData?: any) => {
     }
     if (action === 'save' && title) {
       if (popupType === 'Module') {
+        // 1. Create a top-level Module
         setModules(prev => [...prev, createItem(title, prev.length, 'Module') as Module]);
       } else {
         updateModuleById(currentModuleId!, (module): Module => {
-          const itemType = popupType === 'SubModule' ? 'Module' : 'Lecture';
-          const newItem = createItem(title, module.content.length, itemType as any, module.id) as (Module | Lecture);
 
-          // Adding to a Sub-Module?
+          // 2. Add a lecture INTO an existing Sub-Module
           if (popupType === 'Lecture' && currentSubModuleIndex !== null) {
             const updatedContent = [...module.content];
             const subMod = { ...(updatedContent[currentSubModuleIndex] as Module) };
@@ -85,10 +87,15 @@ export const useCourseEditor = (initialData?: any) => {
             updatedContent[currentSubModuleIndex] = subMod;
             return { ...module, content: updatedContent };
           }
-          // Adding to Parent Module?
+
+          // 3. Create either a Sub-Module or a standard Lecture inside the Module
+          // FIX: Ensure 'SubModule' remains 'SubModule' for createItem logic
+          const typeForCreate = popupType === 'SubModule' ? 'SubModule' : 'Lecture';
+          const newItem = createItem(title, module.content.length, typeForCreate as any, module.id);
+
           return {
             ...module,
-            content: [...module.content, newItem]
+            content: [...module.content, newItem as any]
           };
         });
       }
@@ -165,7 +172,7 @@ export const useCourseEditor = (initialData?: any) => {
       return prev.map((m) => {
         if (extraArgs && m.id !== extraArgs.moduleId) return m;
         const updatedContent = m.content.map((item, idx) => {
-          if (type === 'submodule' && idx === extraArgs?.subModuleIndex) {
+          if (type === 'submodule' && item.id === id) {
             return { ...item, title: newTitle };
           }
           if (type === 'lecture' && item.id === id) {
@@ -193,11 +200,42 @@ export const useCourseEditor = (initialData?: any) => {
       handleSubModule(action, modId)
     }
   };
+  const updateSubLectureContent = (
+    moduleId: string,
+    subModuleIndex: number,
+    lectureIndex: number,
+    newContent: string
+  ) => {
+    setModules((prev) =>
+      prev.map((m) => {
+        if (m.id !== moduleId) return m;
+
+        const updatedContent = [...m.content];
+        // Clone the submodule
+        const subMod = { ...(updatedContent[subModuleIndex] as Module) };
+
+        if (subMod && Array.isArray(subMod.content)) {
+          const updatedSubContent = [...subMod.content];
+          // Update the specific lecture inside the submodule
+          updatedSubContent[lectureIndex] = {
+            ...updatedSubContent[lectureIndex],
+            content: newContent
+          } as Lecture;
+
+          subMod.content = updatedSubContent;
+          updatedContent[subModuleIndex] = subMod;
+        }
+
+        return { ...m, content: updatedContent };
+      })
+    );
+  };
+
 
   return {
     state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails },
-    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails },
+    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId },
     refs: { inputRef, quillRef, editorRef },
-    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateLectureContent, updateTitle },
+    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateLectureContent, updateSubLectureContent, updateTitle },
   };
 };
