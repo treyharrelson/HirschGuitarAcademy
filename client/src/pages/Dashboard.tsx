@@ -144,22 +144,31 @@ function Dashboard() {
                 <div className='flex-1'>
                     <h2 className="mb-4 text-xl font-semibold">My Feed</h2>
 
-                    {feedPosts.length === 0 ? (
-                        <p>No posts yet. Subscribe to some threads in the forum to see them here.</p>
-                    ) : (
-                        <div className="flex flex-col gap-4">
-                            {feedPosts.map(post => (
-                                <PostCard
-                                    key={post.id}
-                                    post={post}
-                                    showThread
-                                    onFollowThread={post.announcedThread ? handleFollowFromPost : undefined}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    {feedLoading
+                        ? Array.from({ length: 3 }).map((_, i) => (
+                            <SkeletonPostCard key={i} />
+                        ))
+                        : feedPosts.length === 0
+                            ? <p>No posts yet. Subscribe to some threads in the forum to see them here.</p>
+                            : (
+                                <div className="flex flex-col gap-4">
+                                    {feedPosts.map(post => (
+                                        <PostCard
+                                            key={post.id}
+                                            post={post}
+                                            showThread
+                                            onFollowThread={
+                                                post.announcedThread
+                                                    ? handleFollowFromPost
+                                                    : undefined
+                                            }
+                                        />
+                                    ))}
+                                </div>
+                            )
+                    }
 
-                    {feedHasMore && (
+                    {feedHasMore && !feedLoading && (
                         <button
                             onClick={handleLoadMore}
                             disabled={loadingMore}
@@ -170,18 +179,8 @@ function Dashboard() {
                     )}
                 </div>
 
-            {/* Feed */}
-            <div className='flex-1'>
-                <h2 className="mb-4 text-xl font-semibold">My Feed</h2>
-                {feedLoading
-                    ? Array.from({ length: 3 }).map((_, i) => <SkeletonPostCard key={i} />)
-                    : feedPosts.length === 0
-                        ? <p>No posts yet. Subscribe to some threads in the forum to see them here.</p>
-                        : <div className="flex flex-col gap-4">
-                            {feedPosts.map(post => <PostCard key={post.id} post={post} showThread />)}
-                        </div>
-                }
             </div>
+
         </div>
     );
 }
