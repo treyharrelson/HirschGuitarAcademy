@@ -58,6 +58,13 @@ function Dashboard() {
         }
     };
 
+    // Follow a thread from an announcement post card
+    const handleFollowFromPost = async (threadId: number) => {
+        try {
+            await api.post(`/api/threads/${threadId}/subscribe`);
+        } catch { console.error('Error following thread'); }
+    };
+
     // submit event for the load more button
     const handleLoadMore = async () => {
         setLoadingMore(true);
@@ -74,7 +81,14 @@ function Dashboard() {
 
         es.onmessage = (e) => {
             const { type, post } = JSON.parse(e.data);
+
+            // thread post from a subscribed thread
             if (type === 'new_post') {
+                setFeedPosts(prev => prev.some(p => p.id === post.id) ? prev : [post, ...prev]);
+            }
+
+            // global announcement post (new thread created, or manual global post)
+            if (type === 'new_global_post') {
                 setFeedPosts(prev => prev.some(p => p.id === post.id) ? prev : [post, ...prev]);
             }
         };
@@ -107,49 +121,54 @@ function Dashboard() {
     }
 
     return (
-    <div>
-        <h1>Welcome, {user.name}!</h1>
-        <p>Email: {user.email}</p>
-        <p>Role: {user.role}</p>
+        <div>
+            <h1>Welcome, {user.name}!</h1>
+            <p>Email: {user.email}</p>
+            <p>Role: {user.role}</p>
 
-        <div className='mt-10 flex gap-8'>
+            <div className='mt-10 flex gap-8'>
 
-            {/* Sidebar */}
-            <div className='w-48 flex-shrink-0'>
-                <h2 className="mb-4 text-xl font-semibold">Quick Links</h2>
-                <ul className="flex flex-col gap-2">
-                    <RenderLinks />
-                </ul>
+                {/* Sidebar */}
+                <div className='w-48 flex-shrink-0'>
+                    <h2 className="mb-4 text-xl font-semibold">Quick Links</h2>
+                    <ul className="flex flex-col gap-2">
+                        <RenderLinks />
+                    </ul>
+                </div>
+
+                {/* Feed */}
+                <div className='flex-1'>
+                    <h2 className="mb-4 text-xl font-semibold">My Feed</h2>
+
+                    {feedPosts.length === 0 ? (
+                        <p>No posts yet. Subscribe to some threads in the forum to see them here.</p>
+                    ) : (
+                        <div className="flex flex-col gap-4">
+                            {feedPosts.map(post => (
+                                <PostCard
+                                    key={post.id}
+                                    post={post}
+                                    showThread
+                                    onFollowThread={post.announcedThread ? handleFollowFromPost : undefined}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {feedHasMore && (
+                        <button
+                            onClick={handleLoadMore}
+                            disabled={loadingMore}
+                            className="w-full mt-4 py-2 text-sm text-blue-600 font-semibold border border-blue-200 rounded-full hover:bg-blue-50 transition-all disabled:opacity-50"
+                        >
+                            {loadingMore ? 'Loading...' : 'Load More'}
+                        </button>
+                    )}
+                </div>
+
             </div>
-
-            {/* Feed */}
-            <div className='flex-1'>
-                <h2 className="mb-4 text-xl font-semibold">My Feed</h2>
-                {feedPosts.length === 0 ? (
-                    <p>No posts yet. Subscribe to some threads in the forum to see them here.</p>
-                ) : (
-                    <div className="flex flex-col gap-4">
-                        {feedPosts.map(post => (
-                            <PostCard key={post.id} post={post} showThread />
-                    ))}
-                    </div>
-                )}
-            
-                {feedHasMore && (
-                    <button
-                        onClick={handleLoadMore}
-                        disabled={loadingMore}
-                        className="w-full mt-4 py-2 text-sm text-blue-600 font-semibold border border-blue-200 rounded-full hover:bg-blue-50 transition-all disabled:opacity-50"
-                    >
-                        {loadingMore ? 'Loading...' : 'Load More'}
-                    </button>
-                )}
-
-            </div>
-
         </div>
-    </div>
-);
+    );
 }
 
 export default Dashboard;

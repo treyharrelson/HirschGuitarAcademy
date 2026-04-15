@@ -5,10 +5,12 @@ export interface Attachment {
 }
 
 export interface Post {
-    id: number,
-    threadId: number;
+    id: number;
+    threadId: number | null;
     userId: number;
     content: string;
+    scope: 'thread' | 'global';
+    announcedThreadId?: number | null;
     createdAt: string;
     author?: {
         userName: string;
@@ -17,6 +19,10 @@ export interface Post {
     };
     attachments?: Attachment[];
     thread?: {
+        id: number;
+        title: string;
+    };
+    announcedThread?: {
         id: number;
         title: string;
     };

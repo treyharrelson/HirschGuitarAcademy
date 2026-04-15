@@ -70,6 +70,10 @@ Post.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
 Thread.hasMany(Post, { foreignKey: 'threadId', as: 'posts' });
 Post.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
 
+// Post to the thread it announces (for global announcement posts)
+Post.belongsTo(Thread, { foreignKey: 'announcedThreadId', as: 'announcedThread' });
+Thread.hasMany(Post, { foreignKey: 'announcedThreadId', as: 'announcements' });
+
 // Post to comments
 Post.hasMany(Comment, { foreignKey: 'postId', as: 'comments' });
 Comment.belongsTo(Post, { foreignKey: 'postId', as: 'post' });

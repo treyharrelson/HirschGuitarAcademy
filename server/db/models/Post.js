@@ -14,7 +14,7 @@ const Post = sequelize.define(
 		},
 		threadId: {
 			type: DataTypes.INTEGER,
-			allowNull: false,
+			allowNull: true,
 			field: 'thread_id',
 		},
 		authorId: {
@@ -25,6 +25,17 @@ const Post = sequelize.define(
 		content: {
 			type: DataTypes.TEXT,
 			allowNull: false,
+		},
+		scope: {
+			type: DataTypes.ENUM('thread', 'global'),
+			allowNull: false,
+			defaultValue: 'thread'
+		},
+		// set when scope='global' and this post announces a new thread
+		announcedThreadId: {
+			type: DataTypes.INTEGER,
+			allowNull: true,
+			field: 'announced_thread_id',
 		},
 		numLikes: {
 			type: DataTypes.INTEGER,

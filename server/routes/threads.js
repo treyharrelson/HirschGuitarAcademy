@@ -25,14 +25,35 @@ router.get('/', async (req, res) => {
 });
 
 // Create a thread (Maps to /api/threads)
+// Also auto-creates a global announcement post and broadcasts it via SSE
 router.post('/', async (req, res) => {
 	try {
-		// took out auth code because runs in requireAuth in server.js
 		const { title } = req.body;
 		const newThread = await Models.Thread.create({
 			title,
 			authorId: req.session.user.id
 		});
+
+		// Auto-create a global announcement post for the new thread
+		const announcementPost = await Models.Post.create({
+			content: `New thread started: "${title}" — jump in and join the discussion!`,
+			authorId: req.session.user.id,
+			scope: 'global',
+			threadId: null,
+			announcedThreadId: newThread.id
+		});
+
+		const postWithAuthor = await Models.Post.findByPk(announcementPost.id, {
+			include: [
+				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.Attachment, as: 'attachments' },
+				{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'] }
+			]
+		});
+
+		// Broadcast the announcement to all connected users
+		const payload = `data: ${JSON.stringify({ type: 'new_global_post', post: postWithAuthor })}\n\n`;
+		userClients.forEach(clients => clients.forEach(client => client.write(payload)));
 
 		res.status(201).json(newThread);
 	} catch (error) {
@@ -70,9 +91,56 @@ router.get('/stream', (req, res) => {
 	});
 });
 
-// gets a # of posts at a time to put on user's main feed based on the threads they are
-// subscribed to. Uses offset pagination logic
-// maps to Get /api/threads/feed/posts
+// Create a global feed post (Maps to POST /api/threads/feed)
+router.post('/feed', async (req, res) => {
+	try {
+		const { content, attachments } = req.body;
+
+		const newPost = await Models.Post.create({
+			content,
+			authorId: req.session.user.id,
+			scope: 'global',
+			threadId: null
+		})
+
+		if (attachments && attachments.length > 0) {
+			const attachmentRecords = attachments.map(att => ({
+				postId: newPost.id,
+				fileKey: att.fileKey,
+				fileType: att.fileType,
+				fileName: att.fileName
+			}));
+			await Models.Attachment.bulkCreate(attachmentRecords);
+		}
+
+		// fetch post with author included for the broadcast payload
+		const postWithAuthor = await Models.Post.findByPk(newPost.id, {
+			include: [
+				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.Attachment, as: 'attachments' }
+			]
+		});
+
+		// broadcast to ALL connected users
+		const payload = `data: ${JSON.stringify({
+			type: 'new_global_post',
+			post: postWithAuthor
+		})}\n\n`;
+
+		userClients.forEach(clients => {
+			clients.forEach(client => client.write(payload));
+		});
+
+		res.status(201).json(newPost);
+	} catch(error) {
+		res.status(500).json({ message: `Error creating post: ${error}`});
+	}
+});
+
+// Gets a merged, chronologically sorted feed of:
+//   - posts from threads the user is subscribed to
+//   - global announcement posts (visible to everyone)
+// Uses offset pagination. Maps to GET /api/threads/feed/posts
 router.get('/feed/posts', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 20;
@@ -82,13 +150,21 @@ router.get('/feed/posts', async (req, res) => {
             where: { userId: req.session.user.id }
         });
         const threadIds = subs.map(s => s.threadId);
-        if (threadIds.length === 0) return res.json({ posts: [], total: 0, hasMore: false });
 
         const { count, rows: posts } = await Models.Post.findAndCountAll({
-            where: { threadId: threadIds },
+            where: {
+                [Op.or]: [
+                    // posts from subscribed threads (only if the user follows at least one)
+                    ...(threadIds.length > 0 ? [{ threadId: threadIds }] : []),
+                    // global announcements always included
+                    { scope: 'global' }
+                ]
+            },
             include: [
                 { model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
-                { model: Models.Thread, as: 'thread', attributes: ['id', 'title'] }
+                { model: Models.Attachment, as: 'attachments' },
+                { model: Models.Thread, as: 'thread', attributes: ['id', 'title'], required: false },
+                { model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'], required: false }
             ],
             order: [['createdAt', 'DESC']],
             limit,
@@ -188,17 +264,13 @@ router.get('/:threadId/posts', async (req, res) => {
 
 // Create a post in a thread (Maps to /api/threads/:threadId/posts)
 router.post('/:threadId/posts', async (req, res) => {
-	console.log('POST /api/threads/:threadId/posts called');
-	console.log('Thread ID :', req.params.threadId);
-	console.log('Request body: ', req.body);
-	console.log('Session user: ', req.session.user);
 	try {
 		const { content, attachments } = req.body;
-		console.info(req.params.threadId)
 		const newPost = await Models.Post.create({
 			threadId: req.params.threadId,
 			authorId: req.session.user.id,
-			content
+			content,
+			scope: 'thread'
 		});
 
 		if (attachments && attachments.length > 0) {
@@ -211,7 +283,7 @@ router.post('/:threadId/posts', async (req, res) => {
 			await Models.Attachment.bulkCreate(attachmentRecords);
 		}
 
-		// Auto-subscribe the poster to this thread if not already subscribed
+		//Auto-subscribe the poster to this thread if not already subscribed
 		await Models.Subscription.findOrCreate({
 		where: {
 			userId: req.session.user.id,
@@ -302,9 +374,12 @@ router.delete('/:threadId/subscribe', async (req, res) => {
 // updates lastReadAt on the followed thread
 router.post('/:threadId/read', async (req, res) => {
     try {
-        const [follow] = await Models.Subscription.findOrCreate({
+        const [follow] = await Models.Subscription.findOne({
             where: { userId: req.session.user.id, threadId: req.params.threadId }
         });
+
+		if (!follow) return res.status(204).end();
+
         await follow.update({ lastReadAt: new Date() });
         res.json({ lastReadAt: follow.lastReadAt });
     } catch (error) {
