@@ -35,11 +35,11 @@ function Login() {
 
                 // navigate based on role
                 if (response.data.user.role === 'student') {
-                    navigate('/student-dashboard')
+                    navigate('/home')
                 } else if (response.data.user.role === 'instructor') {
                     navigate('/instructor')
                 } else if (response.data.user.role === 'admin') {
-                    navigate('/student-dashboard')
+                    navigate('/home')
                 }
             }
         } catch (err) {
