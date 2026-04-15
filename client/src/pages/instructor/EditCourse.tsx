@@ -208,12 +208,19 @@ const EditCourse: React.FC = () => {
                                     // 3. DEFAULT LECTURE: If it's not a submodule, render standard lecture
                                     return (
                                         <div key={item.id || lIdx} className="p-4 bg-gray-50 rounded border mb-4">
-                                            <div className="flex flex-col mb-2">
-                                                <p className="text-xs text-gray-400 uppercase font-bold">Lecture Title</p>
-                                                <input
-                                                    className="font-medium text-blue-600 bg-transparent border-b border-transparent focus:border-blue-300 outline-none"
-                                                    value={item.title}
-                                                    onChange={(e) => handlers.updateTitle('lecture', item.id, e.target.value, { moduleId: module.id })}
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex flex-col mb-2">
+                                                    <p className="text-xs text-gray-400 uppercase font-bold">Lecture Title</p>
+                                                    <input
+                                                        className="font-medium text-blue-600 bg-transparent border-b border-transparent focus:border-blue-300 outline-none"
+                                                        value={item.title}
+                                                        onChange={(e) => handlers.updateTitle('lecture', item.id, e.target.value, { moduleId: module.id })}
+                                                    />
+                                                </div>
+                                                <img
+                                                    src={assets.cross_icon}
+                                                    className="w-5 h-5 cursor-pointer opacity-50 hover:opacity-100 p-1"
+                                                    onClick={() => handlers.handleLecture('remove', module.id, lIdx)}
                                                 />
                                             </div>
                                             <LectureEditor
