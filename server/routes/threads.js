@@ -55,6 +55,14 @@ router.post('/', async (req, res) => {
 		const payload = `data: ${JSON.stringify({ type: 'new_global_post', post: postWithAuthor })}\n\n`;
 		userClients.forEach(clients => clients.forEach(client => client.write(payload)));
 
+		// auto subscribe the thread author
+		await Models.Subscription.findOrCreate({
+			where: {
+				userId: req.session.user.id,
+				threadId: newThread.id
+			}
+		});
+
 		res.status(201).json(newThread);
 	} catch (error) {
 		if (error.name === 'SequelizeUniqueConstraintError') {

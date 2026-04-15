@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import api from '../api/axiosInstance';
 import {type Post } from '../types/post';
 import PostCard from '../components/generic/PostCard';
+import SkeletonPostCard from '../components/generic/SkeletonPostCard';
 
 type RoleLink = {
     label: string;
@@ -44,6 +45,7 @@ function Dashboard() {
     const [feedHasMore, setFeedHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [feedPosts, setFeedPosts] = useState<Post[]>([]);
+    const [feedLoading, setFeedLoading] = useState(true);
 
     const loadFeed = async (currentOffset = 0, append = false) => {
         try {
@@ -55,6 +57,8 @@ function Dashboard() {
             setFeedHasMore(hasMore);
         } catch (err) {
             console.error('Error loading feed');
+        } finally {
+            setFeedLoading(false);
         }
     };
 
@@ -166,6 +170,17 @@ function Dashboard() {
                     )}
                 </div>
 
+            {/* Feed */}
+            <div className='flex-1'>
+                <h2 className="mb-4 text-xl font-semibold">My Feed</h2>
+                {feedLoading
+                    ? Array.from({ length: 3 }).map((_, i) => <SkeletonPostCard key={i} />)
+                    : feedPosts.length === 0
+                        ? <p>No posts yet. Subscribe to some threads in the forum to see them here.</p>
+                        : <div className="flex flex-col gap-4">
+                            {feedPosts.map(post => <PostCard key={post.id} post={post} showThread />)}
+                        </div>
+                }
             </div>
         </div>
     );
