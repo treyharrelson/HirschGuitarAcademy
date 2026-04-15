@@ -25,7 +25,7 @@ function Forum() {
             const response = await api.get('/api/threads', {
                 params: { limit: LIMIT, offset: currentOffset }
             });
-            const {threads: newThreads, hasMore: more } = response.data;
+            const {threads: newThreads = [], hasMore: more = false } = response.data || {};
             setThreads(prev => append ? [...prev, ...newThreads] : newThreads);
             setHasMore(more);
         } catch (err) {
@@ -76,7 +76,7 @@ function Forum() {
         }
     };
 
-    const filteredThreads = threads.filter(thread =>
+    const filteredThreads = (threads || []).filter(thread =>
         thread.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
     
