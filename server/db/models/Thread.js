@@ -6,9 +6,12 @@ const Thread = sequelize.define(
     {
         id: {
             type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
             allowNull: false,
+            defaultValue: 1, // Change this to a valid ID from your Threads table
+            references: {
+                model: 'Threads',
+                key: 'id'
+            }
         },
         title: {
             type: DataTypes.STRING,
