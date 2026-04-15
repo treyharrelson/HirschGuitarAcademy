@@ -21,6 +21,12 @@ const Subscription = sequelize.define(
 			allowNull: false,
 			field: 'thread_id',
 		},
+		lastReadAt: {
+			type: DataTypes.DATE,
+			allowNull: true,
+			defaultValue: null,
+			field: 'last_read_at',
+		},
 	},
 	{
 		tableName: 'Subscriptions',
