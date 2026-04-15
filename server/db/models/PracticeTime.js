@@ -19,6 +19,11 @@ const PracticeTime = sequelize.define(
 			type: DataTypes.INTEGER,
 			field: 'time_this_week',
 		},
+		userId: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			field: 'user_id',
+		},
 	},
 	{
 		tableName: 'Practicetimes',

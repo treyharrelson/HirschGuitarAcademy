@@ -10,6 +10,16 @@ const Belt = sequelize.define(
 			autoIncrement: true,
 			allowNull: false,
 		},
+		userId: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			field: 'user_id',
+		},
+		courseId: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			field: 'course_id',
+		},
 	},
 	{
 		tableName: 'Belts',
