@@ -17,6 +17,7 @@ export const useCourseEditor = (initialData?: any) => {
   const [currentSubModuleIndex, setCurrentSubModuleIndex] = useState<number | null>(null);
   const [modules, setModules] = useState<Module[]>(initialData?.modules || [])
   const [lectureDetails, setLectureDetails] = useState({ lectureTitle: '' })
+  const [courseDescription, setCourseDescription] = useState("");
 
   // UI States
   const [showPopup, setPopup] = useState<boolean>(false)
@@ -233,8 +234,8 @@ export const useCourseEditor = (initialData?: any) => {
 
 
   return {
-    state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails },
-    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId },
+    state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription },
+    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription },
     refs: { inputRef, quillRef, editorRef },
     handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateLectureContent, updateSubLectureContent, updateTitle },
   };

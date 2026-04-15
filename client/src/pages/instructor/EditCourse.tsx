@@ -21,33 +21,43 @@ const EditCourse: React.FC = () => {
                 const res = await api.get(`/api/courses/${courseId}`, { withCredentials: true });
                 const course = res.data;
 
-                // 1. Set the basic states
                 setters.setCourseTitle(course.name);
                 setters.setIsPrivate(course.isPrivate);
                 setters.setModules(course.modules || []);
                 setters.setImage(course.thumbnail);
+                setters.setCourseDescription(course.description || "");
 
-                // 2. Safely initialize Quill AFTER data is fetched
-                if (refs.editorRef.current && !refs.quillRef.current) {
-                    refs.quillRef.current = new Quill(refs.editorRef.current, {
-                        theme: 'snow',
-                        modules: { toolbar: true }
-                    });
-                }
-
-                // 3. Hydrate the editor content directly
-                if (refs.quillRef.current && course.description) {
-                    refs.quillRef.current.root.innerHTML = course.description;
-                }
             } catch (err) {
                 setStatusMsg("Error loading course data.");
             } finally {
                 setLoading(false);
             }
         };
-
         if (courseId) fetchAndPopulate();
     }, [courseId]);
+
+    useEffect(() => {
+        // Only init if loading is done, the div exists, and Quill isn't already there
+        if (!loading && refs.editorRef.current && !refs.quillRef.current) {
+
+            const quill = new Quill(refs.editorRef.current, {
+                theme: 'snow',
+                modules: { toolbar: true }
+            });
+
+            refs.quillRef.current = quill;
+
+            // Fill the editor with the description stored in state
+            if (state.courseDescription) {
+                quill.root.innerHTML = state.courseDescription;
+            }
+
+            // Listen for changes to keep the state updated
+            quill.on('text-change', () => {
+                setters.setCourseDescription(quill.root.innerHTML);
+            });
+        }
+    }, [loading]);
 
     useEffect(() => {
         if (state.showPopup) {
@@ -59,25 +69,19 @@ const EditCourse: React.FC = () => {
         e.preventDefault();
         setSubmitting(true);
         setStatusMsg('');
-
-        // Ensure we capture the Quill content at the EXACT moment of submission
         const descriptionHtml = refs.quillRef.current ? refs.quillRef.current.root.innerHTML : '';
-
         const payload = {
             name: state.courseTitle,
             isPrivate: state.isPrivate,
             description: descriptionHtml,
-            modules: state.modules, // Double-check this isn't empty in your console
+            modules: state.modules,
         };
-
         try {
             // Log the payload to verify data before it's sent
             console.log("Sending payload:", payload);
-
             const response = await api.put(`/api/courses/${courseId}`, payload, {
                 withCredentials: true
             });
-
             if (response.status === 200 || response.status === 204) {
                 setStatusMsg('Course saved successfully!');
             }
@@ -89,15 +93,11 @@ const EditCourse: React.FC = () => {
             setSubmitting(false);
         }
     };
-
     if (loading) return <div className="p-10">Loading Course Editor...</div>;
-
     return (
         <div className='h-screen overflow-scroll flex flex-col items-start md:p-8 p-4 pt-8'>
             <form onSubmit={handleUpdate} className='flex flex-col gap-6 w-full max-w-4xl text-gray-500 pb-20'>
-
                 <h1 className='text-2xl font-bold text-black'>Editing: {state.courseTitle}</h1>
-
                 {/* COURSE TITLE */}
                 <div className='flex flex-col gap-1'>
                     <p className='font-medium'>Course Title</p>
@@ -108,20 +108,17 @@ const EditCourse: React.FC = () => {
                         className='outline-none py-2 px-3 rounded border border-gray-400 text-black'
                     />
                 </div>
-
                 {/* MAIN DESCRIPTION */}
                 <div className='flex flex-col gap-1'>
                     <p className='font-medium'>Course Description</p>
                     <div ref={refs.editorRef} className="bg-white min-h-[200px] border border-gray-300"></div>
                 </div>
-
                 {/* MODULES & LECTURES */}
                 <div className='flex flex-col gap-4'>
                     <p className='font-bold text-lg text-black'>Course Content</p>
                     {state.modules.map((module, mIdx) => (
                         <div key={module.id} className='bg-white border border-gray-300 rounded-lg p-4'>
                             {/* Module Title Input */}
-
                             <div className="flex items-center gap-3 p-4 bg-gray-50 border-b rounded-t-lg">
                                 <img
                                     onClick={() => handlers.handleModule('toggle', module.id)}
@@ -140,13 +137,11 @@ const EditCourse: React.FC = () => {
                                     onClick={() => handlers.handleModule('remove', module.id)}
                                 />
                             </div>
-
                             {/* Lectures inside Module */}
                             {!module.collapsed && (<div className="flex flex-col gap-6 ml-6">
                                 {module.content.map((item: any, lIdx: number) => {
                                     // 1. CHECK IF SUBMODULE: Submodules have a 'content' array
                                     const isSubModule = Array.isArray(item.content);
-
                                     if (isSubModule) {
                                         return (
                                             <div key={item.id || lIdx} className="ml-6 p-4 border-l-4 border-blue-400 bg-blue-50/20 rounded-r-lg mb-4">
@@ -172,7 +167,6 @@ const EditCourse: React.FC = () => {
                                                         onClick={() => handlers.handleSubModule('remove', module.id, lIdx)}
                                                     />
                                                 </div>
-
                                                 {/* 2. NESTED LECTURES: Map the content within the SubModule */}
                                                 {!item.collapsed && (<div className="flex flex-col gap-4 ml-4">
                                                     {item.content.map((subLecture: any, slIdx: number) => (
@@ -197,7 +191,6 @@ const EditCourse: React.FC = () => {
                                                                 onContentChange={(val) => handlers.updateSubLectureContent(module.id, lIdx, slIdx, val)}
                                                             />
                                                         </div>
-
                                                     ))}
                                                     <div>
                                                         <button
@@ -208,12 +201,10 @@ const EditCourse: React.FC = () => {
                                                             + Add Sub-Lecture
                                                         </button>
                                                     </div>
-
                                                 </div>)}
                                             </div>
                                         );
                                     }
-
                                     // 3. DEFAULT LECTURE: If it's not a submodule, render standard lecture
                                     return (
                                         <div key={item.id || lIdx} className="p-4 bg-gray-50 rounded border mb-4">
@@ -281,18 +272,12 @@ const EditCourse: React.FC = () => {
                                         }}
                                     />
                                 </div>
-
-                                {/** Other input fields come in as seperate divs, will be changing the lecture creation soon so dont worry about it */}
-
                                 <button onClick={() => handlers.handleLecture('save')} type='button' className='w-full bg-blue-400 text-white px-4 py-2 rounded cursor-pointer'>Add</button>
-
                                 <img onClick={() => setters.setPopup(false)} src={assets.cross_icon} alt='cross icon' className='absolute top-4 right-4 w-4 h-4 cursor-pointer' />
-
                             </div>
                         </div>
                     )}
                 </div>
-
                 {/* SUBMIT */}
                 <div className="flex items-center gap-4">
                     <button
@@ -310,5 +295,4 @@ const EditCourse: React.FC = () => {
         </div>
     );
 };
-
 export default EditCourse;
