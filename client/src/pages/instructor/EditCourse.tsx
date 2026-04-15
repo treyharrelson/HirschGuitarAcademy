@@ -21,15 +21,21 @@ const EditCourse: React.FC = () => {
                 const res = await api.get(`/api/courses/${courseId}`, { withCredentials: true });
                 const course = res.data;
 
+                // 1. Set the basic states
                 setters.setCourseTitle(course.name);
                 setters.setIsPrivate(course.isPrivate);
                 setters.setModules(course.modules || []);
                 setters.setImage(course.thumbnail);
 
-                if (!refs.quillRef.current && refs.editorRef.current) {
-                    refs.quillRef.current = new Quill(refs.editorRef.current, { theme: 'snow' });
+                // 2. Safely initialize Quill AFTER data is fetched
+                if (refs.editorRef.current && !refs.quillRef.current) {
+                    refs.quillRef.current = new Quill(refs.editorRef.current, {
+                        theme: 'snow',
+                        modules: { toolbar: true }
+                    });
                 }
 
+                // 3. Hydrate the editor content directly
                 if (refs.quillRef.current && course.description) {
                     refs.quillRef.current.root.innerHTML = course.description;
                 }
@@ -106,7 +112,7 @@ const EditCourse: React.FC = () => {
                 {/* MAIN DESCRIPTION */}
                 <div className='flex flex-col gap-1'>
                     <p className='font-medium'>Course Description</p>
-                    <div ref={refs.editorRef} className="bg-white"></div>
+                    <div ref={refs.editorRef} className="bg-white min-h-[200px] border border-gray-300"></div>
                 </div>
 
                 {/* MODULES & LECTURES */}
