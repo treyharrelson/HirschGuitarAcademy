@@ -33,36 +33,33 @@ export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) =
   }, [course.thumbnail]);
 
   return (
-    <div className='flex flex-col aspect-square p-5 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 bg-white overflow-hidden group'>
-    <Link 
-      to={`/course/${course.id}`}
-      onClick={() => scrollTo(0, 0)}
-      className='flex flex-col flex-grow'
-    >
+    <div className='pb-2 flex flex-col w-60 aspect-square border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 bg-white group'>
+      <Link 
+        to={`/course/${course.id}`}
+        onClick={() => scrollTo(0, 0)}
+        className='flex flex-col flex-grow'
+      >
 
-      {/* Top Section: Image and Title side-by-side */}
+      {/* Top Section: Image */}
       <div className='flex items-start'>
         <img
-          className='w-full object-cover rounded-lg flex-shrink-0 border border-gray-100'
+          className='w-full object-cover rounded-t flex-shrink-0 border border-gray-100'
           src={imageUrl}
           alt={`${course.name} Thumbnail`}
         />
       </div>
-      <div>
-          <h3 className='text-base font-semibold text-gray-800 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors'>
+      <div className='pl-2'>
+          <h3 className='text-base font-semibold text-gray-800 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors overflow-hidden'>
             {course.name}
           </h3>
-          <p className='text-sm text-gray-500 mt-1'>
-            {course.instructor ? `${course.instructor.firstName} ${course.instructor.lastName}` : 'Unknown Instructor'}
-          </p>
       </div>
 
-      <div className='flex-grow text-sm text-gray-600'>
+      <div className='flex-grow text-sm text-gray-600 pl-2'>
         <p>Course Details go here</p>
       </div>
       </Link>
 
-      <div className=''>
+      <div className='pl-2'>
         <BigBlueButton children={enrolled} onClick={buttonclick} />
       </div>
 
