@@ -8,6 +8,7 @@ import Forum from './pages/Forum';
 import ThreadDetail from './pages/ThreadDetail';
 import AllCourses from './pages/student/AllCourses';
 import MyCourses from './pages/MyCourses';
+import ThreadFollows from './pages/ThreadFollows';
 // import Metronome from './pages/student/metronome-tool/js/metronome';
 // import Timer from './pages/student/metronome-tool/js/timer';
 import MainLayout from './pages/MainLayout';
@@ -41,6 +42,7 @@ function App() {
           <Route path="/home" element={<Dashboard />} />
           <Route path="/forum" element={<Forum />} />
           <Route path="/forum/thread/:threadId" element={<ThreadDetail />} />
+          <Route path="/follows" element={<ThreadFollows />} />
           <Route path="/all-courses" element={<AllCourses />} />
           <Route path="/courses" element={<MyCourses />} />
           {/* elements set to this so it won't crash */}

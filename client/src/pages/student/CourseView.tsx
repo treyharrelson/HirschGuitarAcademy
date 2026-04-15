@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import type { Course, Module, Lecture } from '../../types/course';
 import api from '../../api/axiosInstance';
+import Loading from '../../components/student/Loading';
 import { useAuth } from '../../context/AuthContext';
 
 interface ExtendedCourse extends Course {
@@ -130,7 +131,7 @@ const CourseView: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="flex justify-center flex-col items-center h-screen text-xl text-slate-500">Loading course content...</div>;
+    if (loading) return <Loading />
     if (error) return <div className="flex justify-center flex-col items-center h-screen text-xl text-red-500">Error: {error}</div>;
     if (!course) return <div className="flex justify-center flex-col items-center h-screen text-xl text-red-500">Course not found</div>;
 
