@@ -17,6 +17,7 @@ const Belt = require('./Belt');
 const Award = require('./Award');
 const PracticeTime = require('./PracticeTime');
 const ScoreBoard = require('./ScoreBoard');
+const ThreadBan = require('./ThreadBan');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -103,6 +104,14 @@ Thread.hasMany(Subscription, { foreignKey: 'threadId', as: 'subscriptions'})
 Subscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Subscription.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
 
+// Thread Bans
+User.hasMany(ThreadBan, { foreignKey: 'userId', as: 'threadBans' });
+ThreadBan.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Thread.hasMany(ThreadBan, { foreignKey: 'threadId', as: 'bans' });
+ThreadBan.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
+User.hasMany(ThreadBan, { foreignKey: 'bannedById', as: 'issuedBans' });
+ThreadBan.belongsTo(User, { foreignKey: 'bannedById', as: 'bannedBy' });
+
 // Belt to Course and User
 User.hasMany(Belt, { foreignKey: 'userId', as: 'belts' });
 Belt.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -142,4 +151,5 @@ module.exports = {
     Award,
     PracticeTime,
     ScoreBoard,
+    ThreadBan,
 };

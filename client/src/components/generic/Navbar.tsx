@@ -26,7 +26,10 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
   ],
   admin: [
     //dunno yet
-  ]
+  ],
+  moderator: [
+    { label: 'Forum', path: '/forum', button: NavBarButton },
+  ],
 };
 
 
