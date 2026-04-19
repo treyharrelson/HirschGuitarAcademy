@@ -55,7 +55,7 @@ const MyCourses: React.FC = () => {
 
     return (
         <div style={{ padding: '1rem' }}>
-            <Link to='/student-dashboard'>← Back to Dashboard</Link>
+            <Link to='/home'>← Back to Dashboard</Link>
             <h1>My Courses</h1>
 
             {actionMsg && <p style={{ color: 'green' }}>{actionMsg}</p>}

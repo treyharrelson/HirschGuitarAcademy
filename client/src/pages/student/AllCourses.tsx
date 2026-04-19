@@ -90,7 +90,7 @@ const AllCourses = () => {
 
     return (
         <div style={{ padding: '1rem' }}>
-            <Link to='/student-dashboard'>← Back to Dashboard</Link>
+            <Link to='/home'>← Back to Dashboard</Link>
             <h1>Available Courses</h1>
 
             {actionMsg && <p style={{ color: 'green' }}>{actionMsg}</p>}

@@ -25,14 +25,13 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
         { label: 'My Courses', path: '/courses', button: DashButton },
         { label: 'Metronome', path: '/metronome', button: DashButton },
         { label: 'Timer', path: '/timer', button: DashButton },
-        { label: 'LMS Redirect', path: '/home', button: DashButton }
     ],
     instructor: [
         { label: 'Instructor View', path: '/instructor', button: DashButton },
-        { label: 'Add Course', path: '/instructor/add-course', button: DashButton },
     ],
     admin: [
-        //dunno yet
+        { label: 'Instructor View', path: '/instructor', button: DashButton },
+        { label: 'Course Management', path: '/instructor/add-course', button: DashButton },
     ]
 };
 

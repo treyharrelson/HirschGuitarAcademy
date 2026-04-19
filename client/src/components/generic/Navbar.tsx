@@ -17,7 +17,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'Create Account', path: '/', button: BigBlueButton }
   ],
   student: [
-    { label: 'Dashboard', path: '/student-dashboard', button: NavBarButton },
+    { label: 'Dashboard', path: '/home', button: NavBarButton },
     { label: 'My Courses', path: '/courses', button: NavBarButton },
   ],
   instructor: [

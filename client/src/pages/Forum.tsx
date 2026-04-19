@@ -85,7 +85,7 @@ function Forum() {
         {/* Header */}
         <div className="mb-6">
         <Link
-            to="/student-dashboard"
+            to="/home"
             className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-4"
         >
             ← Back to Dashboard
