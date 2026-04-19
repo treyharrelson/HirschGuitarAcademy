@@ -23,6 +23,7 @@ async function doit() {
 		getrecord('m', 'm', 'student', 'student', 'password', 'student'),
 		getrecord('m', 'm', 'admin', 'admin', 'password', 'admin'),
 		getrecord('m', 'm', 'guy', 'guy', 'password', 'student'),
+		getrecord('m', 'm', 'mod', 'mod', 'password', 'moderator'),
 	]);
 	try {
 		await Models.User.bulkCreate(constusers, { ignoreDuplicates: true, logging: false });
