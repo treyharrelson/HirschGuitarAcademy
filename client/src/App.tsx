@@ -9,6 +9,7 @@ import ThreadDetail from './pages/ThreadDetail';
 import AllCourses from './pages/student/AllCourses';
 import MyCourses from './pages/MyCourses';
 import ThreadFollows from './pages/ThreadFollows';
+import ThreadManager from './pages/ThreadManager';
 // import Metronome from './pages/student/metronome-tool/js/metronome';
 // import Timer from './pages/student/metronome-tool/js/timer';
 import MainLayout from './pages/MainLayout';
@@ -38,6 +39,9 @@ function App() {
 
           {/** THIS IS THE MAIN RENDERED PAGE */}
           <Route element={<MainLayout />}>
+          <Route path="/student-dashboard" element={<Dashboard />} />
+          <Route path="/admin-dashboard" element={<Dashboard />} />
+          <Route path="/manage/threads" element={<ThreadManager />} />
 
           <Route path="/home" element={<Dashboard />} />
           <Route path="/forum" element={<Forum />} />

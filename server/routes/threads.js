@@ -148,23 +148,35 @@ router.post('/feed', async (req, res) => {
 // Gets a merged, chronologically sorted feed of:
 //   - posts from threads the user is subscribed to
 //   - global announcement posts (visible to everyone)
+//	 - global feed threads (threads that have been designated as Global)
 // Uses offset pagination. Maps to GET /api/threads/feed/posts
 router.get('/feed/posts', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 20;
         const offset = parseInt(req.query.offset) || 0;
 
+		// grab threads that the user follows
         const subs = await Models.Subscription.findAll({
             where: { userId: req.session.user.id }
         });
-        const threadIds = subs.map(s => s.threadId);
+        const subscribedThreadIds = subs.map(s => s.threadId);
+
+		// also grab all threads marked as global feed
+		const globalThreads = await Models.Thread.findAll({
+			where: { isGlobalFeed: true },
+			attributes: ['id']
+		});
+		const globalThreadIds = globalThreads.map(t => t.id);
+
+		// Merge followed threads and global threads
+		const threadIds = [...new Set([...subscribedThreadIds, ...globalThreadIds])];
 
         const { count, rows: posts } = await Models.Post.findAndCountAll({
             where: {
                 [Op.or]: [
                     // posts from subscribed threads (only if the user follows at least one)
                     ...(threadIds.length > 0 ? [{ threadId: threadIds }] : []),
-                    // global announcements always included
+                    // standalone global posts (announcements, feed-only posts)
                     { scope: 'global' }
                 ]
             },
@@ -393,6 +405,44 @@ router.post('/:threadId/read', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: `Error marking as read: ${error}` });
     }
+});
+
+// toggle isGlobalFeed on a thread (PATCH /api/threads/:threadId/global)
+// TODO: swap requireAuth for requireRole([ROLES.MODERATOR]) once roles are finalized
+router.patch('/:threadId/global', async (req, res) => {
+	try {
+		const thread = await Models.Thread.findByPk(req.params.threadId);
+		if (!thread) return res.status(404).json({ message: 'Thread not found' });
+		await thread.update({ isGlobalFeed: !thread.isGlobalFeed });
+		res.json({ id: thread.id, isGlobalFeed: thread.isGlobalFeed });
+	} catch (error) {
+		res.status(500).json({ message: `Error updating thread: ${error}`});
+	}
+});
+
+// delete a thread and its posts/subscriptions (DELETE /api/threads/:threadId)
+// TODO: swap requireAuth for requireRole([ROLES.MODERATOR]) once roles are finalized
+router.delete('/:threadId', async (req, res) => {
+	try {
+		const thread = await Models.Thread.findByPk(req.params.threadId);
+		if (!thread) return res.status(404).json({ message: 'Thread not found' });
+		
+		// delete posts inside the thread
+		await Models.Post.destroy({ where: { threadId: thread.id } });
+
+		// delete the announcement post that was auto-created when this thread was made
+		// (it has threadId: null but announcedThreadId pointing here)
+		await Models.Post.destroy({ where: {announcedThreadId: thread.id } });
+
+		// delete the follow relationships between users and the thread
+		await Models.Subscription.destroy({ where: { threadId: thread.id } });
+		
+		// finally, delete the thread
+		await thread.destroy();
+		res.status(204).end();
+	} catch (error) {
+		res.status(500).json({ message: `Error deleting thread: ${error}` });
+	}
 });
 
 module.exports = router;
