@@ -17,6 +17,7 @@ const Belt = require('./Belt');
 const Award = require('./Award');
 const PracticeTime = require('./PracticeTime');
 const ScoreBoard = require('./ScoreBoard');
+const CourseRequirement = require('./CourseRequirement');
 const ThreadBan = require('./ThreadBan');
 
 // Associations work like this:
@@ -40,6 +41,10 @@ Course.belongsTo(User, { foreignKey: 'instructorId', as: 'instructor' });
 // Students to courses
 User.belongsToMany(Course, { through: Enrollment, foreignKey: 'userId', otherKey: 'courseId', as: 'enrolledCourses' });
 Course.belongsToMany(User, { through: Enrollment, foreignKey: 'courseId', otherKey: 'userId', as: 'students' });
+
+// Course prerequisites
+Course.belongsToMany(Course, { through: CourseRequirement, as: 'requirements', foreignKey: 'courseId', otherKey: 'requiredCourseId' });
+Course.belongsToMany(Course, { through: CourseRequirement, as: 'requiredBy', foreignKey: 'requiredCourseId', otherKey: 'courseId' });
 
 // Enrollment table direct setup, just helps with magic functions
 User.hasMany(Enrollment, { foreignKey: 'userId' });
@@ -151,5 +156,6 @@ module.exports = {
     Award,
     PracticeTime,
     ScoreBoard,
+    CourseRequirement,
     ThreadBan,
 };

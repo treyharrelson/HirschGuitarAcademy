@@ -28,6 +28,8 @@ export interface Course {
     instructorId: number,
     instructor?: CourseInstructor,
     enrolled: number,
+    completed?: boolean,
     isPrivate: boolean,
-    thumbnail: File | string
+    thumbnail: File | string,
+    requirements?: { id: string | number; name: string }[]
 }

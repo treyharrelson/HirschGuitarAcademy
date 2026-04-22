@@ -15,6 +15,10 @@ const CourseView: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
+    const [isCompleted, setIsCompleted] = useState<boolean>(false);
+    const [completing, setCompleting] = useState<boolean>(false);
+
     const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
     const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
@@ -44,6 +48,19 @@ const CourseView: React.FC = () => {
                     }
                 }
 
+                if (user?.role === 'student') {
+                    try {
+                        const enrollmentsRes = await api.get('/api/courses/my-enrollments');
+                        const courseEnrollment = enrollmentsRes.data.find((c: any) => c.id.toString() === courseId);
+                        if (courseEnrollment) {
+                            setIsEnrolled(true);
+                            setIsCompleted(!!courseEnrollment.completed);
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch enrollments', e);
+                    }
+                }
+
                 setLoading(false);
             } catch (err: any) {
                 setError(err.message);
@@ -65,6 +82,20 @@ const CourseView: React.FC = () => {
 
     const handleSelectLecture = (lecture: Lecture) => {
         setSelectedLecture(lecture);
+    };
+
+    const handleCompleteCourse = async () => {
+        if (!courseId) return;
+        setCompleting(true);
+        try {
+            await api.post(`/api/courses/${courseId}/complete`);
+            setIsCompleted(true);
+        } catch (e) {
+            console.error('Failed to complete course', e);
+            alert('Failed to complete course, try again later.');
+        } finally {
+            setCompleting(false);
+        }
     };
 
     const getModuleHeaderClasses = (depth: number) => {
@@ -140,16 +171,32 @@ const CourseView: React.FC = () => {
         <div className="flex flex-col md:flex-row w-full bg-slate-50 overflow-hidden font-sans" style={{ height: 'calc(100vh - 64px)' }}>
             
             <div className="w-full md:w-[350px] shrink-0 bg-white md:border-r border-b md:border-b-0 border-slate-200 flex flex-col overflow-y-auto shadow-[2px_0_10px_rgba(0,0,0,0.02)] h-[35vh] md:h-auto">
-                <div className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 text-white flex">
+                <div className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 text-white flex justify-between items-center">
                     <h2 className="m-0 text-xl font-semibold leading-relaxed pr-15">{course.name}</h2>
-                    {canEdit && (
-                    <button
-                        onClick={() => window.location.href = `/instructor/edit-course/${courseId}`}
-                        className="w-30 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-1.5 px-3 rounded transition-colors"
-                    >
-                        EDIT COURSE
-                    </button>
-                )}
+                    <div className="flex gap-2">
+                        {canEdit && (
+                            <button
+                                onClick={() => window.location.href = `/instructor/edit-course/${courseId}`}
+                                className="w-30 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-1.5 px-3 rounded transition-colors"
+                            >
+                                EDIT COURSE
+                            </button>
+                        )}
+                        {isEnrolled && !isCompleted && user?.role === 'student' && (
+                            <button
+                                onClick={handleCompleteCourse}
+                                disabled={completing}
+                                className={`w-30 ${completing ? 'bg-emerald-400' : 'bg-emerald-600 hover:bg-emerald-500'} text-white text-xs font-bold py-1.5 px-3 rounded transition-colors`}
+                            >
+                                {completing ? '...' : 'COMPLETE COURSE'}
+                            </button>
+                        )}
+                        {isEnrolled && isCompleted && user?.role === 'student' && (
+                            <span className="bg-emerald-800/50 text-emerald-300 text-xs font-bold py-1.5 px-3 rounded border border-emerald-500/30">
+                                COMPLETED
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <div className="py-4">
                     {course.modules && course.modules.map(mod => renderModuleContent(mod))}

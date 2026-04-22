@@ -18,7 +18,7 @@ const MyCourses: React.FC = () => {
         try {
             // Fetch enrolled course IDs
             const myCourses = await api.get('/api/courses/my-enrollments');
-            setCourses(myCourses.data);
+            setCourses(Array.isArray(myCourses.data) ? myCourses.data : []);
         } catch (err) {
             setError('Failed to load your courses.');
         } finally {
@@ -44,7 +44,9 @@ const MyCourses: React.FC = () => {
         <>
             {courses.map((course, index) => (
                 <CourseCard course={course}
+                    key={course.id}
                     enrolled={"Unenroll"}
+                    isCompleted={!!course.completed}
                     buttonclick={() => handleDrop(course.id)} />
             ))}
         </>

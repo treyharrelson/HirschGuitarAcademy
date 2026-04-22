@@ -12,8 +12,7 @@ router.get('/my-enrollments', requireRole('student'), async (req, res) => {
     try {
         const userId = req.session.user.id;
         const enrolledcourses = await Models.Enrollment.findAll({
-            // don't include enrollment table data
-            attributes: [],
+            attributes: ['completed'],
             // get all rows with userId
             where: { userId: userId },
             // get Courses that are in rolls
@@ -43,6 +42,7 @@ router.get('/my-enrollments', requireRole('student'), async (req, res) => {
                 instructorId: instructor.id,
                 instructor: instructor,
                 enrolled: course.enrolled,
+                completed: enrollment.completed,
                 isPrivate: course.isPrivate,
                 thumbnail: course.thumbnail,
                 description: course.description
@@ -61,9 +61,27 @@ router.post('/:courseId/enroll', requireRole('student'), async (req, res) => {
         const userId = req.session.user.id;
         const { courseId } = req.params;
 
-        const course = await Models.Course.findByPk(courseId);
+        const course = await Models.Course.findByPk(courseId, {
+            include: [{ model: Models.Course, as: 'requirements' }]
+        });
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
+        }
+
+        // Check requirements
+        if (course.requirements && course.requirements.length > 0) {
+            const userEnrollments = await Models.Enrollment.findAll({
+                where: { userId }
+            });
+            const completedCourseIds = userEnrollments.filter(e => e.completed).map(e => e.courseId);
+            
+            const missingRequirements = course.requirements.filter(reqCourse => !completedCourseIds.includes(reqCourse.id));
+            if (missingRequirements.length > 0) {
+                return res.status(403).json({ 
+                    message: 'Missing required courses', 
+                    missingRequirements: missingRequirements.map(r => r.name) 
+                });
+            }
         }
 
         // Check if already enrolled
@@ -113,12 +131,39 @@ router.delete('/:courseId/enroll', requireRole('student'), async (req, res) => {
     }
 });
 
+// Complete a course (Maps to POST /api/courses/:courseId/complete)
+router.post('/:courseId/complete', requireRole('student'), async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const { courseId } = req.params;
+
+        const enrollment = await Models.Enrollment.findOne({
+            where: { userId, courseId }
+        });
+
+        if (!enrollment) {
+            return res.status(404).json({ message: 'Not enrolled in this course' });
+        }
+
+        if (enrollment.completed) {
+            return res.status(400).json({ message: 'Course is already completed' });
+        }
+
+        enrollment.completed = true;
+        await enrollment.save();
+
+        res.status(200).json({ message: 'Successfully completed the course' });
+    } catch (error) {
+        res.status(500).json({ message: `Error completing course: ${error.message}` });
+    }
+});
+
 // === INSTRUCTOR OR ADMIN ===
 
 // Create a new course (Maps to POST /api/courses)
 router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
     try {
-        const { name, modules, description, isPrivate, thumbnail } = req.body;
+        const { name, modules, description, isPrivate, thumbnail, requirements } = req.body;
 
         if (!name) {
             return res.status(400).json({ message: 'Course name is required' });
@@ -134,6 +179,103 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
             }, { transaction: t });
 
             // If modules exist, process them
+            if (modules && Array.isArray(modules)) {
+                for (let i = 0; i < modules.length; i++) {
+                    const modData = modules[i];
+                    const newModule = await Models.Module.create({
+                        title: modData.title || 'Untitled Module',
+                        order: modData.order || i + 1,
+                        courseId: course.id,
+                        parentModuleId: null
+                    }, { transaction: t });
+
+                    if (modData.content && Array.isArray(modData.content)) {
+                        for (let j = 0; j < modData.content.length; j++) {
+                            const item = modData.content[j];
+                            
+                            if (Array.isArray(item.content)) {
+                                const newSubModule = await Models.Module.create({
+                                    title: item.title || 'Untitled Submodule',
+                                    order: item.order || j + 1,
+                                    courseId: course.id,
+                                    parentModuleId: newModule.id
+                                }, { transaction: t });
+
+                                for (let k = 0; k < item.content.length; k++) {
+                                    const subLec = item.content[k];
+                                    await Models.Lecture.create({
+                                        title: subLec.title || 'Untitled Lecture',
+                                        order: subLec.order || k + 1, 
+                                        content: subLec.content || '',
+                                        moduleId: newSubModule.id
+                                    }, { transaction: t });
+                                }
+                            } else {
+                                await Models.Lecture.create({
+                                    title: item.title || 'Untitled Lecture',
+                                    order: item.order || j + 1,
+                                    content: item.content || '',
+                                    moduleId: newModule.id
+                                }, { transaction: t });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Parse requirement IDs as integers (frontend sends strings)
+            if (requirements && Array.isArray(requirements) && requirements.length > 0) {
+                const reqIds = requirements.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+                await course.setRequirements(reqIds, { transaction: t });
+            }
+
+            return course;
+        });
+
+        res.status(201).json(newCourse);
+    } catch (error) {
+        if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+            const messages = error.errors.map(e => e.message).join(', ');
+            return res.status(400).json({ message: `Validation error: ${messages}` });
+        }
+        res.status(500).json({ message: `Error creating course: ${error.message}` });
+    }
+});
+
+// Edit an existing course (Maps to PUT /api/courses/:courseId)
+router.put('/:courseId', requireRole('admin','instructor'), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { name, modules, description, isPrivate, thumbnail, requirements } = req.body;
+
+        const course = await Models.Course.findByPk(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        if (!name) {
+            return res.status(400).json({ message: 'Course name is required' });
+        }
+
+        await Models.Course.sequelize.transaction(async (t) => {
+            // Update course basic info
+            await course.update({
+                name,
+                description: description || null,
+                isPrivate: isPrivate || false,
+                thumbnail: thumbnail || null
+            }, { transaction: t });
+
+            // Destroy existing lectures & modules
+            const oldModules = await Models.Module.findAll({ where: { courseId: course.id }, transaction: t });
+            const oldModuleIds = oldModules.map(m => m.id);
+            if (oldModuleIds.length > 0) {
+                await Models.Lecture.destroy({ where: { moduleId: oldModuleIds }, transaction: t });
+                await Models.Module.destroy({ where: { courseId: course.id }, transaction: t });
+            }
+
+            // Re-create modules
+            // should probably be in a function for this and add course, maybe just use edit course for both and add course just takes directly to edit course after naming?
             if (modules) {
                 for (let i = 0; i < modules.length; i++) {
                     const modData = modules[i];
@@ -177,33 +319,35 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
                     }
                 }
             }
-            return course;
+
+            // Update requirements
+            if (requirements && Array.isArray(requirements) && requirements.length > 0) {
+                const reqIds = requirements.map((id) => parseInt(id, 10)).filter(id => !isNaN(id));
+                await course.setRequirements(reqIds, { transaction: t });
+            } else {
+                await course.setRequirements([], { transaction: t });
+            }
         });
 
-        res.status(201).json(newCourse);
+        res.status(200).json({ message: 'Course updated successfully' });
     } catch (error) {
         if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
             const messages = error.errors.map(e => e.message).join(', ');
             return res.status(400).json({ message: `Validation error: ${messages}` });
         }
-        res.status(500).json({ message: `Error creating course: ${error.message}` });
+        res.status(500).json({ message: `Error updating course: ${error.message}` });
     }
 });
 
 // Delete a course (Maps to DELETE /api/courses/:courseId)
-// Instructors can only delete their own; admins can delete any
-router.delete('/:courseId', requireRole('instructor', 'admin'), async (req, res) => {
+// Admins can delete any
+router.delete('/:courseId', requireRole('admin','instructor'), async (req, res) => {
     try {
         const { courseId } = req.params;
         const course = await Models.Course.findByPk(courseId);
 
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
-        }
-
-        // Instructors can only delete courses they own
-        if (req.session.user.role === 'instructor' && course.instructorId !== req.session.user.id) {
-            return res.status(403).json({ message: 'You can only delete your own courses' });
         }
 
         await course.destroy();
@@ -222,6 +366,7 @@ router.get('/', async (req, res) => {
     try {
         const courses = await Models.Course.findAll({
             order: [['createdAt', 'DESC']],
+            include: [{ model: Models.Course, as: 'requirements', attributes: ['id', 'name'] }]
         });
         res.status(200).json(courses);
     } catch (error) {
@@ -256,6 +401,11 @@ router.get('/:courseId', async (req, res) => {
                             ]
                         }
                     ]
+                },
+                {
+                    model: Models.Course,
+                    as: 'requirements',
+                    attributes: ['id', 'name']
                 }
             ],
             order: [
@@ -314,7 +464,8 @@ router.get('/:courseId', async (req, res) => {
             isPrivate: course.isPrivate,
             description: course.description,
             thumbnail: course.thumbnail,
-            modules: mappedModules
+            modules: mappedModules,
+            requirements: course.requirements ? course.requirements.map(reqCourse => ({ id: reqCourse.id, name: reqCourse.name })) : []
         };
 
         res.status(200).json(courseData);

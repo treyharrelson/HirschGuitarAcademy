@@ -9,9 +9,11 @@ type CourseCardProps = {
   course: Course;
   enrolled: string;
   buttonclick: () => void;
+  missingRequirements?: string[];
+  isCompleted?: boolean;
 };
 
-export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) => {
+export const CourseCard = ({ course, enrolled, buttonclick, missingRequirements = [], isCompleted = false }: CourseCardProps) => {
   const [imageUrl, setImageUrl] = useState<string>(assets.defaultCourseThumbnail);
 
   useEffect(() => {
@@ -59,9 +61,17 @@ export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) =
       </div>
       </Link>
 
-      <div className='pl-2'>
-        <BigBlueButton children={enrolled} onClick={buttonclick} />
+      <div className='pl-2 pb-1 flex items-center gap-2'>
+        <BigBlueButton children={enrolled} onClick={missingRequirements.length > 0 ? undefined : buttonclick} disabled={missingRequirements.length > 0} />
+        {enrolled === "Unenroll" && isCompleted && (
+          <span className="text-emerald-500 font-bold text-lg" title="Completed">✓</span>
+        )}
       </div>
+      {missingRequirements.length > 0 && (
+        <div className='px-2 pb-2 text-xs text-red-500 font-medium whitespace-normal leading-tight'>
+          Requires: {missingRequirements.join(', ')}
+        </div>
+      )}
 
       {/* For progress bar */}
       {/* <div className='mt-auto pt-4 border-t border-gray-100 w-full'>

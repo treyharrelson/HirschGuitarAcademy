@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom'
 const AddCourse: React.FC = () => {
   const navigate = useNavigate();
   const { state, handlers, refs, setters } = useCourseEditor();
-  const { fetchAllCourses } = useAppContext();
+  const { fetchAllCourses, allCourses } = useAppContext();
 
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [statusMsg, setStatusMsg] = useState<string>('')
@@ -47,7 +47,8 @@ const AddCourse: React.FC = () => {
         isPrivate: state.isPrivate,
         description,
         modules: state.modules,
-        thumbnail: thumbnailKey || null
+        thumbnail: thumbnailKey || null,
+        requirements: state.courseRequirements
       }, { withCredentials: true });
 
       setStatusMsg('Course created successfully!');
@@ -63,6 +64,7 @@ const AddCourse: React.FC = () => {
         setters.setCourseTitle('');
         setters.setIsPrivate(false);
         setters.setModules([]);
+        setters.setCourseRequirements([]);
         if (refs.quillRef.current) refs.quillRef.current.setContents([]);
       }
       
@@ -98,6 +100,29 @@ const AddCourse: React.FC = () => {
         <div className='flex flex-col gap-1'>
           <p>Course Description</p>
           <div ref={refs.editorRef}></div>
+        </div>
+
+        {/* COURSE REQUIREMENTS */}
+        <div className='flex flex-col gap-1'>
+          <p>Course Prerequisites</p>
+          <div className='border border-gray-500 rounded p-2 max-h-40 overflow-y-auto bg-white'>
+            {allCourses.length === 0 ? <p className='text-sm text-gray-400'>No courses available</p> : allCourses.map(course => (
+              <label key={course.id} className='flex items-center gap-2 mb-1 cursor-pointer'>
+                <input 
+                  type='checkbox' 
+                  checked={state.courseRequirements.includes(String(course.id))}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setters.setCourseRequirements([...state.courseRequirements, String(course.id)]);
+                    } else {
+                      setters.setCourseRequirements(state.courseRequirements.filter(id => id !== String(course.id)));
+                    }
+                  }}
+                />
+                {course.name}
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* COURSE THUMBNAIL */}

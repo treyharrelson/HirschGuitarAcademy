@@ -40,7 +40,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
     };
 
     const handleBan = async () => {
-        if (!confirm(`Are you sure you want to ban ${post.author?.userName} from this thread?`)) return;
+        if (!confirm(`Are you sure you want to ban ${post.author?.userName} (${post.userId}) from this thread?`)) return;
         try {
             const threadId = post.threadId || post.announcedThread?.id;
             await api.post(`/api/threads/${threadId}/ban`, { userId: post.author?.id });

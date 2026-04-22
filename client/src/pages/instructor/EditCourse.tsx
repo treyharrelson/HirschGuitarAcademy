@@ -2,14 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 import { useCourseEditor } from '../../hooks/useCourseEditor';
+import { useAppContext } from '../../context/AppContext';
 import LectureEditor from '../../components/instructor/LectureEditor';
 import Quill from 'quill';
 import "quill/dist/quill.snow.css";
 import { assets } from '../../assets/assets';
 
+
 const EditCourse: React.FC = () => {
     const { courseId } = useParams<{ courseId: string }>();
     const { state, setters, handlers, refs } = useCourseEditor();
+    const { allCourses } = useAppContext();
 
     const [submitting, setSubmitting] = useState<boolean>(false);
     const [statusMsg, setStatusMsg] = useState<string>('');
@@ -26,6 +29,7 @@ const EditCourse: React.FC = () => {
                 setters.setModules(course.modules || []);
                 setters.setImage(course.thumbnail);
                 setters.setCourseDescription(course.description || "");
+                setters.setCourseRequirements(course.requirements ? course.requirements.map((r: any) => String(r.id)) : []);
 
             } catch (err) {
                 setStatusMsg("Error loading course data.");
@@ -75,6 +79,7 @@ const EditCourse: React.FC = () => {
             isPrivate: state.isPrivate,
             description: descriptionHtml,
             modules: state.modules,
+            requirements: state.courseRequirements,
         };
         try {
             // Log the payload to verify data before it's sent
@@ -112,6 +117,28 @@ const EditCourse: React.FC = () => {
                 <div className='flex flex-col gap-1'>
                     <p className='font-medium'>Course Description</p>
                     <div ref={refs.editorRef} className="bg-white min-h-[200px] border border-gray-300"></div>
+                </div>
+                {/* COURSE REQUIREMENTS */}
+                <div className='flex flex-col gap-1'>
+                    <p className='font-medium'>Course Prerequisites</p>
+                    <div className='border border-gray-300 rounded p-4 max-h-40 overflow-y-auto bg-white'>
+                        {allCourses.length === 0 ? <p className='text-sm text-gray-400'>No courses available</p> : allCourses.filter(c => String(c.id) !== courseId).map(course => (
+                        <label key={course.id} className='flex items-center gap-2 mb-1 cursor-pointer'>
+                            <input 
+                            type='checkbox' 
+                            checked={state.courseRequirements.includes(String(course.id))}
+                            onChange={(e) => {
+                                if (e.target.checked) {
+                                setters.setCourseRequirements([...state.courseRequirements, String(course.id)]);
+                                } else {
+                                setters.setCourseRequirements(state.courseRequirements.filter(id => id !== String(course.id)));
+                                }
+                            }}
+                            />
+                            {course.name}
+                        </label>
+                        ))}
+                    </div>
                 </div>
                 {/* MODULES & LECTURES */}
                 <div className='flex flex-col gap-4'>

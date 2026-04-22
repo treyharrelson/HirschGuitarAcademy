@@ -19,6 +19,8 @@ export const useCourseEditor = (initialData?: any) => {
   const [lectureDetails, setLectureDetails] = useState({ lectureTitle: '' })
   const [courseDescription, setCourseDescription] = useState("");
 
+  const [courseRequirements, setCourseRequirements] = useState<string[]>(initialData?.requirements?.map((r: any) => String(r.id)) || [])
+
   // UI States
   const [showPopup, setPopup] = useState<boolean>(false)
   const [popupType, setPopupType] = useState<'Module' | 'SubModule' | 'Lecture'>('Lecture')
@@ -234,8 +236,8 @@ export const useCourseEditor = (initialData?: any) => {
 
 
   return {
-    state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription },
-    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription },
+    state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription, courseRequirements },
+    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription, setCourseRequirements },
     refs: { inputRef, quillRef, editorRef },
     handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateLectureContent, updateSubLectureContent, updateTitle },
   };
