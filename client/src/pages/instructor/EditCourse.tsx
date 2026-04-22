@@ -3,10 +3,12 @@ import { useParams } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 import { useCourseEditor } from '../../hooks/useCourseEditor';
 import { useAppContext } from '../../context/AppContext';
-import LectureEditor from '../../components/instructor/LectureEditor';
+import LectureEditor from '../../components/instructor/LectureBlockContainer';
 import Quill from 'quill';
 import "quill/dist/quill.snow.css";
 import { assets } from '../../assets/assets';
+import LectureBlocksContainer from '../../components/instructor/LectureBlockContainer';
+import AddBlockMenu from '../../components/instructor/AddBlockMenu';
 
 
 const EditCourse: React.FC = () => {
@@ -116,27 +118,30 @@ const EditCourse: React.FC = () => {
                 {/* MAIN DESCRIPTION */}
                 <div className='flex flex-col gap-1'>
                     <p className='font-medium'>Course Description</p>
-                    <div ref={refs.editorRef} className="bg-white min-h-[200px] border border-gray-300"></div>
+                    <div className='w-full bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden'>
+                        <div ref={refs.editorRef} className="bg-white min-h-[200px]"></div>
+                    </div>
+                    
                 </div>
                 {/* COURSE REQUIREMENTS */}
                 <div className='flex flex-col gap-1'>
                     <p className='font-medium'>Course Prerequisites</p>
                     <div className='border border-gray-300 rounded p-4 max-h-40 overflow-y-auto bg-white'>
                         {allCourses.length === 0 ? <p className='text-sm text-gray-400'>No courses available</p> : allCourses.filter(c => String(c.id) !== courseId).map(course => (
-                        <label key={course.id} className='flex items-center gap-2 mb-1 cursor-pointer'>
-                            <input 
-                            type='checkbox' 
-                            checked={state.courseRequirements.includes(String(course.id))}
-                            onChange={(e) => {
-                                if (e.target.checked) {
-                                setters.setCourseRequirements([...state.courseRequirements, String(course.id)]);
-                                } else {
-                                setters.setCourseRequirements(state.courseRequirements.filter(id => id !== String(course.id)));
-                                }
-                            }}
-                            />
-                            {course.name}
-                        </label>
+                            <label key={course.id} className='flex items-center gap-2 mb-1 cursor-pointer'>
+                                <input
+                                    type='checkbox'
+                                    checked={state.courseRequirements.includes(String(course.id))}
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            setters.setCourseRequirements([...state.courseRequirements, String(course.id)]);
+                                        } else {
+                                            setters.setCourseRequirements(state.courseRequirements.filter(id => id !== String(course.id)));
+                                        }
+                                    }}
+                                />
+                                {course.name}
+                            </label>
                         ))}
                     </div>
                 </div>
@@ -147,11 +152,11 @@ const EditCourse: React.FC = () => {
                         <div key={module.id} className='bg-white border border-gray-300 rounded-lg p-4'>
                             {/* Module Title Input */}
                             <div className="flex items-center gap-3 p-4 bg-gray-50 border-b rounded-t-lg">
-                                <img
+                                {/*<img
                                     onClick={() => handlers.handleModule('toggle', module.id)}
                                     src={assets.dropDown_icon}
                                     className={`w-4 h-4 cursor-pointer transition-transform ${module.collapsed ? "-rotate-90" : ""}`}
-                                />
+                                />*/}
                                 <span className="font-bold text-black whitespace-nowrap">{mIdx + 1}.</span>
                                 <input
                                     className="font-bold text-black border-b border-transparent hover:border-gray-300 focus:border-blue-500 w-full outline-none bg-transparent"
@@ -165,7 +170,7 @@ const EditCourse: React.FC = () => {
                                 />
                             </div>
                             {/* Lectures inside Module */}
-                            {!module.collapsed && (<div className="flex flex-col gap-6 ml-6">
+                            {(<div className="flex flex-col gap-6 ml-6">
                                 {module.content.map((item: any, lIdx: number) => {
                                     // 1. CHECK IF SUBMODULE: Submodules have a 'content' array
                                     const isSubModule = Array.isArray(item.content);
@@ -193,6 +198,7 @@ const EditCourse: React.FC = () => {
                                                         className='cursor-pointer w-4 h-4 opacity-50 hover:opacity-100 shrink-0'
                                                         onClick={() => handlers.handleSubModule('remove', module.id, lIdx)}
                                                     />
+
                                                 </div>
                                                 {/* 2. NESTED LECTURES: Map the content within the SubModule */}
                                                 {!item.collapsed && (<div className="flex flex-col gap-4 ml-4">
@@ -213,9 +219,9 @@ const EditCourse: React.FC = () => {
                                                                     onClick={() => handlers.handleLecture('remove', module.id, lIdx, slIdx)}
                                                                 />
                                                             </div>
-                                                            <LectureEditor
-                                                                initialContent={subLecture.content}
-                                                                onContentChange={(val) => handlers.updateSubLectureContent(module.id, lIdx, slIdx, val)}
+                                                            <LectureBlocksContainer
+                                                                initialBlocks={item.blocks || []}
+                                                                onBlocksChange={(newBlocks) => handlers.updateLectureBlocks(item.id, newBlocks)}
                                                             />
                                                         </div>
                                                     ))}
@@ -250,10 +256,11 @@ const EditCourse: React.FC = () => {
                                                     onClick={() => handlers.handleLecture('remove', module.id, lIdx)}
                                                 />
                                             </div>
-                                            <LectureEditor
-                                                initialContent={item.content}
-                                                onContentChange={(val) => handlers.updateLectureContent(module.id, lIdx, val)}
+                                            <LectureBlocksContainer
+                                                initialBlocks={item.blocks || []}
+                                                onBlocksChange={(newBlocks) => handlers.updateLectureBlocks(item.id, newBlocks)}
                                             />
+
                                         </div>
                                     );
                                 })}

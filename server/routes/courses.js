@@ -3,8 +3,6 @@ const router = express.Router();
 const Models = require('../db/models');
 const requireRole = require('../middleware/requireRole');
 
-
-
 // === STUDENT ONLY ===
 
 // Get enrollments for the current user (Maps to GET /api/courses/my-enrollments)

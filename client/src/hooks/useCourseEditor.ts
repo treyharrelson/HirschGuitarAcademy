@@ -40,15 +40,34 @@ export const useCourseEditor = (initialData?: any) => {
     );
   };
 
-  const createItem = (title: string, currentLength: number, type: 'Module' | 'SubModule' | 'Lecture', parentId?: string) => ({
-    id: uniqid(),
-    title,
-    order: currentLength + 1,
-    // Both 'Module' and 'SubModule' need an empty array []
-    ...(type === 'Module' || type === 'SubModule'
-      ? { content: [], collapsed: false, courseId }
-      : { content: '', module_Id: parentId })
-  });
+  const createItem = (
+    title: string,
+    currentLength: number,
+    type: 'Module' | 'SubModule' | 'Lecture',
+    parentId?: string
+  ): Module | Lecture => {
+    const base = {
+      id: uniqid(),
+      title,
+      order: currentLength + 1,
+    };
+
+    if (type === 'Module' || type === 'SubModule') {
+      return {
+        ...base,
+        content: [],
+        collapsed: false,
+        courseId: courseId,
+      } as Module;
+    } else {
+      return {
+        ...base,
+        blocks: [],
+        module_Id: parentId || '',
+      } as Lecture;
+    }
+  };
+
 
   const handleModule = (action: ModuleAction, moduleId?: string): void => {
     if (action === 'add') {
@@ -57,8 +76,6 @@ export const useCourseEditor = (initialData?: any) => {
       return;
     } else if (action === 'remove' && moduleId) {
       setModules((prev) => prev.filter((m) => String(m.id) !== String(moduleId)));
-    } else if (action === 'toggle' && moduleId) {
-      updateModuleById(moduleId, (m) => ({ ...m, collapsed: !m.collapsed }));
     }
   };
 
@@ -121,25 +138,6 @@ export const useCourseEditor = (initialData?: any) => {
     }
   };
 
-  const updateLectureContent = (moduleId: string, lectureIndex: number, newContent: string) => {
-    setModules((prev) =>
-      prev.map((m) => {
-        if (m.id !== moduleId) return m;
-
-        const updatedContent = [...m.content];
-        const targetLecture = updatedContent[lectureIndex];
-
-        if (targetLecture) {
-          updatedContent[lectureIndex] = {
-            ...targetLecture,
-            content: newContent
-          } as any;
-        }
-        return { ...m, content: updatedContent };
-      })
-    );
-  };
-
   const handleSubModule = (action: ModuleAction, moduleId: string, index?: number): void => {
     if (action === 'add') {
       setCurrentModuleId(moduleId);
@@ -166,7 +164,7 @@ export const useCourseEditor = (initialData?: any) => {
     type: 'module' | 'submodule' | 'lecture',
     id: string,
     newTitle: string,
-    extraArgs?: { moduleId: string; subModuleIndex?: number } // Add this 4th arg
+    extraArgs?: { moduleId: string; subModuleIndex?: number }
   ) => {
     setModules((prev) => {
       if (type === 'module') {
@@ -180,14 +178,6 @@ export const useCourseEditor = (initialData?: any) => {
           }
           if (type === 'lecture' && item.id === id) {
             return { ...item, title: newTitle };
-          }
-          if ('collapsed' in item && Array.isArray(item.content)) {
-            return {
-              ...item,
-              content: item.content.map((subLec) =>
-                subLec.id === id ? { ...subLec, title: newTitle } : subLec
-              ),
-            };
           }
           return item;
         });
@@ -203,42 +193,32 @@ export const useCourseEditor = (initialData?: any) => {
       handleSubModule(action, modId)
     }
   };
-  const updateSubLectureContent = (
-    moduleId: string,
-    subModuleIndex: number,
-    lectureIndex: number,
-    newContent: string
-  ) => {
-    setModules((prev) =>
-      prev.map((m) => {
-        if (m.id !== moduleId) return m;
 
-        const updatedContent = [...m.content];
-        // Clone the submodule
-        const subMod = { ...(updatedContent[subModuleIndex] as Module) };
-
-        if (subMod && Array.isArray(subMod.content)) {
-          const updatedSubContent = [...subMod.content];
-          // Update the specific lecture inside the submodule
-          updatedSubContent[lectureIndex] = {
-            ...updatedSubContent[lectureIndex],
-            content: newContent
-          } as Lecture;
-
-          subMod.content = updatedSubContent;
-          updatedContent[subModuleIndex] = subMod;
-        }
-
-        return { ...m, content: updatedContent };
-      })
-    );
+  const updateLectureBlocks = (lectureId: string, newBlocks: any[]) => {
+    setModules((prevModules) => {
+      const updateRecursive = (items: any[]): any[] => {
+        return items.map((item) => {
+          // If this is the lecture we are looking for
+          if (item.id === lectureId) {
+            return { ...item, blocks: newBlocks };
+          }
+          // If this is a module/sub-module, look inside its content
+          if (item.content && Array.isArray(item.content)) {
+            return { ...item, content: updateRecursive(item.content) };
+          }
+          return item;
+        });
+      };
+      return updateRecursive(prevModules);
+    });
   };
+
 
 
   return {
     state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription, courseRequirements },
     setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription, setCourseRequirements },
     refs: { inputRef, quillRef, editorRef },
-    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateLectureContent, updateSubLectureContent, updateTitle },
+    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateTitle, updateLectureBlocks },
   };
 };
