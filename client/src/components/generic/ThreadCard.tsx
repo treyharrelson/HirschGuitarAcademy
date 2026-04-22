@@ -11,6 +11,11 @@ function ThreadCard({ thread, unreadCount }: Props) {
         <Link to={`/forum/thread/${thread.id}`} className="block bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-blue-200 transition-all">
             <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold text-blue-700">{thread.title}</h3>
+                {thread.isGlobalFeed && (
+                    <span className="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">
+                        Global
+                    </span>
+                )}
                 {unreadCount !== undefined && unreadCount > 0 && (
                     <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
                         {unreadCount} new

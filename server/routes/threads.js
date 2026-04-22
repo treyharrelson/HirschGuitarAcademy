@@ -55,8 +55,8 @@ router.post('/', async (req, res) => {
 		const payload = `data: ${JSON.stringify({ type: 'new_global_post', post: postWithAuthor })}\n\n`;
 		userClients.forEach(clients => clients.forEach(client => client.write(payload)));
 
-		// auto subscribe the thread author
-		await Models.Subscription.findOrCreate({
+		// auto follow the thread author
+		await Models.Follow.findOrCreate({
 			where: {
 				userId: req.session.user.id,
 				threadId: newThread.id
@@ -146,7 +146,7 @@ router.post('/feed', async (req, res) => {
 });
 
 // Gets a merged, chronologically sorted feed of:
-//   - posts from threads the user is subscribed to
+//   - posts from threads the user follows
 //   - global announcement posts (visible to everyone)
 //	 - global feed threads (threads that have been designated as Global)
 // Uses offset pagination. Maps to GET /api/threads/feed/posts
@@ -156,10 +156,10 @@ router.get('/feed/posts', async (req, res) => {
         const offset = parseInt(req.query.offset) || 0;
 
 		// grab threads that the user follows
-        const subs = await Models.Subscription.findAll({
+        const follows = await Models.Follow.findAll({
             where: { userId: req.session.user.id }
         });
-        const subscribedThreadIds = subs.map(s => s.threadId);
+        const followedThreadIds = follows.map(f => f.threadId);
 
 		// also grab all threads marked as global feed
 		const globalThreads = await Models.Thread.findAll({
@@ -169,12 +169,12 @@ router.get('/feed/posts', async (req, res) => {
 		const globalThreadIds = globalThreads.map(t => t.id);
 
 		// Merge followed threads and global threads
-		const threadIds = [...new Set([...subscribedThreadIds, ...globalThreadIds])];
+		const threadIds = [...new Set([...followedThreadIds, ...globalThreadIds])];
 
         const { count, rows: posts } = await Models.Post.findAndCountAll({
             where: {
                 [Op.or]: [
-                    // posts from subscribed threads (only if the user follows at least one)
+                    // posts from followed threads (only if the user follows at least one)
                     ...(threadIds.length > 0 ? [{ threadId: threadIds }] : []),
                     // standalone global posts (announcements, feed-only posts)
                     { scope: 'global' }
@@ -303,8 +303,8 @@ router.post('/:threadId/posts', async (req, res) => {
 			await Models.Attachment.bulkCreate(attachmentRecords);
 		}
 
-		//Auto-subscribe the poster to this thread if not already subscribed
-		await Models.Subscription.findOrCreate({
+		//Auto-follow the poster to this thread if not already followed
+		await Models.Follow.findOrCreate({
 		where: {
 			userId: req.session.user.id,
 			threadId: req.params.threadId
@@ -319,7 +319,7 @@ router.post('/:threadId/posts', async (req, res) => {
 			]
 		});
 
-		// find who should receive this event, either users who are subscribed or everyone, if thread is global
+		// find who should receive this event, either users who are followed or everyone, if thread is global
 		const thread = await Models.Thread.findByPk(req.params.threadId);
 
 		let recipientUserIds;
@@ -327,11 +327,11 @@ router.post('/:threadId/posts', async (req, res) => {
 			// broadcast to all connected users
 			recipientUserIds = [...userClients.keys()];
 		} else {
-			// broadcast to subscribed users
-			const subs = await Models.Subscription.findAll({
+			// broadcast to followed users
+			const follows = await Models.Follow.findAll({
 				where: { threadId: req.params.threadId }
 			});
-			recipientUserIds = subs.map(s => s.userId);
+			recipientUserIds = follows.map(f => f.userId);
 		}
 
 		const payload = `data: ${JSON.stringify({ type: 'new_post', threadId: req.params.threadId, post: postWithAuthor })}\n\n`;
@@ -346,40 +346,40 @@ router.post('/:threadId/posts', async (req, res) => {
 	}
 });
 
-// Get subscription status for current user on this thread
-router.get('/:threadId/subscribe', async (req, res) => {
+// Get follow status for current user on this thread
+router.get('/:threadId/follow', async (req, res) => {
 	try {
-		const subscription = await Models.Subscription.findOne({
+		const follow = await Models.Follow.findOne({
 			where: {
 				userId: req.session.user.id,
 				threadId: req.params.threadId
 			}
 		});
-		res.json({ subscribed: !!subscription });
+		res.json({ followed: !!follow });
 	} catch (error) {
-		res.status(500).json({ message: `Error checking subscription: ${error} `});
+		res.status(500).json({ message: `Error checking follow status: ${error} `});
 	}
 });
 
-// Subscribe to a thread (maps to /api/threads/:threadId/subscribe)
-router.post('/:threadId/subscribe', async (req, res) => {
+// follow a thread (maps to /api/threads/:threadId/follow)
+router.post('/:threadId/follow', async (req, res) => {
 	try {
-		const [subscription, created] = await Models.Subscription.findOrCreate({
+		const [follow, created] = await Models.Follow.findOrCreate({
 			where: {
 				userId: req.session.user.id,
 				threadId: req.params.threadId
 			}
 		});
-		res.status(created ? 201 : 200).json(subscription);
+		res.status(created ? 201 : 200).json(follow);
 	} catch (error) {
-		res.status(500).json({ message: `Error subscribing: ${error}` });
+		res.status(500).json({ message: `Error following: ${error}` });
 	}
 });
 
-// Unsubscribe from a thread
-router.delete('/:threadId/subscribe', async (req, res) => {
+// Unfollow a thread
+router.delete('/:threadId/follow', async (req, res) => {
 	try {
-		await Models.Subscription.destroy({
+		await Models.Follow.destroy({
 			where: {
 				userId: req.session.user.id,
 				threadId: req.params.threadId
@@ -387,14 +387,14 @@ router.delete('/:threadId/subscribe', async (req, res) => {
 		});
 		res.status(204).end();
 	} catch (error) {
-		res.status(500).json({ message: `Error unsubscribing: ${error}` });
+		res.status(500).json({ message: `Error unfollowing: ${error}` });
 	}
 });
 
 // updates lastReadAt on the followed thread
 router.post('/:threadId/read', async (req, res) => {
     try {
-        const [follow] = await Models.Subscription.findOne({
+        const follow = await Models.follow.findOne({
             where: { userId: req.session.user.id, threadId: req.params.threadId }
         });
 
@@ -408,7 +408,7 @@ router.post('/:threadId/read', async (req, res) => {
 });
 
 // toggle isGlobalFeed on a thread (PATCH /api/threads/:threadId/global)
-// TODO: swap requireAuth for requireRole([ROLES.MODERATOR]) once roles are finalized
+// TODO: add requireRole([ROLES.MODERATOR]) once roles are finalized
 router.patch('/:threadId/global', async (req, res) => {
 	try {
 		const thread = await Models.Thread.findByPk(req.params.threadId);
@@ -420,8 +420,8 @@ router.patch('/:threadId/global', async (req, res) => {
 	}
 });
 
-// delete a thread and its posts/subscriptions (DELETE /api/threads/:threadId)
-// TODO: swap requireAuth for requireRole([ROLES.MODERATOR]) once roles are finalized
+// delete a thread and its posts/follows (DELETE /api/threads/:threadId)
+// TODO: add requireRole([ROLES.MODERATOR]) once roles are finalized
 router.delete('/:threadId', async (req, res) => {
 	try {
 		const thread = await Models.Thread.findByPk(req.params.threadId);
@@ -435,7 +435,7 @@ router.delete('/:threadId', async (req, res) => {
 		await Models.Post.destroy({ where: {announcedThreadId: thread.id } });
 
 		// delete the follow relationships between users and the thread
-		await Models.Subscription.destroy({ where: { threadId: thread.id } });
+		await Models.Follow.destroy({ where: { threadId: thread.id } });
 		
 		// finally, delete the thread
 		await thread.destroy();

@@ -8,8 +8,8 @@ const Comment = require('./Comment')
 const Course = require('./Course');
 const Enrollment = require('./Enrollment');
 const Message = require('./Message');
-const Notification = require('./Notification')
-const Subscription = require('./Subscription')
+const Notification = require('./Notification');
+const Follow = require('./Follow');
 const Module = require('./Module');
 const Lecture = require('./Lecture');
 const Attachment = require('./Attachment');
@@ -97,11 +97,11 @@ Message.belongsTo(User, { foreignKey: 'recipientId', as: 'recipient' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
-// User to thread subscriptions
-User.hasMany(Subscription, { foreignKey: 'userId', as: 'subscriptions' });
-Thread.hasMany(Subscription, { foreignKey: 'threadId', as: 'subscriptions'})
-Subscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-Subscription.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
+// User to thread follows
+User.hasMany(Follow, { foreignKey: 'userId', as: 'follows' });
+Thread.hasMany(Follow, { foreignKey: 'threadId', as: 'follows'})
+Follow.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Follow.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
 
 // Belt to Course and User
 User.hasMany(Belt, { foreignKey: 'userId', as: 'belts' });
@@ -134,7 +134,7 @@ module.exports = {
     Post,
     Comment,
     Notification,
-    Subscription,
+    Follow,
     Module,
     Lecture,
     Attachment,
