@@ -149,7 +149,7 @@ function Dashboard() {
                             <SkeletonPostCard key={i} />
                         ))
                         : feedPosts.length === 0
-                            ? <p>No posts yet. Follow to some threads in the forum to see them here.</p>
+                            ? <p>No posts yet. Follow some threads in the forum to see them here.</p>
                             : (
                                 <div className="flex flex-col gap-4">
                                     {feedPosts.map(post => (

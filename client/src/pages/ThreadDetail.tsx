@@ -98,7 +98,7 @@ function ThreadDetail() {
   // load follow status only once thread is loaded and only if its not global
   useEffect(() => {
     if (!thread) return;
-    if (thread.isGlobalFeed) return;
+    if (thread.visibility === 'global') return;
     loadFollowStatus();
   }, [thread]);
 
@@ -135,13 +135,13 @@ function ThreadDetail() {
           <h1 className="text-3xl font-bold text-blue-700 tracking-tight">
             {thread ? thread.title : 'Loading...'}
           </h1>
-          {thread?.isGlobalFeed && (
+          {thread?.visibility === 'global' && (
             <span className="text-sm bg-green-100 text-green-700 font-semibold px-3 py-1 rounded-full">
               Global
             </span>
           )}
         </div>
-        {!thread?.isGlobalFeed && (
+        {!thread || thread.visibility !== 'global' && (
           <button
             onClick={handleFollowToggle}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-all border ${

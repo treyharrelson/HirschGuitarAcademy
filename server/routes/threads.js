@@ -10,8 +10,24 @@ router.get('/', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 20;
         const offset = parseInt(req.query.offset) || 0;
+		const userId = req.session.user.id;
+
+		// find private threadIds this user has access to
+		const memberOf = await Models.ThreadMember.findAll({
+			where: { userId },
+			attributes: ['threadId']
+		});
+		// pull out the list of threadIds
+		const memberThreadIds = memberOf.map(m => m.threadId);
 
         const { count, rows: threads } = await Models.Thread.findAndCountAll({
+			where: {
+				// if the thread is not private or it is private but the user is in it, it is included
+				[Op.or]: [
+					{ visibility: ['public', 'global'] },
+					...(memberThreadIds.length > 0 ? [{ id: memberThreadIds}] : [])
+				]
+			},
             include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }],
             order: [['createdAt', 'DESC']],
             limit,
@@ -163,7 +179,7 @@ router.get('/feed/posts', async (req, res) => {
 
 		// also grab all threads marked as global feed
 		const globalThreads = await Models.Thread.findAll({
-			where: { isGlobalFeed: true },
+			where: { visibility: 'global' },
 			attributes: ['id']
 		});
 		const globalThreadIds = globalThreads.map(t => t.id);
@@ -243,6 +259,50 @@ router.get('/unread-counts', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: `Error fetching unread counts: ${error}` });
     }
+});
+
+// Get members of a private thread (GET /api/threads/:threadId/members)
+router.get('/:threadId/members', async (req, res) => {
+	try {
+		// find members of the thread given by the GET URL param, 
+		const members = await Models.ThreadMember.findAll({
+			where: { threadId: req.params.threadId },
+			// join Users table
+			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName'] }]
+		});
+		// map the nested users from the query so that the response is only the users
+		res.json(members.map(m => m.user));
+	} catch (error) {
+		res.status(500).json({ message: `Error fetching members: ${error}`});
+	}
+});
+
+// Add a member to a private thread (POST /api/threads/:threadId/members)
+router.post('/:threadId/members', async (req, res) => {
+	try {
+		// get userId from request
+		const { userId } = req.body;
+		if (!userId) return res.status(400).json({ message: 'userId is required' });
+		// add new record for ThreadMember
+		const [member, created] = await Models.ThreadMember.findOrCreate({
+			where: { threadId: req.params.threadId, userId }
+		});
+		res.status(created ? 201 : 200).json(member);
+	} catch (error) {
+		res.status(500).json({ message: `Error adding member: ${error}` });
+	}
+});
+
+// Remove a member from a private thread (DELETE /api/threads/:threadId/members/:userId)
+router.delete('/:threadId/members/:userId', async (req, res) => {
+	try {
+		await Models.ThreadMember.destroy({
+			where: { threadId: req.params.threadId, userId: req.params.userId }
+		});
+		res.status(204).end();
+	} catch (error) {
+		res.status(500).json({ message: `Error deleting member: ${error}`});
+	}
 });
 
 // Get a single thread by ID
@@ -407,17 +467,48 @@ router.post('/:threadId/read', async (req, res) => {
     }
 });
 
-// toggle isGlobalFeed on a thread (PATCH /api/threads/:threadId/global)
+// update visibility of a thread (PATCH /api/threads/:threadId/visibility)
+// NOTE: a thread should not be able to be private and global at the same time
 // TODO: add requireRole([ROLES.MODERATOR]) once roles are finalized
-router.patch('/:threadId/global', async (req, res) => {
-	try {
-		const thread = await Models.Thread.findByPk(req.params.threadId);
-		if (!thread) return res.status(404).json({ message: 'Thread not found' });
-		await thread.update({ isGlobalFeed: !thread.isGlobalFeed });
-		res.json({ id: thread.id, isGlobalFeed: thread.isGlobalFeed });
-	} catch (error) {
-		res.status(500).json({ message: `Error updating thread: ${error}`});
-	}
+// PATCH /api/threads/:threadId/visibility — set to 'public', 'global', or 'private'
+router.patch('/:threadId/visibility', async (req, res) => {
+    try {
+		// get visibility and ensure it is valid
+        const { visibility } = req.body;
+        if (!['public', 'global', 'private'].includes(visibility)) {
+            return res.status(400).json({ message: "visibility must be 'public', 'global', or 'private'" });
+        }
+
+		// find the thread to update
+        const thread = await Models.Thread.findByPk(req.params.threadId);
+        if (!thread) return res.status(404).json({ message: 'Thread not found' });
+        
+		// if making private:
+		if (visibility === 'private') {
+
+			// make the current user (should be admin) a member
+			await Models.ThreadMember.findOrCreate({
+				where: {
+					threadId: thread.id,
+					userId: req.session.user.id
+				}
+			});
+
+			// block making a private thread with 0 members - invalid state
+			const count = await Models.ThreadMember.count({
+				where: { threadId: req.params.threadId }
+			});
+			if (count === 0) {
+				return res.status(400).json({
+					message: 'Cannot make thread private without members'
+				});
+			}
+		}
+		await thread.update({ visibility });
+        res.json({ id: thread.id, visibility: thread.visibility });
+    } catch (error) {
+        res.status(500).json({ message: `Error updating thread: ${error}` });
+    }
 });
 
 // delete a thread and its posts/follows (DELETE /api/threads/:threadId)
@@ -437,6 +528,9 @@ router.delete('/:threadId', async (req, res) => {
 		// delete the follow relationships between users and the thread
 		await Models.Follow.destroy({ where: { threadId: thread.id } });
 		
+		// delete the member records if it was a private thread
+		await Models.ThreadMember.destroy({ where: { threadId: thread.id } });
+
 		// finally, delete the thread
 		await thread.destroy();
 		res.status(204).end();
