@@ -3,7 +3,7 @@ import uniqid from 'uniqid';
 import Quill from 'quill';
 import "quill/dist/quill.snow.css";
 import { assets } from '../assets/assets'
-import { type Lecture, type Module } from '../types/course';
+import { type ContentBlock, type Lecture, type Module } from '../types/course';
 
 
 export const useCourseEditor = (initialData?: any) => {
@@ -194,24 +194,36 @@ export const useCourseEditor = (initialData?: any) => {
     }
   };
 
-  const updateLectureBlocks = (lectureId: string, newBlocks: any[]) => {
-    setModules((prevModules) => {
-      const updateRecursive = (items: any[]): any[] => {
-        return items.map((item) => {
-          // If this is the lecture we are looking for
-          if (item.id === lectureId) {
-            return { ...item, blocks: newBlocks };
-          }
-          // If this is a module/sub-module, look inside its content
-          if (item.content && Array.isArray(item.content)) {
-            return { ...item, content: updateRecursive(item.content) };
-          }
-          return item;
-        });
-      };
-      return updateRecursive(prevModules);
-    });
+  const updateLectureBlocks = (moduleId: string, lectureId: string, newBlocks: ContentBlock[]) => {
+    setModules((prev) =>
+      prev.map((mod) => {
+        // 1. Find the parent Module
+        if (mod.id !== moduleId) return mod;
+
+        return {
+          ...mod,
+          content: mod.content.map((item: any) => {
+            // 2. Check if the item IS the lecture
+            if (item.id === lectureId) {
+              return { ...item, blocks: newBlocks };
+            }
+            // 3. Check if the lecture is inside a Sub-Module
+            if (Array.isArray(item.content)) {
+              return {
+                ...item,
+                content: item.content.map((subLec: any) =>
+                  subLec.id === lectureId ? { ...subLec, blocks: newBlocks } : subLec
+                ),
+              };
+            }
+            return item;
+          }),
+        };
+      })
+    );
   };
+
+
 
 
 

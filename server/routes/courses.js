@@ -72,12 +72,12 @@ router.post('/:courseId/enroll', requireRole('student'), async (req, res) => {
                 where: { userId }
             });
             const completedCourseIds = userEnrollments.filter(e => e.completed).map(e => e.courseId);
-            
+
             const missingRequirements = course.requirements.filter(reqCourse => !completedCourseIds.includes(reqCourse.id));
             if (missingRequirements.length > 0) {
-                return res.status(403).json({ 
-                    message: 'Missing required courses', 
-                    missingRequirements: missingRequirements.map(r => r.name) 
+                return res.status(403).json({
+                    message: 'Missing required courses',
+                    missingRequirements: missingRequirements.map(r => r.name)
                 });
             }
         }
@@ -190,7 +190,7 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
                     if (modData.content && Array.isArray(modData.content)) {
                         for (let j = 0; j < modData.content.length; j++) {
                             const item = modData.content[j];
-                            
+
                             if (Array.isArray(item.content)) {
                                 const newSubModule = await Models.Module.create({
                                     title: item.title || 'Untitled Submodule',
@@ -203,7 +203,7 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
                                     const subLec = item.content[k];
                                     await Models.Lecture.create({
                                         title: subLec.title || 'Untitled Lecture',
-                                        order: subLec.order || k + 1, 
+                                        order: subLec.order || k + 1,
                                         content: subLec.content || '',
                                         moduleId: newSubModule.id
                                     }, { transaction: t });
@@ -241,7 +241,7 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
 });
 
 // Edit an existing course (Maps to PUT /api/courses/:courseId)
-router.put('/:courseId', requireRole('admin','instructor'), async (req, res) => {
+router.put('/:courseId', requireRole('admin', 'instructor'), async (req, res) => {
     try {
         const { courseId } = req.params;
         const { name, modules, description, isPrivate, thumbnail, requirements } = req.body;
@@ -287,11 +287,12 @@ router.put('/:courseId', requireRole('admin','instructor'), async (req, res) => 
                     if (modData.content && Array.isArray(modData.content)) {
                         for (let j = 0; j < modData.content.length; j++) {
                             const item = modData.content[j];
-                            
+
                             if (Array.isArray(item.content)) {
                                 const newSubModule = await Models.Module.create({
+                                    // REMOVE 'id: item.id'
                                     title: item.title || 'Untitled Submodule',
-                                    order: item.order || j + 1,
+                                    order: j + 1,
                                     courseId: course.id,
                                     parentModuleId: newModule.id
                                 }, { transaction: t });
@@ -299,18 +300,20 @@ router.put('/:courseId', requireRole('admin','instructor'), async (req, res) => 
                                 for (let k = 0; k < item.content.length; k++) {
                                     const subLec = item.content[k];
                                     await Models.Lecture.create({
+                                        // REMOVE 'id: subLec.id'
                                         title: subLec.title || 'Untitled Lecture',
-                                        order: k + 1, 
-                                        blocks: subLec.blocks || [],
-                                        moduleId: newSubModule.id
+                                        order: k + 1,
+                                        moduleId: newSubModule.id,
+                                        blocks: subLec.blocks || []
                                     }, { transaction: t });
                                 }
                             } else {
                                 await Models.Lecture.create({
+                                    // REMOVE 'id: item.id' from here
                                     title: item.title || 'Untitled Lecture',
                                     order: j + 1,
-                                    blocks: item.blocks || [],
-                                    moduleId: newModule.id
+                                    moduleId: newModule.id,
+                                    blocks: item.blocks ? [...item.blocks] : [] 
                                 }, { transaction: t });
                             }
                         }
@@ -339,7 +342,7 @@ router.put('/:courseId', requireRole('admin','instructor'), async (req, res) => 
 
 // Delete a course (Maps to DELETE /api/courses/:courseId)
 // Admins can delete any
-router.delete('/:courseId', requireRole('admin','instructor'), async (req, res) => {
+router.delete('/:courseId', requireRole('admin', 'instructor'), async (req, res) => {
     try {
         const { courseId } = req.params;
         const course = await Models.Course.findByPk(courseId);
@@ -439,17 +442,19 @@ router.get('/:courseId', async (req, res) => {
                                 title: lec.title,
                                 order: lec.order,
                                 content: lec.content,
+                                blocks: lec.blocks || [],
                                 moduleId: lec.moduleId.toString()
-                            })).sort((a,b)=>a.order - b.order) : []
+                            })).sort((a, b) => a.order - b.order) : []
                         })) : []),
                         ...(mod.lectures ? mod.lectures.map(lec => ({
                             id: lec.id.toString(),
                             title: lec.title,
                             order: lec.order,
                             content: lec.content,
+                            blocks: lec.blocks || [],
                             moduleId: lec.moduleId.toString()
                         })) : [])
-                    ].sort((a,b)=>a.order - b.order)
+                    ].sort((a, b) => a.order - b.order)
                 };
             });
         }

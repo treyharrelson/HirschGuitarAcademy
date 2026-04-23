@@ -15,7 +15,6 @@ import { SortableModuleWrapper } from '../../components/instructor/SortableModul
 import type { Module, Lecture } from '../../types/course';
 import MediaBlockEditor from '../../components/instructor/MediaBlockEditor';
 
-
 const EditCourse: React.FC = () => {
     const { courseId } = useParams<{ courseId: string }>();
     const { state, setters, handlers, refs } = useCourseEditor();
@@ -26,16 +25,13 @@ const EditCourse: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
 
     const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over, delta } = event; // 1. Grab 'delta'
+        const { active, over, delta } = event;
         if (!over || active.id === over.id) return;
-
         setters.setModules((prev: Module[]) => {
             const newModules: Module[] = JSON.parse(JSON.stringify(prev));
             const activeId = String(active.id);
             const overId = String(over.id);
             let draggedItem: any = null;
-
-            // 1. PLUCK (Remove)
             const findAndRemove = (list: any[]): boolean => {
                 for (let i = 0; i < list.length; i++) {
                     if (String(list[i].id) === activeId) {
@@ -48,68 +44,46 @@ const EditCourse: React.FC = () => {
                 }
                 return false;
             };
-
-            // 2. PLACE (Insert)
             const findAndInsert = (list: any[]): boolean => {
-                // SCENARIO A: Is the target a sibling in THIS list?
                 const overIndex = list.findIndex(item => String(item.id) === overId);
-
                 if (overIndex !== -1 && draggedItem) {
-                    // 2. DIRECTIONAL FIX:
-                    // If the mouse moved DOWN, we want to land AFTER the item we are hovering over.
-                    // This prevents the 'snapping back' because we actually clear the target.
                     const isMovingDown = delta.y > 0;
                     const finalIndex = isMovingDown ? overIndex + 1 : overIndex;
-
                     list.splice(finalIndex, 0, draggedItem);
                     return true;
                 }
-
-                // SCENARIO B: Is the target a VOID zone for this level?
                 if (overId.includes('void-')) {
                     const targetParentId = overId.replace('void-', '').replace('top-', '');
-                    // If this list belongs to the target container
-                    // (We check root level specially)
                     if (targetParentId === 'root' && list === newModules) {
                         overId.startsWith('top-') ? list.unshift(draggedItem) : list.push(draggedItem);
                         return true;
                     }
                 }
-
-                // SCENARIO C: Search inside containers
                 for (let item of list) {
-                    // If dropping ON the container title itself
                     if (String(item.id) === overId && item.content) {
                         item.content.push(draggedItem);
                         return true;
                     }
-                    // If dropping on a void zone belonging to this item
                     if (overId.includes(String(item.id)) && overId.includes('void-')) {
                         if (!Array.isArray(item.content)) item.content = [];
                         overId.startsWith('top-') ? item.content.unshift(draggedItem) : item.content.push(draggedItem);
                         return true;
                     }
-                    // Recurse
                     if (item.content && Array.isArray(item.content)) {
                         if (findAndInsert(item.content)) return true;
                     }
                 }
                 return false;
             };
-
             if (findAndRemove(newModules)) {
-                // CRITERIA GUARD: Prevent Lecture -> Root promotion
                 const isDraggingModule = prev.some(m => String(m.id) === activeId);
                 const isOverRoot = overId.includes('root') || newModules.some(m => String(m.id) === overId);
-
                 if (!isDraggingModule && isOverRoot) {
                     console.warn("Lectures must stay inside modules.");
                     return prev;
                 }
-
                 if (findAndInsert(newModules)) return newModules;
             }
-
             return prev;
         });
     };
@@ -117,15 +91,10 @@ const EditCourse: React.FC = () => {
     const handleDragOver = (event: DragOverEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
-
-        // Check if we are moving between different containers
-        // If the 'over' container is different than the 'active' container, 
-        // move the item in the state immediately.
     };
 
     const EmptyDropZone = ({ id }: { id: string }) => {
         const { setNodeRef, isOver } = useSortable({ id });
-
         return (
             <div
                 ref={setNodeRef}
@@ -134,8 +103,7 @@ const EditCourse: React.FC = () => {
                 className={`w-full transition-all duration-200 ease-in-out ${isOver
                     ? 'h-10 bg-blue-50 border-2 border-dashed border-blue-300 my-2 rounded-lg'
                     : 'h-2 bg-transparent'
-                    }`}
-            >
+                    }`}>
                 {isOver && (
                     <div className="flex items-center justify-center h-full">
                         <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">
@@ -152,14 +120,12 @@ const EditCourse: React.FC = () => {
             try {
                 const res = await api.get(`/api/courses/${courseId}`, { withCredentials: true });
                 const course = res.data;
-
                 setters.setCourseTitle(course.name);
                 setters.setIsPrivate(course.isPrivate);
                 setters.setModules(course.modules || []);
                 setters.setImage(course.thumbnail);
                 setters.setCourseDescription(course.description || "");
                 setters.setCourseRequirements(course.requirements ? course.requirements.map((r: any) => String(r.id)) : []);
-
             } catch (err) {
                 setStatusMsg("Error loading course data.");
             } finally {
@@ -170,22 +136,15 @@ const EditCourse: React.FC = () => {
     }, [courseId]);
 
     useEffect(() => {
-        // Only init if loading is done, the div exists, and Quill isn't already there
         if (!loading && refs.editorRef.current && !refs.quillRef.current) {
-
             const quill = new Quill(refs.editorRef.current, {
                 theme: 'snow',
                 modules: { toolbar: true }
             });
-
             refs.quillRef.current = quill;
-
-            // Fill the editor with the description stored in state
             if (state.courseDescription) {
                 quill.root.innerHTML = state.courseDescription;
             }
-
-            // Listen for changes to keep the state updated
             quill.on('text-change', () => {
                 setters.setCourseDescription(quill.root.innerHTML);
             });
@@ -214,16 +173,36 @@ const EditCourse: React.FC = () => {
             name: state.courseTitle,
             description: descriptionHtml,
             thumbnail: state.image,
-            modules: state.modules,
+            modules: state.modules.map(mod => ({
+                ...mod,
+                id: typeof mod.id === 'string' ? parseInt(mod.id.replace('mod-', '')) : mod.id,
+                content: mod.content?.map((item: any) => ({
+                    ...item,
+                    blocks: item.blocks || [],
+                    id: typeof item.id === 'string'
+                        ? parseInt(item.id.replace('lec-', '').replace('sub-', ''))
+                        : item.id,
+                    content: Array.isArray(item.content)
+                        ? item.content.map((subLec: any) => ({
+                            ...subLec,
+                            blocks: subLec.blocks || [],
+                            id: typeof subLec.id === 'string'
+                                ? parseInt(subLec.id.replace('lec-', '').replace('sub-', ''))
+                                : subLec.id
+                        }))
+                        : undefined
+                }))
+            })),
             requirements: state.courseRequirements,
         };
         try {
-            // Log the payload to verify data before it's sent
-            console.log("Sending payload:", payload);
-            const response = await api.put(`/api/courses/${courseId}`, payload, {
-                withCredentials: true
-            });
-            if (response.status === 200 || response.status === 204) {
+            const response = await api.put(`/api/courses/${courseId}`, payload);
+            if (response.status === 200) {
+                if (response.data.modules) {
+                    setters.setModules(response.data.modules);
+                } else {
+                    window.location.reload();
+                }
                 setStatusMsg('Course saved successfully!');
             }
         } catch (err: any) {
@@ -255,9 +234,7 @@ const EditCourse: React.FC = () => {
                     <div className='w-full bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden'>
                         <div ref={refs.editorRef} className="bg-white min-h-[200px]"></div>
                     </div>
-
                 </div>
-
                 {/* COURSE THUMBNAIL */}
                 <div className='flex flex-col gap-2 mb-6'>
                     <p className='font-bold text-gray-700'>Course Thumbnail</p>
@@ -272,16 +249,13 @@ const EditCourse: React.FC = () => {
                             }}
                         />
                     </div>
-
                     <p className="text-[10px] text-gray-400 mt-1">
                         Recommended: 16:9 aspect ratio (800x450px)
                     </p>
                 </div>
-
                 {/* COURSE REQUIREMENTS */}
                 <div className='flex flex-col gap-2'>
                     <p className='font-bold text-gray-700'>Course Prerequisites</p>
-
                     {/* The Flex-Wrap container makes them sit side-by-side */}
                     <div className='flex flex-wrap gap-2 w-full'>
                         {allCourses
@@ -294,10 +268,9 @@ const EditCourse: React.FC = () => {
                                     <label
                                         key={course.id}
                                         className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer text-sm font-medium ${isChecked
-                                                ? 'bg-blue-50 border-blue-400 text-blue-700 shadow-sm'
-                                                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                                            }`}
-                                    >
+                                            ? 'bg-blue-50 border-blue-400 text-blue-700 shadow-sm'
+                                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                                            }`}>
                                         <input
                                             type='checkbox'
                                             className="hidden"
@@ -308,8 +281,7 @@ const EditCourse: React.FC = () => {
                                                 } else {
                                                     setters.setCourseRequirements(state.courseRequirements.filter(id => id !== String(course.id)));
                                                 }
-                                            }}
-                                        />
+                                            }}/>
                                         {isChecked && <span>✓</span>}
                                         {course.name}
                                     </label>
@@ -322,47 +294,33 @@ const EditCourse: React.FC = () => {
                         )}
                     </div>
                 </div>
-
-
-
-
                 {/* MODULES & LECTURES */}
                 <DndContext
                     collisionDetection={closestCorners}
                     onDragOver={handleDragOver}
-                    onDragEnd={handleDragEnd}
-                >
+                    onDragEnd={handleDragEnd}>
                     <div className='flex flex-col gap-4'>
                         <p className='font-bold text-lg text-black'>Course Content</p>
                         <SortableContext
                             id="root-modules" // Give it a fixed unique ID
                             items={[...state.modules.map(m => m.id), 'void-root', 'top-void-root']}
-                            strategy={verticalListSortingStrategy}
-                        >
+                            strategy={verticalListSortingStrategy}>
                             <EmptyDropZone id="top-void-root" />
                             {state.modules?.map((module, mIdx) => (
-                                <SortableModuleWrapper key={module.id} id={module.id}>
+                                <SortableModuleWrapper key={`mod-${module.id}`} id={`mod-${module.id}`}>
                                     <div key={module.id} className='bg-white border border-gray-300 rounded-lg p-4'>
                                         {/* Module Title Input */}
                                         <div className="flex items-center gap-3 p-4 bg-gray-50 border-b rounded-t-lg">
-                                            {/*<img
-                                    onClick={() => handlers.handleModule('toggle', module.id)}
-                                    src={assets.dropDown_icon}
-                                    className={`w-4 h-4 cursor-pointer transition-transform ${module.collapsed ? "-rotate-90" : ""}`}
-                                />*/}
                                             <span className="font-bold text-black whitespace-nowrap">{mIdx + 1}.</span>
                                             <input
                                                 className="font-bold text-black border-b border-transparent hover:border-gray-300 focus:border-blue-500 w-full outline-none bg-transparent"
                                                 value={module.title}
-                                                onChange={(e) => handlers.updateTitle('module', module.id, e.target.value)}
-                                            />
+                                                onChange={(e) => handlers.updateTitle('module', module.id, e.target.value)}/>
                                             <img
                                                 src={assets.cross_icon}
                                                 className="w-4 h-4 cursor-pointer opacity-50 hover:opacity-100"
-                                                onClick={() => handlers.handleModule('remove', module.id)}
-                                            />
+                                                onClick={() => handlers.handleModule('remove', module.id)}/>
                                         </div>
-
                                         {/* Lectures/SubModules inside Module */}
                                         {(<div className="flex flex-col gap-6 ml-6">
                                             <SortableContext
@@ -372,8 +330,7 @@ const EditCourse: React.FC = () => {
                                                     `void-${module.id}`,
                                                     `top-void-${module.id}`
                                                 ]}
-                                                strategy={verticalListSortingStrategy}
-                                            >
+                                                strategy={verticalListSortingStrategy}>
                                                 {module.content?.map((item: any, lIdx: number) => {
                                                     // 1. CHECK IF SUBMODULE: Submodules have a 'content' array
                                                     const isSubModule = Array.isArray(item.content);
@@ -386,23 +343,19 @@ const EditCourse: React.FC = () => {
                                                                             <img
                                                                                 onClick={() => handlers.handleSubModule('toggle', module.id, lIdx)}
                                                                                 src={assets.dropDown_icon}
-                                                                                className={`w-3.5 h-3.5 cursor-pointer transition-transform shrink-0 ${item.collapsed ? "-rotate-90" : "rotate-0"}`}
-                                                                            />
+                                                                                className={`w-3.5 h-3.5 cursor-pointer transition-transform shrink-0 ${item.collapsed ? "-rotate-90" : "rotate-0"}`}/>
                                                                             <div className="flex flex-col flex-grow">
                                                                                 <p className="text-[10px] text-blue-500 uppercase font-black">Sub-Module Title</p>
                                                                                 <input
                                                                                     className="font-bold text-gray-800 bg-transparent border-b border-blue-200 outline-none focus:border-blue-500 w-full"
                                                                                     value={item.title}
-                                                                                    onChange={(e) => handlers.updateTitle('submodule', item.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })}
-                                                                                />
+                                                                                    onChange={(e) => handlers.updateTitle('submodule', item.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })}/>
                                                                             </div>
                                                                         </div>
                                                                         <img
                                                                             src={assets.cross_icon}
                                                                             className='cursor-pointer w-4 h-4 opacity-50 hover:opacity-100 shrink-0'
-                                                                            onClick={() => handlers.handleSubModule('remove', module.id, lIdx)}
-                                                                        />
-
+                                                                            onClick={() => handlers.handleSubModule('remove', module.id, lIdx)}/>
                                                                     </div>
                                                                     {/* 2. NESTED LECTURES: Map the content within the SubModule */}
                                                                     {!item.collapsed && (<div className="flex flex-col gap-4 ml-4">
@@ -413,12 +366,9 @@ const EditCourse: React.FC = () => {
                                                                                 `void-${item.id}`,
                                                                                 `top-void-${item.id}`
                                                                             ]}
-                                                                            strategy={verticalListSortingStrategy}
-                                                                        >
-
-
+                                                                            strategy={verticalListSortingStrategy}>
                                                                             {item.content.map((subLecture: any, slIdx: number) => (
-                                                                                <SortableModuleWrapper key={subLecture.id} id={subLecture.id}>
+                                                                                <SortableModuleWrapper key={item.content ? `sub-${item.id}` : `lec-${item.id}`} id={item.content ? `sub-${item.id}` : `lec-${item.id}`}>
                                                                                     <div key={subLecture.id || slIdx} className="p-3 bg-white border rounded shadow-sm">
                                                                                         <div className="flex justify-between items-start">
                                                                                             <div className="flex-1">
@@ -426,19 +376,16 @@ const EditCourse: React.FC = () => {
                                                                                                 <input
                                                                                                     className="font-medium text-blue-600 w-full mb-2 outline-none bg-transparent"
                                                                                                     value={subLecture.title}
-                                                                                                    onChange={(e) => handlers.updateTitle('lecture', subLecture.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })}
-                                                                                                />
+                                                                                                    onChange={(e) => handlers.updateTitle('lecture', subLecture.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })}/>
                                                                                             </div>
                                                                                             <img
                                                                                                 src={assets.cross_icon}
                                                                                                 className="w-5 h-5 cursor-pointer opacity-50 hover:opacity-100 p-1"
-                                                                                                onClick={() => handlers.handleLecture('remove', module.id, lIdx, slIdx)}
-                                                                                            />
+                                                                                                onClick={() => handlers.handleLecture('remove', module.id, lIdx, slIdx)}/>
                                                                                         </div>
                                                                                         <LectureBlocksContainer
                                                                                             initialBlocks={item.blocks || []}
-                                                                                            onBlocksChange={(newBlocks) => handlers.updateLectureBlocks(item.id, newBlocks)}
-                                                                                        />
+                                                                                            onBlocksChange={(newBlocks) => handlers.updateLectureBlocks(module.id, item.id, newBlocks)}/>
                                                                                     </div>
                                                                                 </SortableModuleWrapper>
                                                                             ))}
@@ -446,8 +393,7 @@ const EditCourse: React.FC = () => {
                                                                                 <button
                                                                                     type="button"
                                                                                     className="text-blue-500 text-sm font-semibold mt-2"
-                                                                                    onClick={() => { setters.setPopupType('Lecture'); handlers.handleLecture('add', module.id, lIdx) }}
-                                                                                >
+                                                                                    onClick={() => { setters.setPopupType('Lecture'); handlers.handleLecture('add', module.id, lIdx) }}>
                                                                                     + Add Sub-Lecture
                                                                                 </button>
                                                                             </div>
@@ -461,7 +407,7 @@ const EditCourse: React.FC = () => {
                                                     }
                                                     // 3. DEFAULT LECTURE: If it's not a submodule, render standard lecture
                                                     return (
-                                                        <SortableModuleWrapper key={item.id} id={item.id}>
+                                                        <SortableModuleWrapper key={item.content ? `sub-${item.id}` : `lec-${item.id}`} id={item.content ? `sub-${item.id}` : `lec-${item.id}`}>
                                                             <div key={item.id} className="p-4 bg-gray-50 rounded border mb-4">
                                                                 <div className="flex justify-between items-start">
                                                                     <div className="flex flex-col mb-2">
@@ -469,20 +415,16 @@ const EditCourse: React.FC = () => {
                                                                         <input
                                                                             className="font-medium text-blue-600 bg-transparent border-b border-transparent focus:border-blue-300 outline-none"
                                                                             value={item.title}
-                                                                            onChange={(e) => handlers.updateTitle('lecture', item.id, e.target.value, { moduleId: module.id })}
-                                                                        />
+                                                                            onChange={(e) => handlers.updateTitle('lecture', item.id, e.target.value, { moduleId: module.id })}/>
                                                                     </div>
                                                                     <img
                                                                         src={assets.cross_icon}
                                                                         className="w-5 h-5 cursor-pointer opacity-50 hover:opacity-100 p-1"
-                                                                        onClick={() => handlers.handleLecture('remove', module.id, lIdx)}
-                                                                    />
+                                                                        onClick={() => handlers.handleLecture('remove', module.id, lIdx)}/>
                                                                 </div>
                                                                 <LectureBlocksContainer
                                                                     initialBlocks={item.blocks || []}
-                                                                    onBlocksChange={(newBlocks) => handlers.updateLectureBlocks(item.id, newBlocks)}
-                                                                />
-
+                                                                    onBlocksChange={(newBlocks) => handlers.updateLectureBlocks(module.id, item.id, newBlocks)}/>
                                                             </div>
                                                         </SortableModuleWrapper>
                                                     );
@@ -491,15 +433,13 @@ const EditCourse: React.FC = () => {
                                                     <button
                                                         type="button"
                                                         className="bg-gray-100 px-3 py-1 rounded text-sm"
-                                                        onClick={() => { setters.setPopupType('Lecture'); handlers.handleLecture('add', module.id) }}
-                                                    >
+                                                        onClick={() => { setters.setPopupType('Lecture'); handlers.handleLecture('add', module.id) }}>
                                                         + Add Lecture
                                                     </button>
                                                     <button
                                                         type="button"
                                                         className="bg-gray-100 px-3 py-1 rounded text-sm"
-                                                        onClick={() => { setters.setPopupType('SubModule'); handlers.handleSubModule('add', module.id) }}
-                                                    >
+                                                        onClick={() => { setters.setPopupType('SubModule'); handlers.handleSubModule('add', module.id) }}>
                                                         + Add Sub-Module
                                                     </button>
                                                 </div>
@@ -514,8 +454,7 @@ const EditCourse: React.FC = () => {
                             <button
                                 type="button"
                                 className="w-full py-4 bg-blue-100 text-blue-600 font-bold rounded-lg border-2 border-dashed border-blue-300"
-                                onClick={() => { setters.setPopupType('Module'); handlers.handleModule('add') }}
-                            >
+                                onClick={() => { setters.setPopupType('Module'); handlers.handleModule('add') }}>
                                 + Add New Module
                             </button>
                             {/* CONTENT TITLE POPUP */}
@@ -523,7 +462,6 @@ const EditCourse: React.FC = () => {
                                 <div className='fixed inset-0 flex items-center justify-center bg-gray-800/50 z-[100]'>
                                     <div className='bg-white text-gray-700 p-4 rounded relative w-full max-w-80 z-[101]'>
                                         <h2 className='text-lg font-semibold mb-4'>Add {state.popupType}</h2>
-
                                         <div className='mb-2'>
                                             <p>{state.popupType} Title</p>
                                             <input
@@ -538,28 +476,22 @@ const EditCourse: React.FC = () => {
                                                         e.preventDefault();  // Prevents the form from submitting/refreshing
                                                         handlers.handleLecture('save');
                                                     }
-                                                }}
-                                            />
+                                                }}/>
                                         </div>
                                         <button onClick={() => handlers.handleLecture('save')} type='button' className='w-full bg-blue-400 text-white px-4 py-2 rounded cursor-pointer'>Add</button>
                                         <img onClick={() => setters.setPopup(false)} src={assets.cross_icon} alt='cross icon' className='absolute top-4 right-4 w-4 h-4 cursor-pointer' />
                                     </div>
                                 </div>
                             )}
-
                         </SortableContext>
                     </div>
                 </DndContext>
-
-
-
                 {/* SUBMIT */}
                 <div className="flex items-center gap-4">
                     <button
                         type='submit'
                         disabled={submitting}
-                        className='bg-blue-600 text-white py-3 px-10 rounded font-bold hover:bg-blue-700 disabled:opacity-50'
-                    >
+                        className='bg-blue-600 text-white py-3 px-10 rounded font-bold hover:bg-blue-700 disabled:opacity-50'>
                         {submitting ? 'Saving...' : 'SAVE CHANGES'}
                     </button>
                     {statusMsg && (

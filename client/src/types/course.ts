@@ -7,7 +7,7 @@ export interface BaseBlock {
 
 export interface TextBlock extends BaseBlock {
     type: 'text';
-    body: string;
+    content: string;
 }
 
 export interface MediaBlock extends BaseBlock {

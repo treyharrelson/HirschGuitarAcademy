@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import uniqid from 'uniqid';
 import TextBlockEditor from './TextBlockEditor';
 import MediaBlockEditor from './MediaBlockEditor';
@@ -68,6 +68,23 @@ const LectureBlocksContainer: React.FC<LectureBlocksContainerProps> = ({
     }
   };
 
+  const handleBlockUpdate = (index: number, newContent: string) => {
+    const updatedBlocks = [...blocks];
+    if (updatedBlocks[index]?.type === 'text') {
+      updatedBlocks[index] = { ...updatedBlocks[index], content: newContent };
+      setBlocks(updatedBlocks);
+      onBlocksChange(updatedBlocks);
+    }
+  };
+
+  useEffect(() => {
+    // If the database sends new blocks (e.g. after a refresh),
+    // we must update the local state to match.
+    if (initialBlocks) {
+      setBlocks(initialBlocks);
+    }
+  }, [initialBlocks]);
+  
   return (
     <DndContext
       collisionDetection={closestCenter}
@@ -79,7 +96,7 @@ const LectureBlocksContainer: React.FC<LectureBlocksContainerProps> = ({
 
         {/* Existing Blocks */}
         <div className="flex flex-col gap-4">
-          {blocks.map((block) => (
+          {blocks.map((block, index) => (
             <div key={block.id} className="relative group bg-white rounded-lg shadow-sm border border-gray-200">
               {/* Delete Button (Top Right of block) */}
               <button
@@ -93,8 +110,8 @@ const LectureBlocksContainer: React.FC<LectureBlocksContainerProps> = ({
               {block.type === 'text' ? (
                 <TextBlockEditor
                   id={block.id}
-                  initialBody={block.body}
-                  onChange={(val) => updateBlockContent(block.id, val)}
+                  initialBody={block.content}
+                  onChange={(val) => handleBlockUpdate(index, val)}
                 />
               ) : (
                 <MediaBlockEditor

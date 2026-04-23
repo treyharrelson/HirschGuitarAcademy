@@ -4,6 +4,9 @@ import type { Course, Module, Lecture } from '../../types/course';
 import api from '../../api/axiosInstance';
 import Loading from '../../components/student/Loading';
 import { useAuth } from '../../context/AuthContext';
+import "quill/dist/quill.snow.css";
+
+
 
 interface ExtendedCourse extends Course {
     modules: Module[];
@@ -122,108 +125,140 @@ const CourseView: React.FC = () => {
         return classes;
     }
 
-    const renderModuleContent = (item: Module | Lecture, depth: number = 0) => {
-        if (Array.isArray(item.content)) {
+    const renderModuleContent = (item: any, depth: number = 0) => {
+        // Check if it's a Module (Top-level or Sub-Module)
+        const isModule = Array.isArray(item.content);
+
+        if (isModule) {
             const mod = item as Module;
             const isExpanded = expandedModules[mod.id];
 
             return (
-                <div key={`mod-${mod.id}`} className="mb-2">
+                <div key={`mod-container-${mod.id}`} className={depth === 0 ? "mb-2" : "mb-1"}>
                     <div
-                        className={getModuleHeaderClasses(depth)}
+                        className={`${getModuleHeaderClasses(depth)} transition-colors cursor-pointer`}
                         onClick={() => toggleModule(mod.id)}
                     >
-                        <span className="text-[0.95rem]">{mod.title}</span>
-                        <span className={`text-xs text-slate-500 transition-transform duration-200 inline-block ${isExpanded ? '' : '-rotate-90'}`}>
+                        {/* Add visual nesting indicator for submodules */}
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <span className={`text-[0.95rem] font-medium truncate ${depth > 0 ? 'text-slate-600' : 'text-slate-800'}`}>
+                                {mod.title}
+                            </span>
+                        </div>
+                        <span className={`text-[10px] text-slate-400 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`}>
                             ▼
                         </span>
                     </div>
+
                     {isExpanded && (
-                        <div className="py-2 bg-white">
-                            {mod.content.map(subItem => renderModuleContent(subItem, depth + 1))}
+                        <div className={`border-l-2 border-slate-100 ml-4`}>
+                            {mod.content.map((subItem) => renderModuleContent(subItem, depth + 1))}
                         </div>
                     )}
                 </div>
             );
         } else {
+            // It's a Lecture
             const lec = item as Lecture;
             const isActive = selectedLecture?.id === lec.id;
 
             return (
                 <div
-                    key={`lec-${lec.id}`}
+                    key={`lec-item-${lec.id}`}
                     className={getLectureItemClasses(depth, isActive)}
                     onClick={() => handleSelectLecture(lec)}
                 >
-                    <span className="mr-3 text-base opacity-70">📄</span>
-                    <span>{lec.title}</span>
+                    <span className={`mr-3 text-base ${isActive ? 'text-sky-500' : 'opacity-50'}`}>
+                        {isActive ? '📖' : '📄'}
+                    </span>
+                    <span className="truncate">{lec.title}</span>
                 </div>
             );
         }
     };
+
 
     if (loading) return <Loading />
     if (error) return <div className="flex justify-center flex-col items-center h-screen text-xl text-red-500">Error: {error}</div>;
     if (!course) return <div className="flex justify-center flex-col items-center h-screen text-xl text-red-500">Course not found</div>;
 
     return (
-        
         <div className="flex flex-col md:flex-row w-full bg-slate-50 overflow-hidden font-sans" style={{ height: 'calc(100vh - 64px)' }}>
-            
+
+            {/* LEFT SIDEBAR */}
             <div className="w-full md:w-[350px] shrink-0 bg-white md:border-r border-b md:border-b-0 border-slate-200 flex flex-col overflow-y-auto shadow-[2px_0_10px_rgba(0,0,0,0.02)] h-[35vh] md:h-auto">
                 <div className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 text-white flex justify-between items-center">
-                    <h2 className="m-0 text-xl font-semibold leading-relaxed pr-15">{course.name}</h2>
+                    <h2 className="m-0 text-xl font-semibold leading-relaxed pr-15">{course?.name}</h2>
                     <div className="flex gap-2">
                         {canEdit && (
-                            <button
-                                onClick={() => window.location.href = `/instructor/edit-course/${courseId}`}
-                                className="w-30 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-1.5 px-3 rounded transition-colors"
-                            >
-                                EDIT COURSE
+                            <button onClick={() => window.location.href = `/instructor/edit-course/${courseId}`} className="w-30 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-1.5 px-3 rounded transition-colors">
+                                EDIT
                             </button>
-                        )}
-                        {isEnrolled && !isCompleted && user?.role === 'student' && (
-                            <button
-                                onClick={handleCompleteCourse}
-                                disabled={completing}
-                                className={`w-30 ${completing ? 'bg-emerald-400' : 'bg-emerald-600 hover:bg-emerald-500'} text-white text-xs font-bold py-1.5 px-3 rounded transition-colors`}
-                            >
-                                {completing ? '...' : 'COMPLETE COURSE'}
-                            </button>
-                        )}
-                        {isEnrolled && isCompleted && user?.role === 'student' && (
-                            <span className="bg-emerald-800/50 text-emerald-300 text-xs font-bold py-1.5 px-3 rounded border border-emerald-500/30">
-                                COMPLETED
-                            </span>
                         )}
                     </div>
                 </div>
+
                 <div className="py-4">
-                    {course.modules && course.modules.map(mod => renderModuleContent(mod))}
-                    
+                    {/* Sidebar Logic */}
+                    {course?.modules ? (
+                        course.modules.map((mod: any) => renderModuleContent(mod, 0))
+                    ) : (
+                        <div className="p-6 text-slate-400 italic text-sm">Loading content...</div>
+                    )}
                 </div>
-                
             </div>
 
+            {/* RIGHT CONTENT AREA (Your New Logic) */}
             <div className="grow py-10 px-5 md:px-16 overflow-y-auto bg-white h-[65vh] md:h-auto">
                 {selectedLecture ? (
                     <div className="max-w-[900px] mx-auto">
-                        <h1 className="text-4xl font-bold text-slate-900 mt-0 mb-6 pb-4 border-b border-slate-200">{selectedLecture.title}</h1>
-                        <div
-                            className="text-lg leading-relaxed text-slate-700 [&>p]:mb-4 [&>img]:!max-w-full [&>img]:!rounded-lg [&>img]:!shadow-sm"
-                            dangerouslySetInnerHTML={{ __html: selectedLecture.content || '<p>No content provided.</p>' }}
-                        />
+                        <h1 className="text-4xl font-bold text-slate-900 mt-0 mb-6 pb-4 border-b border-slate-200">
+                            {selectedLecture.title}
+                        </h1>
+
+                        <div className="flex flex-col gap-10">
+                            {selectedLecture.blocks && selectedLecture.blocks.length > 0 ? (
+                                selectedLecture.blocks.map((block: any, index: number) => (
+                                    <div key={index} className="w-full">
+                                        {block.type === 'text' && (
+                                            <div
+                                                className="ql-editor text-lg leading-relaxed text-slate-700"
+                                                dangerouslySetInnerHTML={{ __html: block.content || '' }}
+                                            />
+                                        )}
+                                        {block.type === 'image' && (
+                                            <div className="flex justify-center">
+                                                <img src={block.url} alt="" className="rounded-xl shadow-md max-h-[600px] object-contain" />
+                                            </div>
+                                        )}
+                                        {block.type === 'video' && (
+                                            <div className="aspect-video rounded-xl overflow-hidden shadow-lg bg-black">
+                                                {block.url?.includes('youtube.com') || block.url?.includes('youtu.be') ? (
+                                                    <iframe className="w-full h-full" src={block.url.replace("watch?v=", "embed/")} title="Video player" allowFullScreen />
+                                                ) : (
+                                                    <video src={block.url} controls className="w-full h-full" />
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                <div
+                                    className="text-lg leading-relaxed text-slate-700"
+                                    dangerouslySetInnerHTML={{ __html: (selectedLecture as any).content || '<p>No content provided.</p>' }}
+                                />
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className="flex justify-center items-center h-full text-slate-400 text-xl">
                         <p>Select a lecture from the sidebar to view its content.</p>
                     </div>
                 )}
-                
             </div>
-
         </div>
     );
+
 };
 
 export default CourseView;
