@@ -49,6 +49,6 @@ export interface Course {
     enrolled: number;
     completed?: boolean;
     isPrivate: boolean;
-    thumbnail: File | string;
+    thumbnail: string | null;
     requirements?: { id: string | number; name: string }[];
 }

@@ -300,16 +300,16 @@ router.put('/:courseId', requireRole('admin','instructor'), async (req, res) => 
                                     const subLec = item.content[k];
                                     await Models.Lecture.create({
                                         title: subLec.title || 'Untitled Lecture',
-                                        order: subLec.order || k + 1, 
-                                        content: subLec.content || '',
+                                        order: k + 1, 
+                                        blocks: subLec.blocks || [],
                                         moduleId: newSubModule.id
                                     }, { transaction: t });
                                 }
                             } else {
                                 await Models.Lecture.create({
                                     title: item.title || 'Untitled Lecture',
-                                    order: item.order || j + 1,
-                                    content: item.content || '',
+                                    order: j + 1,
+                                    blocks: item.blocks || [],
                                     moduleId: newModule.id
                                 }, { transaction: t });
                             }

@@ -19,9 +19,9 @@ const Lecture = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        content: {
-            type: DataTypes.TEXT,
-            allowNull: true,
+        blocks: {
+            type: DataTypes.JSONB,
+            defaultValue: []
         },
         moduleId: {
             type: DataTypes.INTEGER,
