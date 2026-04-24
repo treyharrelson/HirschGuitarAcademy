@@ -1,13 +1,14 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import uniqid from 'uniqid';
-import Quill from 'quill';
 import "quill/dist/quill.snow.css";
 import { assets } from '../assets/assets'
 import { type ContentBlock, type Lecture, type Module } from '../types/course';
+import { useNavigate } from 'react-router-dom';
 
 
 export const useCourseEditor = (initialData?: any) => {
   const [courseId] = useState(uniqid());
+  const navigate = useNavigate(); // Add this
 
   // States
   const [courseTitle, setCourseTitle] = useState(initialData?.title || '')
@@ -187,30 +188,23 @@ export const useCourseEditor = (initialData?: any) => {
     }
   };
 
-  const updateLectureBlocks = (moduleId: string, lectureId: string, newBlocks: ContentBlock[]) => {
-    setModules((prev) =>
-      prev.map((mod) => {
-        if (mod.id !== moduleId) return mod;
-
-        return {
-          ...mod,
-          content: mod.content.map((item: any) => {
-            if (item.id === lectureId) {
-              return { ...item, blocks: newBlocks };
-            }
-            if (Array.isArray(item.content)) {
-              return {
-                ...item,
-                content: item.content.map((subLec: any) =>
-                  subLec.id === lectureId ? { ...subLec, blocks: newBlocks } : subLec
-                ),
-              };
-            }
-            return item;
-          }),
-        };
-      })
-    );
+  const updateLectureBlocks = (lectureId: string, newBlocks: ContentBlock[]) => {
+    setModules((prev) => {
+      const deepUpdate = (list: any[]): any[] => {
+        return list.map((item) => {
+          // Match found (Lecture)
+          if (item.id === lectureId) {
+            return { ...item, blocks: newBlocks };
+          }
+          // If container (Module/Submodule), search deeper
+          if (item.content) {
+            return { ...item, content: deepUpdate(item.content) };
+          }
+          return item;
+        });
+      };
+      return deepUpdate(prev);
+    });
   };
 
   const validateCourse = (): string | null => {
@@ -249,10 +243,47 @@ export const useCourseEditor = (initialData?: any) => {
     return checkTree(modules);
   };
 
+  const toggleAll = (shouldCollapse: boolean) => {
+    setModules(prev => {
+      const deepToggle = (list: any[]): any[] => {
+        return list.map(item => ({
+          ...item,
+          collapsed: shouldCollapse,
+          // Recurse into content if it exists (Submodules/Lectures)
+          content: item.content ? deepToggle(item.content) : item.content,
+          // Recurse into blocks if needed (though usually only containers collapse)
+        }));
+      };
+      return deepToggle(prev);
+    });
+  };
+
+  const toggleItem = (id: string) => {
+    setModules(prev => {
+      const deepSearch = (list: any[]): any[] => {
+        return list.map(item => {
+          if (item.id === id) {
+            return { ...item, collapsed: !item.collapsed };
+          }
+          if (item.content) {
+            return { ...item, content: deepSearch(item.content) };
+          }
+          return item;
+        });
+      };
+      return deepSearch(prev);
+    });
+  };
+
+
+  const viewCourse = (id: string) => {
+    navigate(`/course/${id}`);
+  };
+
   return {
     state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription, courseRequirements },
     setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription, setCourseRequirements },
     refs: { inputRef, quillRef, editorRef },
-    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateTitle, updateLectureBlocks, validateCourse },
+    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateTitle, updateLectureBlocks, validateCourse, toggleAll, toggleItem, viewCourse },
   };
 };

@@ -7,7 +7,7 @@ import Quill from 'quill';
 import "quill/dist/quill.snow.css";
 import { assets } from '../../assets/assets';
 import LectureBlocksContainer from '../../components/instructor/LectureBlockContainer';
-import { DndContext, closestCenter, type DragEndEvent, pointerWithin, DragOverlay, type DragStartEvent, useSensors, useSensor, PointerSensor, type CollisionDetection } from '@dnd-kit/core';
+import { DndContext, closestCenter, type DragEndEvent, pointerWithin, DragOverlay, type DragStartEvent, useSensors, useSensor, PointerSensor, type CollisionDetection, useDndContext } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, type SortingStrategy } from '@dnd-kit/sortable';
 import { SortableModuleWrapper } from '../../components/instructor/SortableModuleWrapper';
 import type { Module } from '../../types/course';
@@ -18,6 +18,8 @@ const EditCourse: React.FC = () => {
     const { courseId } = useParams<{ courseId: string }>();
     const { state, setters, handlers, refs } = useCourseEditor();
     const { allCourses } = useAppContext();
+    const { active } = useDndContext();
+    const isGlobalDragging = !!active;
 
     const [submitting, setSubmitting] = useState<boolean>(false);
     const [statusMsg, setStatusMsg] = useState<string>('');
@@ -360,138 +362,158 @@ const EditCourse: React.FC = () => {
                         <SortableContext
                             id="root-modules"
                             items={state.modules?.map(m => `mod-${m.id}`) || []}
-                            strategy={activeId?.startsWith('mod-') ? nullStrategy : verticalListSortingStrategy}
-                        >
+                            strategy={activeId?.startsWith('mod-') ? nullStrategy : verticalListSortingStrategy}>
                             <EmptyDropZone id="void-top-mod-root" />
-
-                            {state.modules?.map((module: any, mIdx: number) => {
-                                // 1. Generate IDs for the Module's content (Sub-modules and Lectures)
+                            {state.modules?.map((module: any) => {
                                 const allContentIds = module.content?.map((item: any) =>
                                     Array.isArray(item.content) ? `sub-${item.id}` : `lec-${item.id}`
                                 ) || [];
-
                                 return (
                                     <React.Fragment key={`frag-${module.id}`}>
                                         <SortableModuleWrapper id={`mod-${module.id}`}>
-                                            <div className='bg-white border border-gray-300 rounded-lg p-4 mb-4 shadow-sm'>
-                                                {/* Module Header */}
-                                                <div className="flex items-center gap-3 p-4 bg-gray-50 border-b rounded-t-lg">
-                                                    <span className="font-bold text-black">{mIdx + 1}.</span>
-                                                    <input
-                                                        className="font-bold text-black w-full bg-transparent outline-none"
-                                                        value={module.title}
-                                                        onChange={(e) => handlers.updateTitle('module', module.id, e.target.value)}
-                                                    />
-                                                    <img src={assets.cross_icon} className="w-4 h-4 cursor-pointer opacity-50 hover:opacity-100" onClick={() => handlers.handleModule('remove', module.id)} />
+                                            {/* MAIN CONTAINER: flex-col ensures stacking */}
+                                            <div className='flex flex-col bg-white border border-gray-300 rounded-xl mb-4 shadow-sm overflow-hidden'>
+                                                {/* CONSOLIDATED MODULE HEADER */}
+                                                <div
+                                                    className="flex items-start justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors select-none group"
+                                                    onClick={() => handlers.toggleItem(module.id)}>
+                                                    <div className="flex flex-col gap-1 flex-1">
+                                                        <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">
+                                                            Module {module.collapsed && `(${module.content.length} Items)`}
+                                                        </p>
+                                                        <div className="flex items-center gap-3">
+                                                            <img
+                                                                src={assets.dropDown_icon}
+                                                                className={`w-3 h-3 transition-transform ${module.collapsed ? '-rotate-90' : ''}`}/>
+                                                            <div className="flex-1 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+                                                                <input
+                                                                    type="text"
+                                                                    value={module.title}
+                                                                    onChange={(e) => handlers.updateTitle('module', module.id, e.target.value)}
+                                                                    className="font-bold text-gray-800 bg-transparent outline-none w-full text-xl cursor-text"/>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <span className={`text-[10px] font-bold uppercase pt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${module.collapsed ? 'text-blue-500' : 'text-red-500'}`}>
+                                                        {module.collapsed ? 'Expand' : 'Collapse'}
+                                                    </span>
                                                 </div>
-
-                                                {/* Nested Content Area */}
-                                                <div className="flex flex-col gap-6 ml-6 mt-4">
-                                                    <SortableContext id={`content-${module.id}`} items={allContentIds} strategy={verticalListSortingStrategy}>
-
-                                                        <EmptyDropZone id={`void-top-org-mod-${module.id}`} />
-                                                        {module.content?.map((item: any, lIdx: number) => {
-                                                            const isSubModule = Array.isArray(item.content);
-
-                                                            // SUB-MODULE RENDER
-                                                            if (isSubModule) {
-                                                                return (
-                                                                    <React.Fragment key={item.id}>
-                                                                        <SortableModuleWrapper id={`sub-${item.id}`}>
-
-                                                                            <div className="p-4 border-l-4 border-blue-400 bg-blue-50/20 rounded-r-lg mb-4">
-                                                                                <div className="flex items-center justify-between p-3 bg-blue-50/50">
-                                                                                    <div className="flex items-center gap-3 flex-grow">
-                                                                                        <img
-                                                                                            onClick={() => handlers.handleSubModule('toggle', module.id, lIdx)}
-                                                                                            src={assets.dropDown_icon}
-                                                                                            className={`w-3.5 h-3.5 cursor-pointer transition-transform ${item.collapsed ? "-rotate-90" : "rotate-0"}`}
-                                                                                        />
-                                                                                        <div className="flex flex-col flex-grow">
-                                                                                            <p className="text-[10px] text-blue-500 uppercase font-black">Sub-Module</p>
-                                                                                            <input
-                                                                                                className="font-bold text-gray-800 bg-transparent border-b border-blue-200 outline-none w-full"
-                                                                                                value={item.title}
-                                                                                                onChange={(e) => handlers.updateTitle('submodule', item.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })}
-                                                                                            />
+                                                {/* NESTED CONTENT AREA: Stacks correctly below header */}
+                                                {!module.collapsed && (
+                                                    <div className={`m-4 mt-0 p-4 rounded-xl border border-dashed transition-colors ${isGlobalDragging ? 'border-blue-200 bg-blue-50/5' : 'border-gray-200 bg-gray-50/50'}`}>
+                                                        <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-4">Module Content</p>
+                                                        <SortableContext id={`content-${module.id}`} items={allContentIds} strategy={verticalListSortingStrategy}>
+                                                            <EmptyDropZone id={`void-top-org-mod-${module.id}`} />
+                                                            {module.content?.map((item: any, lIdx: number) => {
+                                                                const isSubModule = Array.isArray(item.content);
+                                                                if (isSubModule) {
+                                                                    return (
+                                                                        <React.Fragment key={item.id}>
+                                                                            <SortableModuleWrapper id={`sub-${item.id}`}>
+                                                                                <div className="flex flex-col bg-white border border-gray-200 rounded-lg mb-4 overflow-hidden shadow-sm">
+                                                                                    {/* SUBMODULE HEADER */}
+                                                                                    <div
+                                                                                        className="flex items-start justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                                                                                        onClick={() => handlers.toggleItem(item.id)}>
+                                                                                        <div className="flex flex-col gap-1 flex-1">
+                                                                                            <p className="text-[9px] text-blue-500 uppercase font-black tracking-widest">
+                                                                                                Sub-Module {item.collapsed && `(${item.content.length} Lectures)`}
+                                                                                            </p>
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <img
+                                                                                                    src={assets.dropDown_icon}
+                                                                                                    className={`w-2.5 h-2.5 transition-transform duration-200 ${item.collapsed ? "-rotate-90" : ""}`}/>
+                                                                                                <div
+                                                                                                    className="flex-1 pointer-events-auto"
+                                                                                                    onClick={(e) => e.stopPropagation()}>
+                                                                                                    <input
+                                                                                                        className="font-bold text-gray-700 bg-transparent outline-none w-full text-sm cursor-text"
+                                                                                                        value={item.title}
+                                                                                                        onChange={(e) => handlers.updateTitle('submodule', item.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })}/>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-3 ml-4">
+                                                                                            <span className={`text-[9px] font-bold uppercase pt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${item.collapsed ? 'text-blue-500' : 'text-red-500'}`}>
+                                                                                                {item.collapsed ? 'Expand' : 'Collapse'}
+                                                                                            </span>
+                                                                                            <img
+                                                                                                src={assets.cross_icon}
+                                                                                                className='w-4 h-4 cursor-pointer opacity-30 hover:opacity-100 transition-opacity'
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handlers.handleSubModule('remove', module.id, lIdx);
+                                                                                                }}/>
                                                                                         </div>
                                                                                     </div>
-                                                                                    <img src={assets.cross_icon} className='w-4 h-4 cursor-pointer opacity-50 hover:opacity-100' onClick={() => handlers.handleSubModule('remove', module.id, lIdx)} />
-                                                                                </div>
-
-                                                                                {/* Sub-Lectures Map */}
-                                                                                {!item.collapsed && (
-                                                                                    <div className="flex flex-col gap-4 ml-4 mt-2">
-                                                                                        <SortableContext items={item.content.map((sl: any) => `lec-${sl.id}`)} strategy={verticalListSortingStrategy}>
-                                                                                            <EmptyDropZone id={`void-top-lec-sub-${item.id}`} />
-                                                                                            {item.content.map((subLec: any) => (
-                                                                                                <React.Fragment key={subLec.id}>
-                                                                                                    <SortableModuleWrapper id={`lec-${subLec.id}`}>
-                                                                                                        <div className="p-3 bg-white border rounded shadow-sm">
-                                                                                                            <div className="flex justify-between items-start mb-2">
-                                                                                                                <div className="flex flex-col flex-1">
-                                                                                                                    <p className="text-xs text-gray-400 uppercase font-bold">Lecture</p>
-                                                                                                                    <input className="font-medium text-blue-600 bg-transparent outline-none w-full" value={item.title} onChange={(e) => handlers.updateTitle('lecture', item.id, e.target.value, { moduleId: module.id })} />
+                                                                                    {!item.collapsed && (
+                                                                                        <div className={`m-3 p-3 rounded-lg border border-dashed ${isGlobalDragging ? 'border-blue-100 bg-blue-50/10' : 'border-gray-100 bg-gray-50/80'}`}>
+                                                                                            <SortableContext items={item.content.map((sl: any) => `lec-${sl.id}`)} strategy={verticalListSortingStrategy}>
+                                                                                                <EmptyDropZone id={`void-top-lec-sub-${item.id}`} />
+                                                                                                {item.content.map((subLec: any) => (
+                                                                                                    <React.Fragment key={subLec.id}>
+                                                                                                        <SortableModuleWrapper id={`lec-${subLec.id}`}>
+                                                                                                            <div className="bg-white border rounded-lg p-3 shadow-sm">
+                                                                                                                <div className="flex justify-between items-start mb-2">
+                                                                                                                    <div className="flex flex-col flex-1">
+                                                                                                                        <p className="text-[9px] text-gray-400 uppercase font-bold">Lecture</p>
+                                                                                                                        <input className="font-medium text-blue-600 bg-transparent outline-none w-full" value={subLec.title} onChange={(e) => handlers.updateTitle('lecture', subLec.id, e.target.value, { moduleId: module.id })} />
+                                                                                                                    </div>
+                                                                                                                    <img src={assets.cross_icon} className="w-4 h-4 cursor-pointer opacity-50 hover:opacity-100" onClick={() => handlers.handleLecture('remove', module.id, lIdx, item.content.indexOf(subLec))} />
                                                                                                                 </div>
-                                                                                                                <img src={assets.cross_icon} className="w-5 h-5 cursor-pointer opacity-50 hover:opacity-100 p-1" onClick={() => handlers.handleLecture('remove', module.id, lIdx)} />
+                                                                                                                <LectureBlocksContainer lectureId={subLec.id} initialBlocks={subLec.blocks} isCollapsed={subLec.collapsed} onToggleCollapse={() => handlers.toggleItem(subLec.id)} onBlocksChange={(blocks) => handlers.updateLectureBlocks(subLec.id, blocks)} />
                                                                                                             </div>
-                                                                                                            <LectureBlocksContainer lectureId={subLec.id} initialBlocks={subLec.blocks || []} onBlocksChange={(newBlocks) => handlers.updateLectureBlocks(module.id, subLec.id, newBlocks)} />
-                                                                                                        </div>
-
-                                                                                                    </SortableModuleWrapper>
-                                                                                                    <EmptyDropZone id={`void-after-lec-${subLec.id}`} />
-                                                                                                </React.Fragment>
-                                                                                            ))}
-                                                                                            <EmptyDropZone id={`void-bottom-lec-sub-${item.id}`} />
-                                                                                            <button type="button" className="text-blue-500 text-xs font-bold mt-2" onClick={() => handlers.handleLecture('add', module.id, lIdx)}>+ Add Sub-Lecture</button>
-                                                                                        </SortableContext>
+                                                                                                        </SortableModuleWrapper>
+                                                                                                        <EmptyDropZone id={`void-after-lec-${subLec.id}`} />
+                                                                                                    </React.Fragment>
+                                                                                                ))}
+                                                                                                <EmptyDropZone id={`void-bottom-lec-sub-${item.id}`} />
+                                                                                                <button type="button" className="text-blue-500 text-[10px] font-black uppercase mt-2 hover:underline" onClick={() => handlers.handleLecture('add', module.id, lIdx)}>+ Add Sub-Lecture</button>
+                                                                                            </SortableContext>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </SortableModuleWrapper>
+                                                                            <EmptyDropZone id={`void-after-org-${item.id}`} />
+                                                                        </React.Fragment>
+                                                                    );
+                                                                }
+                                                                {/* STANDARD LECTURE RENDER */ }
+                                                                return (
+                                                                    <React.Fragment key={item.id}>
+                                                                        <SortableModuleWrapper id={`lec-${item.id}`}>
+                                                                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 mb-4 shadow-sm">
+                                                                                <div className="flex justify-between items-start mb-2">
+                                                                                    <div className="flex flex-col flex-1">
+                                                                                        <p className="text-[9px] text-gray-400 uppercase font-bold">Lecture</p>
+                                                                                        <input className="font-medium text-blue-600 bg-transparent outline-none w-full" value={item.title} onChange={(e) => handlers.updateTitle('lecture', item.id, e.target.value, { moduleId: module.id })} />
                                                                                     </div>
-                                                                                )}
+                                                                                    <img src={assets.cross_icon} className="w-4 h-4 cursor-pointer opacity-50 hover:opacity-100" onClick={() => handlers.handleLecture('remove', module.id, lIdx)} />
+                                                                                </div>
+                                                                                <LectureBlocksContainer lectureId={item.id} initialBlocks={item.blocks || []} onBlocksChange={(newBlocks) => handlers.updateLectureBlocks(item.id, newBlocks)} isCollapsed={item.collapsed} onToggleCollapse={() => handlers.toggleItem(item.id)} />
                                                                             </div>
                                                                         </SortableModuleWrapper>
                                                                         <EmptyDropZone id={`void-after-org-${item.id}`} />
                                                                     </React.Fragment>
                                                                 );
-                                                            }
-
-                                                            // B. STANDARD LECTURE RENDER
-                                                            return (
-                                                                <React.Fragment key={item.id}>
-                                                                    <SortableModuleWrapper id={`lec-${item.id}`}>
-                                                                        <div className="p-4 bg-gray-50 rounded border mb-4 shadow-sm">
-                                                                            <div className="flex justify-between items-start mb-2">
-                                                                                <div className="flex flex-col flex-1">
-                                                                                    <p className="text-xs text-gray-400 uppercase font-bold">Lecture</p>
-                                                                                    <input className="font-medium text-blue-600 bg-transparent outline-none w-full" value={item.title} onChange={(e) => handlers.updateTitle('lecture', item.id, e.target.value, { moduleId: module.id })} />
-                                                                                </div>
-                                                                                <img src={assets.cross_icon} className="w-5 h-5 cursor-pointer opacity-50 hover:opacity-100 p-1" onClick={() => handlers.handleLecture('remove', module.id, lIdx)} />
-                                                                            </div>
-                                                                            <LectureBlocksContainer lectureId={item.id} initialBlocks={item.blocks || []} onBlocksChange={(newBlocks) => handlers.updateLectureBlocks(module.id, item.id, newBlocks)} />
-                                                                        </div>
-                                                                    </SortableModuleWrapper>
-                                                                    <EmptyDropZone id={`void-after-org-${item.id}`} />
-                                                                </React.Fragment>
-                                                            );
-                                                        })}
-
-                                                        {/* Footer Buttons */}
-                                                        <div className="flex gap-4 mt-2 border-t pt-4">
-                                                            <button type="button" className="bg-gray-100 px-3 py-1 rounded text-sm font-semibold" onClick={() => handlers.handleLecture('add', module.id)}>+ Add Lecture</button>
-                                                            <button type="button" className="bg-gray-100 px-3 py-1 rounded text-sm font-semibold" onClick={() => handlers.handleSubModule('add', module.id)}>+ Add Sub-Module</button>
-                                                        </div>
-                                                        {module.content.length === 0 && <EmptyDropZone id={`void-bottom-org-mod-${module.id}`} />}
-                                                    </SortableContext>
-                                                </div>
+                                                            })}
+                                                            {/* Footer Buttons */}
+                                                            <div className="flex gap-3 mt-4 border-t border-gray-100 pt-4">
+                                                                <button type="button" className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-[10px] font-black uppercase text-gray-600 hover:bg-gray-50" onClick={() => handlers.handleLecture('add', module.id)}>+ Add Lecture</button>
+                                                                <button type="button" className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-[10px] font-black uppercase text-gray-600 hover:bg-gray-50" onClick={() => handlers.handleSubModule('add', module.id)}>+ Add Sub-Module</button>
+                                                            </div>
+                                                            {module.content.length === 0 && <EmptyDropZone id={`void-bottom-org-mod-${module.id}`} />}
+                                                        </SortableContext>
+                                                    </div>
+                                                )}
                                             </div>
                                         </SortableModuleWrapper>
                                         <EmptyDropZone id={`void-after-mod-${module.id}`} />
                                     </React.Fragment>
                                 );
                             })}
-
                             <EmptyDropZone id="void-bottom-mod-root" />
                         </SortableContext>
-
                         <button
                             type="button"
                             className="w-full py-4 bg-blue-100 text-blue-600 font-bold rounded-lg border-2 border-dashed border-blue-300"
@@ -559,6 +581,45 @@ const EditCourse: React.FC = () => {
                     {statusMsg && (
                         <p className={statusMsg.includes('success') ? 'text-green-600' : 'text-red-500'}>{statusMsg}</p>
                     )}
+                </div>
+                { /* NAV BUTTONS */}
+                <div className="fixed bottom-8 right-8 flex flex-col items-end gap-3 z-[9999]">
+                    <button
+                        type="button"
+                        onClick={() => handlers.viewCourse(courseId || "")}
+                        className="flex items-center gap-2 px-5 py-3 bg-black text-white rounded-full shadow-2xl font-bold text-sm hover:bg-gray-800 transition-all hover:-translate-y-1 active:translate-y-0">
+                        <span>View Course</span>
+                    </button>
+                    <div className="flex bg-white rounded-full shadow-2xl border border-gray-100 p-1.5">
+                        <div className="relative group flex items-center">
+                            <span className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap uppercase tracking-tighter">
+                                Expand All
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => handlers.toggleAll(false)}
+                                className="p-3 hover:bg-blue-50 rounded-full text-blue-600 transition-colors">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="w-px h-6 bg-gray-100 self-center mx-1" />
+                        <div className="relative group flex items-center">
+                            <span className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap uppercase tracking-tighter">
+                                Collapse All
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => handlers.toggleAll(true)}
+                                className="p-3 hover:bg-red-50 rounded-full text-red-500 transition-colors"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path d="M18 15l-6-6-6 6" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form >
         </div >
