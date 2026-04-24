@@ -22,7 +22,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
         { label: 'Forum', path: '/forum', button: DashButton },
         { label: 'Followed Threads', path: '/follows', button: DashButton },
         { label: 'View Available Courses', path: '/all-courses', button: DashButton },
-        { label: 'My Courses', path: '/courses', button: DashButton },
+        { label: 'My Enrollments', path: '/my-enrollments', button: DashButton },
         { label: 'Metronome', path: '/metronome', button: DashButton },
         { label: 'Timer', path: '/timer', button: DashButton },
     ],

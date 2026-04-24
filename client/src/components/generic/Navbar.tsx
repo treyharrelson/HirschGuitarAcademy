@@ -56,7 +56,10 @@ const Navbar = () => {
   const RenderLinks = () => (
     <>
       {links.map((link, index) => (
-        <link.button onClick={() => navigate(link.path)}>
+        <link.button
+          key={`${link.path}-${index}`} // Unique key using path and index
+          onClick={() => navigate(link.path)}
+        >
           {link.label}
         </link.button>
       ))}
@@ -80,7 +83,7 @@ const Navbar = () => {
       </div>
       {/* For phone screens */}
       <div className='md:hidden flex items-center gap-2 sm:gap-5 text-gray-500'>
-        <div>
+        <div className='flex items-center gap-4'>
           <RenderLinks />
         </div>
         <button onClick={handleLogout}><img src={assets.logoutIcon} alt='Logout Icon' className='w-6 h-6' /></button>

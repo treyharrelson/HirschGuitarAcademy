@@ -1,55 +1,75 @@
 const express = require('express');
 const router = express.Router();
 const Models = require('../db/models');
+const { Course, Enrollment, Module, Lecture } = Models;
+const Progress = require('../db/models/Progress');
 const requireRole = require('../middleware/requireRole');
+const requireAuth = require('../middleware/requireAuth');
+
 
 // === STUDENT ONLY ===
 
 // Get enrollments for the current user (Maps to GET /api/courses/my-enrollments)
-router.get('/my-enrollments', requireRole('student'), async (req, res) => {
+router.get('/my-enrollments', requireAuth, requireRole('student'), async (req, res) => {
     try {
-        const userId = req.session.user.id;
-        const enrolledcourses = await Models.Enrollment.findAll({
-            attributes: ['completed'],
-            // get all rows with userId
+        const userId = req.session.user?.id;
+        if (!userId) return res.status(401).json({ message: "No session ID" });
+
+        // Fetch RAW enrollments ONLY - No associations here to avoid crashes
+        const enrolledCourses = await Enrollment.findAll({
             where: { userId: userId },
-            // get Courses that are in rolls
-            include: [
-                {
-                    // didn't add "as" in relations for some reason, so don't add "as" here, just returns as "Course" in object
-                    model: Models.Course,
-                    attributes: ['id', 'name', 'instructorId', 'enrolled', 'isPrivate', 'thumbnail', 'description'],
-                    include: [
-                        {
-                            // added "as" in relations, so returns as "instructor" in object
-                            model: Models.User,
-                            as: 'instructor',
-                            attributes: ['id', 'userName', 'firstName', 'lastName', 'email'],
-                        }
-                    ],
-                },
-            ],
+            raw: true
         });
 
-        const enrollments = enrolledcourses.map(enrollment => {
-            const course = enrollment.Course;
-            const instructor = course.instructor;
+        if (!enrolledCourses || enrolledCourses.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        // Fetch data for each enrollment independently
+        const enrollments = await Promise.all(enrolledCourses.map(async (enrol) => {
+            // Find the course manually
+            const course = await Course.findByPk(enrol.courseId, {
+                attributes: ['id', 'name', 'thumbnail'],
+                raw: true
+            });
+            if (!course) return null;
+
+            // Count completed lectures for this user in this course
+            const completedCount = await Progress.count({
+                where: { userId, courseId: course.id }
+            });
+
+            // Find all module IDs for this course
+            const courseModules = await Module.findAll({
+                where: { courseId: course.id },
+                attributes: ['id'],
+                raw: true
+            });
+
+            const moduleIds = courseModules.map(m => m.id);
+
+            // Count lectures linked to those modules
+            const totalLectures = await Lecture.count({
+                where: { moduleId: moduleIds }
+            });
+
+            const progress = totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0;
+
             return {
-                id: course.id,
+                id: enrol.id,
+                courseId: course.id,
                 name: course.name,
-                instructorId: instructor.id,
-                instructor: instructor,
-                enrolled: course.enrolled,
-                completed: enrollment.completed,
-                isPrivate: course.isPrivate,
                 thumbnail: course.thumbnail,
-                description: course.description
-            }
-        });
+                completed: enrol.completed || progress === 100,
+                totalLectures: totalLectures || 0,
+                completedCount: completedCount || 0,
+                progress: progress
+            };
+        }));
 
-        res.status(200).json(enrollments);
+        res.status(200).json(enrollments.filter(e => e !== null));
     } catch (error) {
-        res.status(500).json({ message: `Error fetching enrollments: ${error.message}` });
+        res.status(500).json({ message: error.message });
     }
 });
 
@@ -129,7 +149,7 @@ router.delete('/:courseId/enroll', requireRole('student'), async (req, res) => {
     }
 });
 
-// Complete a course (Maps to POST /api/courses/:courseId/complete)
+/* Complete a course (Maps to POST /api/courses/:courseId/complete)
 router.post('/:courseId/complete', requireRole('student'), async (req, res) => {
     try {
         const userId = req.session.user.id;
@@ -155,6 +175,47 @@ router.post('/:courseId/complete', requireRole('student'), async (req, res) => {
         res.status(500).json({ message: `Error completing course: ${error.message}` });
     }
 });
+*/
+
+// STUDENT COURSE PROGRESS
+router.get('/:courseId/progress', requireRole('student'), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const userId = req.user.id;
+        const records = await Progress.findAll({
+            where: {
+                userId: req.user.id,
+                courseId: req.params.courseId
+            }
+        });
+        const completedLectures = records.map(r => r.lectureId.toString());
+        res.json({ completedLectures });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+// COMPLETION ROUTE
+router.post('/:courseId/lectures/:lectureId/complete', requireAuth, requireRole('student'), async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const { courseId, lectureId } = req.params;
+
+        await Progress.findOrCreate({
+            where: {
+                userId: userId,
+                courseId: courseId,
+                lectureId: parseInt(lectureId.replace('lec-', ''))
+            }
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("COMPLETION ERROR:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 
 // === INSTRUCTOR OR ADMIN ===
 
@@ -313,7 +374,7 @@ router.put('/:courseId', requireRole('admin', 'instructor'), async (req, res) =>
                                     title: item.title || 'Untitled Lecture',
                                     order: j + 1,
                                     moduleId: newModule.id,
-                                    blocks: item.blocks ? [...item.blocks] : [] 
+                                    blocks: item.blocks ? [...item.blocks] : []
                                 }, { transaction: t });
                             }
                         }

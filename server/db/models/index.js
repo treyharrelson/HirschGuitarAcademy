@@ -19,6 +19,7 @@ const PracticeTime = require('./PracticeTime');
 const ScoreBoard = require('./ScoreBoard');
 const CourseRequirement = require('./CourseRequirement');
 const ThreadBan = require('./ThreadBan');
+const Progress = require('./Progress');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -44,6 +45,8 @@ Course.belongsToMany(User, { through: Enrollment, foreignKey: 'courseId', otherK
 
 // Course prerequisites
 Course.belongsToMany(Course, { through: CourseRequirement, as: 'requirements', foreignKey: 'courseId', otherKey: 'requiredCourseId' });
+
+// Required By (The courses that this course unlocks)
 Course.belongsToMany(Course, { through: CourseRequirement, as: 'requiredBy', foreignKey: 'requiredCourseId', otherKey: 'courseId' });
 
 // Enrollment table direct setup, just helps with magic functions
