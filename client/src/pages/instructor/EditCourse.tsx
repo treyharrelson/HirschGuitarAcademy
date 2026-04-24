@@ -7,19 +7,12 @@ import Quill from 'quill';
 import "quill/dist/quill.snow.css";
 import { assets } from '../../assets/assets';
 import LectureBlocksContainer from '../../components/instructor/LectureBlockContainer';
-import { DndContext, closestCenter, type DragEndEvent, pointerWithin, closestCorners, type DragOverEvent, DragOverlay, type DragStartEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
-import { CSS } from '@dnd-kit/utilities';
+import { DndContext, closestCenter, type DragEndEvent, pointerWithin, DragOverlay, type DragStartEvent, useSensors, useSensor, PointerSensor, type CollisionDetection } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, type SortingStrategy } from '@dnd-kit/sortable';
 import { SortableModuleWrapper } from '../../components/instructor/SortableModuleWrapper';
-import type { Module, Lecture } from '../../types/course';
+import type { Module } from '../../types/course';
 import MediaBlockEditor from '../../components/instructor/MediaBlockEditor';
 import { EmptyDropZone } from '../../components/generic/EmptyDropZone';
-import {
-    rectIntersection,
-    getFirstCollision,
-    type CollisionDetection
-} from '@dnd-kit/core';
 
 const EditCourse: React.FC = () => {
     const { courseId } = useParams<{ courseId: string }>();
@@ -40,131 +33,128 @@ const EditCourse: React.FC = () => {
         setActiveId(null);
     };
 
-    // This function filters targets so the mouse "sees through" layers
-    const smartCollisionDetection: CollisionDetection = (args) => {
-        const { active } = args;
-        const activeId = active?.id ? String(active.id) : '';
+    const nullStrategy: SortingStrategy = () => null;
 
-        // 1. Filter targets: If dragging a block, only see block zones. 
-        // If dragging a lecture, only see organizational zones.
-        const filteredContainers = args.droppableContainers.filter((container) => {
-            const id = String(container.id);
-            if (activeId.startsWith('block-')) return id.includes('block');
-            if (activeId.startsWith('lec-')) return !id.includes('block');
-            return true;
-        });
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5,
+            },
+        })
+    );
 
-        // 2. Prioritize what's directly under the pointer
-        const collisions = pointerWithin({
-            ...args,
-            droppableContainers: filteredContainers,
-        });
-
-        return collisions.length > 0
-            ? collisions
-            : rectIntersection({ ...args, droppableContainers: filteredContainers });
+    const customCollisionDetection: CollisionDetection = (args) => {
+        const { active, droppableContainers, pointerCoordinates } = args;
+        if (!pointerCoordinates) return [];
+        const pointerCollisions = pointerWithin(args);
+        const voidCollisions = pointerCollisions.filter(c => String(c.id).includes('void'));
+        if (voidCollisions.length > 0) {
+            const intersectingContainers = droppableContainers.filter(c =>
+                voidCollisions.some(vc => vc.id === c.id)
+            );
+            return closestCenter({
+                ...args,
+                droppableContainers: intersectingContainers
+            });
+        }
+        return closestCenter(args);
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over, delta } = event;
-        if (typeof setActiveId === 'function') setActiveId(null);
+        setActiveId(null);
         if (!over || active.id === over.id) return;
-
+        const activeId = String(active.id);
+        const overId = String(over.id);
+        const clean = (id: string) => id.replace(/^(mod-|sub-|lec-|block-|void-top-mod-root-|void-bottom-mod-root-|void-top-org-mod-|void-top-org-sub-|void-top-lec-sub-|void-top-block-lec-|void-after-mod-|void-after-org-|void-after-lec-|void-after-block-|void-bottom-mod-root-|void-bottom-org-mod-|void-bottom-org-sub-|void-bottom-lec-sub-|void-bottom-block-lec-|void-top-|void-after-|void-)/, '');
+        const overIdClean = clean(overId);
         setters.setModules((prev: Module[]) => {
             const newModules: Module[] = JSON.parse(JSON.stringify(prev));
-            const activeId = String(active.id);
-            const overId = String(over.id);
-
             const isBlock = activeId.startsWith('block-');
             const isOrg = activeId.startsWith('lec-') || activeId.startsWith('sub-');
             const isMod = activeId.startsWith('mod-');
-
-            const clean = (id: string) =>
-                id.replace(/^(mod-|sub-|lec-|block-|void-top-mod-root-|void-bottom-mod-root-|void-top-org-mod-|void-top-org-sub-|void-top-lec-sub-|void-top-block-lec-|void-after-mod-|void-after-org-|void-after-lec-|void-after-block-|void-bottom-mod-root-|void-bottom-org-mod-|void-bottom-org-sub-|void-bottom-lec-sub-|void-bottom-block-lec-|void-top-|void-after-|void-)/, '');
-
             const activeIdClean = clean(activeId);
-            const overIdClean = clean(overId);
-
             let draggedItem: any = null;
-
-            // 1. REMOVE (Unchanged)
             const findAndRemove = (list: any[]): boolean => {
                 if (!Array.isArray(list)) return false;
                 for (let i = 0; i < list.length; i++) {
                     if (String(list[i].id) === activeIdClean) {
-                        draggedItem = list.splice(i, 1)[0]; // Extract the object correctly
+                        draggedItem = list.splice(i, 1)[0];
                         return true;
                     }
-                    if (findAndRemove(list[i].content)) return true;
-                    if (findAndRemove(list[i].blocks)) return true;
+                    if (list[i].content && findAndRemove(list[i].content)) return true;
+                    if (list[i].blocks && findAndRemove(list[i].blocks)) return true;
                 }
                 return false;
             };
-
-            // 2. INSERT (Depth-First Priority)
             const findAndInsert = (list: any[], listType: 'root' | 'org' | 'blocks'): boolean => {
                 if (!Array.isArray(list)) return false;
-
-                for (const item of list) {
-                    if (item.content && findAndInsert(item.content, 'org')) return true;
-                    if (item.blocks && findAndInsert(item.blocks, 'blocks')) return true;
+                if (overId === "void-bottom-mod-root" && listType === 'root') {
+                    list.push(draggedItem);
+                    return true;
                 }
-
-                // --- STEP B: VOID ZONE TARGETS ---
                 if (overId.includes('void')) {
-                    // Root Bottom/Top
                     if (overId.includes('mod-root') && listType === 'root') {
-                        overId.includes('top') ? list.unshift(draggedItem) : list.push(draggedItem);
+                        const nIdx = list.findIndex(item => String(item.id) === overIdClean);
+                        if (nIdx !== -1) {
+                            list.splice(overId.includes('top') ? nIdx : nIdx + 1, 0, draggedItem);
+                        } else {
+                            overId.includes('top') ? list.unshift(draggedItem) : list.push(draggedItem);
+                        }
                         return true;
                     }
-
-                    // Specific Container Voids (Dropping into empty Module/Sub-module/Lecture)
                     for (let item of list) {
-                        if (String(item.id) === overIdClean) {
-                            if (isBlock && 'blocks' in item) {
-                                if (!Array.isArray(item.blocks)) item.blocks = [];
-                                overId.includes('top') ? item.blocks.unshift(draggedItem) : item.blocks.push(draggedItem);
+                        if (String(item.id) === overIdClean && overIdClean !== '') {
+                            if (isMod && item.id.startsWith('lec-')) continue;
+                            if ((isOrg || isMod) && 'content' in item) {
+                                if (!Array.isArray(item.content)) item.content = [];
+                                if (overId.includes('top')) {
+                                    item.content.unshift(draggedItem);
+                                } else {
+                                    item.content.push(draggedItem);
+                                }
                                 return true;
                             }
-                            if (isOrg && 'content' in item) {
-                                if (!Array.isArray(item.content)) item.content = [];
-                                overId.includes('top') ? item.content.unshift(draggedItem) : item.content.push(draggedItem);
+                            if (isBlock && 'blocks' in item) {
+                                if (!Array.isArray(item.blocks)) item.blocks = [];
+                                if (overId.includes('top')) {
+                                    item.blocks.unshift(draggedItem);
+                                } else {
+                                    item.blocks.push(draggedItem);
+                                }
                                 return true;
                             }
                         }
                     }
-
-                    // Neighbor Voids (Dropping in between items)
                     const nIdx = list.findIndex(item => String(item.id) === overIdClean);
-                    if (nIdx !== -1) {
-                        if ((isBlock && listType === 'blocks') || (isOrg && listType === 'org') || (isMod && listType === 'root')) {
-                            list.splice(nIdx + 1, 0, draggedItem);
+                    if (nIdx !== -1 && overIdClean !== '') {
+                        if ((isMod && listType === 'root') || (isOrg && listType === 'root') || (isOrg && listType === 'org') || (isMod && listType === 'org') || (isBlock && listType === 'blocks')) {
+                            const insertIdx = overId.includes('top') ? nIdx : nIdx + 1;
+                            list.splice(insertIdx, 0, draggedItem);
                             return true;
                         }
                     }
                 }
-
-                // --- STEP C: DIRECT CARD DROP ---
                 const idx = list.findIndex(item => String(item.id) === overIdClean);
                 if (idx !== -1 && !overId.includes('void')) {
                     const targetItem = list[idx];
-
-                    // Nesting into a card's header
-                    if (isOrg && 'content' in targetItem) {
+                    if (isMod && targetItem.id.startsWith('lec-')) return false;
+                    if ((isOrg || isMod) && 'content' in targetItem) {
+                        if (!Array.isArray(targetItem.content)) targetItem.content = [];
                         targetItem.content.push(draggedItem);
                         return true;
                     }
-
-                    // Swapping same-level cards
-                    if ((isBlock && listType === 'blocks') || (isOrg && listType === 'org') || (isMod && listType === 'root')) {
+                    if ((isBlock && listType === 'blocks') || (isOrg && listType === 'org') || (isMod && listType === 'root') || (isOrg && listType === 'root')) {
                         list.splice(delta.y > 0 ? idx + 1 : idx, 0, draggedItem);
                         return true;
                     }
                 }
-
+                for (const item of list) {
+                    if (item.content && findAndInsert(item.content, 'org')) return true;
+                    if (item.blocks && findAndInsert(item.blocks, 'blocks')) return true;
+                }
                 return false;
             };
-
             if (findAndRemove(newModules)) {
                 if (findAndInsert(newModules, 'root')) return newModules;
             }
@@ -316,7 +306,6 @@ const EditCourse: React.FC = () => {
                     {/* The Flex-Wrap container makes them sit side-by-side */}
                     <div className='flex flex-wrap gap-2 w-full'>
                         {allCourses
-                            // 1. Filter out the current course so it can't be a prerequisite of itself
                             .filter(course => String(course.id) !== String(courseId))
                             .map(course => {
                                 const isChecked = state.courseRequirements.includes(String(course.id));
@@ -353,7 +342,8 @@ const EditCourse: React.FC = () => {
                 </div>
                 {/* MODULES & LECTURES */}
                 <DndContext
-                    collisionDetection={smartCollisionDetection}
+                    sensors={sensors}
+                    collisionDetection={customCollisionDetection}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
                     onDragCancel={handleDragCancel}>
@@ -362,7 +352,7 @@ const EditCourse: React.FC = () => {
                         <SortableContext
                             id="root-modules"
                             items={state.modules?.map(m => `mod-${m.id}`) || []}
-                            strategy={verticalListSortingStrategy}
+                            strategy={activeId?.startsWith('mod-') ? nullStrategy : verticalListSortingStrategy}
                         >
                             <EmptyDropZone id="void-top-mod-root" />
 
@@ -527,7 +517,7 @@ const EditCourse: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <DragOverlay adjustScale={true}>
+                    <DragOverlay adjustScale={false} dropAnimation={null}>
                         {activeId ? (
                             <div className="w-[600px] pointer-events-none shadow-2xl scale-105 opacity-95">
                                 <div className="bg-white border-2 border-blue-500 rounded-lg p-4 rotate-1">
@@ -535,14 +525,12 @@ const EditCourse: React.FC = () => {
                                         <div className="text-gray-400">⠿</div>
                                         <div>
                                             <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest">
-                                                {/* STRICT PASSPORT CHECK */}
                                                 {activeId.startsWith('mod-') && "Moving Module"}
                                                 {activeId.startsWith('sub-') && "Moving Sub-Module"}
                                                 {activeId.startsWith('lec-') && "Moving Lecture"}
                                                 {activeId.startsWith('block-') && "Moving Content Block"}
                                             </p>
                                             <h4 className="font-bold text-gray-800">
-                                                {/* You can add logic here to find the actual title from state */}
                                                 Relocating item...
                                             </h4>
                                         </div>
