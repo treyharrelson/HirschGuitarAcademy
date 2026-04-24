@@ -32,7 +32,8 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
         { label: 'Add Course', path: '/instructor/add-course', button: DashButton },
     ],
     admin: [
-        //dunno yet
+        { label: 'Forum', path: '/forum', button: DashButton },
+        { label: 'Manage Threads', path: '/manage/threads', button: DashButton },
     ]
 };
 

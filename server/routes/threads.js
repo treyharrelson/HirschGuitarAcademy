@@ -44,33 +44,52 @@ router.get('/', async (req, res) => {
 // Also auto-creates a global announcement post and broadcasts it via SSE
 router.post('/', async (req, res) => {
 	try {
-		const { title } = req.body;
+		const { title, visibility = 'public', makeAnnouncement = true } = req.body;
+		
+		// validate visibility
+		if (!['public', 'global', 'private'].includes(visibility)) {
+			return res.status(400).json({ message: "visibility must be 'public', 'global', or 'private'" });
+		}
+
 		const newThread = await Models.Thread.create({
 			title,
-			authorId: req.session.user.id
-		});
-
-		// Auto-create a global announcement post for the new thread
-		const announcementPost = await Models.Post.create({
-			content: `New thread started: "${title}" — jump in and join the discussion!`,
 			authorId: req.session.user.id,
-			scope: 'global',
-			threadId: null,
-			announcedThreadId: newThread.id
+			visibility,
 		});
 
-		const postWithAuthor = await Models.Post.findByPk(announcementPost.id, {
-			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
-				{ model: Models.Attachment, as: 'attachments' },
-				{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'] }
-			]
-		});
+		// if private, immediately add the creator as a member so they can see their own thread
+		if (visibility === 'private') {
+			await Models.ThreadMember.findOrCreate({
+				where: {
+					threadId: newThread.id,
+					userId: req.session.user.id
+				}
+			});
+		}
 
-		// Broadcast the announcement to all connected users
-		const payload = `data: ${JSON.stringify({ type: 'new_global_post', post: postWithAuthor })}\n\n`;
-		userClients.forEach(clients => clients.forEach(client => client.write(payload)));
+		if (makeAnnouncement) {
+			// Auto-create a global announcement post for the new thread
+			const announcementPost = await Models.Post.create({
+				content: `New thread started: "${title}" — jump in and join the discussion!`,
+				authorId: req.session.user.id,
+				scope: 'global',
+				threadId: null,
+				announcedThreadId: newThread.id
+			});
 
+			const postWithAuthor = await Models.Post.findByPk(announcementPost.id, {
+				include: [
+					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+					{ model: Models.Attachment, as: 'attachments' },
+					{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'] }
+				]
+			});
+
+			// Broadcast the announcement to all connected users
+			const payload = `data: ${JSON.stringify({ type: 'new_global_post', post: postWithAuthor })}\n\n`;
+			userClients.forEach(clients => clients.forEach(client => client.write(payload)));
+		}
+		
 		// auto follow the thread author
 		await Models.Follow.findOrCreate({
 			where: {

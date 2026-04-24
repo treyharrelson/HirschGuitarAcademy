@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { type Thread } from '../types/thread';
+import VisibilityToggle from '../components/generic/VisibilityToggle';
 
 interface MemberUser {
     id: number;
@@ -266,30 +267,11 @@ function ThreadManager() {
 
                                 {/* Visibility control */}
                                 <div className="w-52 flex justify-center">
-                                    {(['public', 'global', 'private'] as const).map((option, i, arr) => {
-                                        const isActive = thread.visibility === option;
-                                        const isDisabled = settingVisibilityId === thread.id;
-                                        const colors = {
-                                            public:  isActive ? 'bg-gray-500 text-white'  : 'text-gray-500 hover:bg-gray-100',
-                                            global:  isActive ? 'bg-blue-500 text-white'  : 'text-blue-600 hover:bg-blue-50',
-                                            private: isActive ? 'bg-amber-500 text-white' : 'text-amber-600 hover:bg-amber-50',
-                                        };
-                                        const labels = { public: 'Public', global: 'Global', private: '🔒 Private' };
-                                        return (
-                                            <button
-                                                key={option}
-                                                onClick={() => !isActive && handleSetVisibility(thread.id, option)}
-                                                disabled={isDisabled || isActive}
-                                                title={`Set to ${option}`}
-                                                className={`px-3 py-1 text-xs font-semibold transition-colors border border-gray-200
-                                                    ${i === 0 ? 'rounded-l-full' : ''} ${i === arr.length - 1 ? 'rounded-r-full' : ''}
-                                                    ${i > 0 ? '-ml-px' : ''}
-                                                    ${colors[option]} ${isDisabled ? 'opacity-50 cursor-not-allowed' : isActive ? 'cursor-default' : 'cursor-pointer'}`}
-                                            >
-                                                {labels[option]}
-                                            </button>
-                                        );
-                                    })}
+                                    <VisibilityToggle
+                                        value={thread.visibility}
+                                        onChange={(v) => !settingVisibilityId && handleSetVisibility(thread.id, v)}
+                                        disabled={settingVisibilityId === thread.id}
+                                    />
                                 </div>
 
                                 {/* Manage Members button */}
