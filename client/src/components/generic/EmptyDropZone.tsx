@@ -10,14 +10,9 @@ export const EmptyDropZone: React.FC<EmptyDropZoneProps> = ({ id }) => {
     const { active } = useDndContext();
 
     const activeId = active?.id ? String(active.id) : null;
-
-    // 1. Identify the "Passport" of the item being held
     const isDraggingBlock = activeId?.startsWith('block-');
     const isDraggingOrg = activeId?.startsWith('lec-') || activeId?.startsWith('sub-');
     const isDraggingMod = activeId?.startsWith('mod-');
-
-    // 2. Validate Target based on ID naming conventions
-    // Blocks -> Block zones | Lectures/Submodules -> Org/Sub/Lec/Root zones
     const isTargetValid = !!activeId && (
         (isDraggingBlock && id.includes('block')) ||
         (isDraggingOrg && (id.includes('org') || id.includes('sub') || id.includes('lec') || id.includes('mod-root'))) ||

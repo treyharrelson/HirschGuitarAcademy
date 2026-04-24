@@ -81,7 +81,6 @@ export const useCourseEditor = (initialData?: any) => {
 
   const handleLecture = (action: ModuleAction, moduleId?: string, index?: number, subIndex?: number) => {
     const title = lectureDetails.lectureTitle.trim();
-    // Add lecture
     if (action === 'add' && moduleId) {
       setCurrentModuleId(moduleId);
       setCurrentSubModuleIndex(index ?? null);
@@ -91,12 +90,9 @@ export const useCourseEditor = (initialData?: any) => {
     }
     if (action === 'save' && title) {
       if (popupType === 'Module') {
-        // 1. Create a top-level Module
         setModules(prev => [...prev, createItem(title, prev.length, 'Module') as Module]);
       } else {
         updateModuleById(currentModuleId!, (module): Module => {
-
-          // 2. Add a lecture INTO an existing Sub-Module
           if (popupType === 'Lecture' && currentSubModuleIndex !== null) {
             const updatedContent = [...module.content];
             const subMod = { ...(updatedContent[currentSubModuleIndex] as Module) };
@@ -107,9 +103,6 @@ export const useCourseEditor = (initialData?: any) => {
             updatedContent[currentSubModuleIndex] = subMod;
             return { ...module, content: updatedContent };
           }
-
-          // 3. Create either a Sub-Module or a standard Lecture inside the Module
-          // FIX: Ensure 'SubModule' remains 'SubModule' for createItem logic
           const typeForCreate = popupType === 'SubModule' ? 'SubModule' : 'Lecture';
           const newItem = createItem(title, module.content.length, typeForCreate as any, module.id);
 
@@ -197,17 +190,14 @@ export const useCourseEditor = (initialData?: any) => {
   const updateLectureBlocks = (moduleId: string, lectureId: string, newBlocks: ContentBlock[]) => {
     setModules((prev) =>
       prev.map((mod) => {
-        // 1. Find the parent Module
         if (mod.id !== moduleId) return mod;
 
         return {
           ...mod,
           content: mod.content.map((item: any) => {
-            // 2. Check if the item IS the lecture
             if (item.id === lectureId) {
               return { ...item, blocks: newBlocks };
             }
-            // 3. Check if the lecture is inside a Sub-Module
             if (Array.isArray(item.content)) {
               return {
                 ...item,

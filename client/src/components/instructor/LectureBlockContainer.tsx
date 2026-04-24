@@ -72,11 +72,6 @@ const LectureBlocksContainer: React.FC<LectureBlocksContainerProps> = ({
         Lecture Content
       </p>
 
-      {/* 
-        PIERCING LAYER: 
-        When dragging, we disable pointer events on the container background 
-        so the mouse tip hits the nested EmptyDropZones instead of the container.
-      */}
       <div className={isGlobalDragging ? 'pointer-events-none' : 'pointer-events-auto'}>
         <SortableContext items={blockSortableIds} strategy={verticalListSortingStrategy}>
 
