@@ -211,11 +211,23 @@ const EditCourse: React.FC = () => {
         }
     }, [statusMsg]);
 
-    const handleUpdate = async (e: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
+    const handleUpdate = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
+
+        // Simple call to the hook's validator
+        const error = handlers.validateCourse();
+        if (error) {
+            setStatusMsg(`Cannot Save: ${error}`);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        setSubmitting(true);
+
         setSubmitting(true);
         setStatusMsg('');
         const descriptionHtml = refs.quillRef.current ? refs.quillRef.current.root.innerHTML : '';
+
         const payload = {
             name: state.courseTitle,
             description: descriptionHtml,
@@ -225,23 +237,19 @@ const EditCourse: React.FC = () => {
                 id: typeof mod.id === 'string' ? parseInt(mod.id.replace('mod-', '')) : mod.id,
                 content: mod.content?.map((item: any) => ({
                     ...item,
+                    id: typeof item.id === 'string' ? parseInt(item.id.replace('lec-', '').replace('sub-', '')) : item.id,
+                    // Ensure blocks are carried over exactly as defined in your types
                     blocks: item.blocks || [],
-                    id: typeof item.id === 'string'
-                        ? parseInt(item.id.replace('lec-', '').replace('sub-', ''))
-                        : item.id,
-                    content: Array.isArray(item.content)
-                        ? item.content.map((subLec: any) => ({
-                            ...subLec,
-                            blocks: subLec.blocks || [],
-                            id: typeof subLec.id === 'string'
-                                ? parseInt(subLec.id.replace('lec-', '').replace('sub-', ''))
-                                : subLec.id
-                        }))
-                        : undefined
+                    content: Array.isArray(item.content) ? item.content.map((subLec: any) => ({
+                        ...subLec,
+                        blocks: subLec.blocks || [],
+                        id: typeof subLec.id === 'string' ? parseInt(subLec.id.replace('lec-', '').replace('sub-', '')) : subLec.id
+                    })) : undefined
                 }))
             })),
             requirements: state.courseRequirements,
         };
+
         try {
             const response = await api.put(`/api/courses/${courseId}`, payload);
             if (response.status === 200) {
@@ -253,13 +261,13 @@ const EditCourse: React.FC = () => {
                 setStatusMsg('Course saved successfully!');
             }
         } catch (err: any) {
-            // Detailed error logging
-            console.error("Save failed response:", err.response?.data);
+            console.error("Save failed:", err.response?.data);
             setStatusMsg(err.response?.data?.message || 'Failed to update course.');
         } finally {
             setSubmitting(false);
         }
     };
+
     if (loading) return <div className="p-10">Loading Course Editor...</div>;
     return (
         <div className='h-screen overflow-scroll flex flex-col items-start md:p-8 p-4 pt-8'>

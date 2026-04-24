@@ -213,10 +213,46 @@ export const useCourseEditor = (initialData?: any) => {
     );
   };
 
+  const validateCourse = (): string | null => {
+    if (modules.length === 0) return "You must add at least one module.";
+
+    const checkTree = (list: any[]): string | null => {
+      for (const item of list) {
+        // 1. Check Modules/Submodules
+        if ('content' in item && !item.blocks) { // It's a container
+          if (!item.content || item.content.length === 0) {
+            return `${item.id.startsWith('mod') ? 'Module' : 'Submodule'} "${item.title || 'Untitled'}" is empty.`;
+          }
+          const error = checkTree(item.content);
+          if (error) return error;
+        }
+        // 2. Check Lectures
+        else if ('blocks' in item) {
+          if (!item.blocks || item.blocks.length === 0) {
+            return `Lecture "${item.title || 'Untitled'}" must have content.`;
+          }
+          for (const block of item.blocks) {
+            if (block.type === 'text') {
+              const text = (block.content || '').replace(/<(.|\n)*?>/g, '').trim();
+              if (text.length === 0) return `Empty text block in "${item.title}".`;
+            } else if (block.type === 'image' || block.type === 'video') {
+              if (!block.url || block.url.trim().length === 0) {
+                return `Empty ${block.type} block in "${item.title}".`;
+              }
+            }
+          }
+        }
+      }
+      return null;
+    };
+
+    return checkTree(modules);
+  };
+
   return {
     state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription, courseRequirements },
     setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription, setCourseRequirements },
     refs: { inputRef, quillRef, editorRef },
-    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateTitle, updateLectureBlocks },
+    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateTitle, updateLectureBlocks, validateCourse },
   };
 };
