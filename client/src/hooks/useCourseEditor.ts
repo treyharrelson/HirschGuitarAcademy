@@ -223,10 +223,6 @@ export const useCourseEditor = (initialData?: any) => {
     );
   };
 
-
-
-
-
   return {
     state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription, courseRequirements },
     setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription, setCourseRequirements },
