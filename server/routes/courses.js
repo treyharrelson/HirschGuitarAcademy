@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Models = require('../db/models');
-const { Course, Enrollment, Module, Lecture } = Models;
-const Progress = require('../db/models/Progress');
 const requireRole = require('../middleware/requireRole');
 const requireAuth = require('../middleware/requireAuth');
 
@@ -35,7 +33,7 @@ router.get('/my-enrollments', requireAuth, requireRole('student'), async (req, r
             if (!course) return null;
 
             // Count completed lectures for this user in this course
-            const completedCount = await Progress.count({
+            const completedCount = await Models.Progress.count({
                 where: { userId, courseId: course.id }
             });
 
@@ -182,7 +180,7 @@ router.get('/:courseId/progress', requireRole('student'), async (req, res) => {
     try {
         const { courseId } = req.params;
         const userId = req.user.id;
-        const records = await Progress.findAll({
+        const records = await Models.Progress.findAll({
             where: {
                 userId: req.user.id,
                 courseId: req.params.courseId
@@ -200,7 +198,7 @@ router.post('/:courseId/lectures/:lectureId/complete', requireAuth, requireRole(
         const userId = req.session.user.id;
         const { courseId, lectureId } = req.params;
 
-        await Progress.findOrCreate({
+        await Models.Progress.findOrCreate({
             where: {
                 userId: userId,
                 courseId: courseId,
