@@ -22,6 +22,7 @@ import InstructorMyCourses from './pages/instructor/MyCourses'
 import Instructor from './pages/instructor/Instructor'
 import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
 import EditCourse from './pages/instructor/EditCourse'
+import { ProfilePage } from './pages/profile';
 
 import "quill/dist/quill.snow.css";
 
@@ -48,6 +49,7 @@ function App() {
           {/* elements set to this so it won't crash */}
           <Route path="/metronome" element={<MyCourses />} />
           <Route path="/timer" element={<MyCourses />} />
+          <Route path="/profile" element={<ProfilePage />} />
 
           {/**<Route path='/home' element={<Home />} /> */}
           <Route path='/course-info/:id' element={<CourseDetails />} />
