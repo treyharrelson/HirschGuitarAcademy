@@ -22,7 +22,7 @@ import InstructorMyCourses from './pages/instructor/MyCourses'
 import Instructor from './pages/instructor/Instructor'
 import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
 import EditCourse from './pages/instructor/EditCourse'
-import { ProfilePage } from './pages/profile';
+import { ProfilePage } from './pages/Profile';
 
 import "quill/dist/quill.snow.css";
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 type SidebarProps = {
     children?: React.ReactNode;
@@ -8,13 +9,17 @@ type SidebarProps = {
 
 export default function Sidebar({ children, title = "Navigation" }: SidebarProps) {
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     if (!user) return null;
 
     return (
         <div className="w-full lg:w-72 flex-shrink-0">
             {/* Welcome Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <button 
+                onClick={() => navigate("/profile")}
+                className="w-full text-left cursor-pointer bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 hover:bg-gray-200 transition-colors duration-200 block"
+            >
                 <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-600 font-bold text-2xl shadow-inner">
                         {user.name.charAt(0).toUpperCase()}
@@ -27,7 +32,7 @@ export default function Sidebar({ children, title = "Navigation" }: SidebarProps
                         </span>
                     </div>
                 </div>
-            </div>
+            </button>
 
             {/* Navigation / Custom Content */}
             <nav className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-34">
@@ -63,7 +68,7 @@ export function SidebarLink({
                     onClick={onClick}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left group cursor-pointer ${isActive
                             ? 'bg-blue-50 text-blue-700 font-medium'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                         }`}
                 >
                     {icon && (
