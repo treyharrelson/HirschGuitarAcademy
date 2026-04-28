@@ -5,6 +5,7 @@ import api from '../../api/axiosInstance';
 import Loading from '../../components/student/Loading';
 import { useAuth } from '../../context/AuthContext';
 import confetti from 'canvas-confetti';
+import LectureContentRenderer from '../../components/student/LectureContentRenderer';
 import "quill/dist/quill.snow.css";
 
 interface ExtendedCourse extends Course {
@@ -182,19 +183,7 @@ const CourseView: React.FC = () => {
                     ) : (
                         <div className="max-w-4xl mx-auto">
                             <h1 className="text-3xl font-bold border-b pb-4 mb-8">{selectedLecture.title}</h1>
-                            <div className="space-y-8">
-                                {selectedLecture.blocks?.map((block, i) => (
-                                    <div key={i}>
-                                        {block.type === 'text' && <div className="ql-editor text-lg leading-relaxed text-slate-700" dangerouslySetInnerHTML={{ __html: block.content || '' }} />}
-                                        {block.type === 'image' && <img src={block.url} className="rounded-xl shadow-lg mx-auto max-h-[600px] object-contain" />}
-                                        {block.type === 'video' && (
-                                            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-lg">
-                                                <iframe className="w-full h-full" src={block.url.replace("watch?v=", "embed/")} allowFullScreen />
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                            <LectureContentRenderer blocks={selectedLecture.blocks || []} />
                         </div>
                     )}
                 </div>

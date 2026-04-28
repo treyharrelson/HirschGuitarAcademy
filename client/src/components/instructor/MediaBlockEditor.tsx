@@ -1,18 +1,44 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axiosInstance';
+
+type AllowedFolder = 'course-thumbnails' | 'lecture-content';
 
 interface MediaBlockEditorProps {
     type: 'image' | 'video';
-    url: string;
-    onUploadSuccess: (url: string) => void;
+    url: string; // either an R2 fileKey, an external URL, or ''
+    folder: AllowedFolder;
+    onUploadSuccess: (fileKey: string) => void;
 }
 
-const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, onUploadSuccess }) => {
+const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/'];
+
+// returns true when the value looks like an R2 storage key rather than a full URL
+const isFileKey = (value: string) =>
+    R2_FOLDERS.some(prefix => value.startsWith(prefix));
+
+const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, onUploadSuccess }) => {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const [uploading, setUploading] = useState(false);
     const [inputMode, setInputMode] = useState<'upload' | 'link'>('upload');
-    const [linkValue, setLinkValue] = useState(url || '');
+    const [linkValue, setLinkValue] = useState('');
+    const [displayUrl, setDisplayUrl] = useState(''); // the URL we actually render
+
+    useEffect(() => {
+        if (!url) {
+            setDisplayUrl('');
+            return;
+        }
+        if (isFileKey(url)) {
+            // Resolve R2 file key → short-lived presigned URL for display
+            api.get('/api/upload/file-url', { params: { fileKey: url } })
+                .then(res => setDisplayUrl(res.data.presignedUrl))
+                .catch(() => setDisplayUrl(''));
+        } else {
+            // External URL (YouTube, direct link, etc.) — use as-is
+            setDisplayUrl(url);
+        }
+    }, [url]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -21,10 +47,13 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, onUpload
         setUploading(true);
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('folder', folder);
 
         try {
-            const response = await axios.post('/api/upload', formData, { withCredentials: true });
-            onUploadSuccess(response.data.url);
+            const response = await api.post('/api/upload/upload', formData, { 
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            onUploadSuccess(response.data.fileKey);
         } catch (err) {
             console.error("Upload failed", err);
         } finally {
@@ -59,18 +88,18 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, onUpload
 
     return (
         <div className="p-6 border-2 border-dashed border-gray-200 rounded-lg bg-white w-full h-full flex flex-col items-center justify-center">
-            {url ? (
+            {displayUrl ? (
                 /* PREVIEW MODE */
                 <div className="w-full h-full flex items-center justify-center overflow-hidden">
                     <div className="relative group h-full w-full flex items-center justify-center">
                         {type === 'image' ? (
                             <img
-                                src={url}
+                                src={displayUrl}
                                 alt="Preview"
                                 className="max-w-full max-h-full w-auto h-auto rounded-lg shadow-md object-contain"
                             />
                         ) : (
-                            renderVideoPlayer(url)
+                            renderVideoPlayer(displayUrl)
                         )}
 
                         {/* Overlay button container */}

@@ -274,7 +274,8 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
                                     title: item.title || 'Untitled Lecture',
                                     order: item.order || j + 1,
                                     content: item.content || '',
-                                    moduleId: newModule.id
+                                    moduleId: newModule.id,
+                                    //blocks: item.blocks ? [...item.blocks] : []
                                 }, { transaction: t });
                             }
                         }

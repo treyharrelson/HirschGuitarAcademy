@@ -111,7 +111,7 @@ const LectureBlocksContainer: React.FC<LectureBlocksContainerProps> = ({
                             {block.type === 'text' ? (
                               <TextBlockEditor id={block.id} initialBody={block.content || ''} onChange={(val) => handleBlockUpdate(block.id, val)} />
                             ) : (
-                              <MediaBlockEditor type={block.type} url={block.url || ''} onUploadSuccess={(url) => handleBlockUpdate(block.id, url)} />
+                              <MediaBlockEditor type={block.type} folder="lecture-content" url={block.url || ''} onUploadSuccess={(url) => handleBlockUpdate(block.id, url)} />
                             )}
                           </div>
                         </div>

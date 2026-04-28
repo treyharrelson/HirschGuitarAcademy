@@ -298,11 +298,12 @@ const EditCourse: React.FC = () => {
 
                     <div className="max-w-md aspect-video overflow-hidden rounded-lg border border-gray-200">
                         <MediaBlockEditor
-                            key={Image ? 'preview' : 'input'} // This forces a full UI reset
+                            //key={Image ? 'preview' : 'input'} // This forces a full UI reset
                             type="image"
+                            folder="course-thumbnails"
                             url={typeof state.image === 'string' ? state.image : assets.defaultCourseThumbnail}
-                            onUploadSuccess={(url) => {
-                                setters.setImage(url);
+                            onUploadSuccess={(fileKey) => {
+                                setters.setImage(fileKey);
                             }}
                         />
                     </div>

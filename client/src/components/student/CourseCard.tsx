@@ -15,13 +15,15 @@ type CourseCardProps = {
 
 export const CourseCard = ({ course, enrolled, buttonclick, missingRequirements = [], isCompleted = false }: CourseCardProps) => {
   const [imageUrl, setImageUrl] = useState<string>(assets.defaultCourseThumbnail);
+  const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/'];
+  const isFileKey = (val: string) => R2_FOLDERS.some(p => val.startsWith(p));
 
   useEffect(() => {
     let isMounted = true;
     const loadThumbnail = async () => {
-      if (course.thumbnail && typeof course.thumbnail === 'string' && course.thumbnail.startsWith('uploads/')) {
+      if (course.thumbnail && typeof course.thumbnail === 'string' && isFileKey(course.thumbnail)) {
         try {
-          const res = await api.get(`/api/upload/file-url?fileKey=${course.thumbnail}`);
+          const res = await api.get(`/api/upload/file-url`, { params: { fileKey: course.thumbnail } });
           if (isMounted && res.data.presignedUrl) {
             setImageUrl(res.data.presignedUrl);
           }
