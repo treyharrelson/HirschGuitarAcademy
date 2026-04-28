@@ -166,13 +166,19 @@ async function clearAll() {
 		// Clearing in reverse dependency order to avoid foreign constraint errors
 		const tablesToClear = [
 			'Comment',
+			'Attachment',
 			'Post',
+			'Subscription',
 			'Thread',
 			'Lecture',
 			'Module',
+			'CourseRequirement',
 			'Enrollment',
+			'Belt',
+			'Award',
+			'PracticeTime',
+			'ScoreBoard',
 			'Course',
-			'Subscription',
 			'Notification',
 			'Message',
 			'User' // User cleared last

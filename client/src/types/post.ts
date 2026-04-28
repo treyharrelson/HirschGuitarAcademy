@@ -13,6 +13,7 @@ export interface Post {
     announcedThreadId?: number | null;
     createdAt: string;
     author?: {
+        id: number;
         userName: string;
         firstName: string;
         lastName: string;

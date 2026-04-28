@@ -10,6 +10,11 @@ const Award = sequelize.define(
 			autoIncrement: true,
 			allowNull: false,
 		},
+		userId: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			field: 'user_id',
+		},
 	},
 	{
 		tableName: 'Awards',

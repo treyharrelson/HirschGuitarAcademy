@@ -9,17 +9,21 @@ type CourseCardProps = {
   course: Course;
   enrolled: string;
   buttonclick: () => void;
+  missingRequirements?: string[];
+  isCompleted?: boolean;
 };
 
-export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) => {
+export const CourseCard = ({ course, enrolled, buttonclick, missingRequirements = [], isCompleted = false }: CourseCardProps) => {
   const [imageUrl, setImageUrl] = useState<string>(assets.defaultCourseThumbnail);
+  const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/'];
+  const isFileKey = (val: string) => R2_FOLDERS.some(p => val.startsWith(p));
 
   useEffect(() => {
     let isMounted = true;
     const loadThumbnail = async () => {
-      if (course.thumbnail && typeof course.thumbnail === 'string' && course.thumbnail.startsWith('uploads/')) {
+      if (course.thumbnail && typeof course.thumbnail === 'string' && isFileKey(course.thumbnail)) {
         try {
-          const res = await api.get(`/api/upload/file-url?fileKey=${course.thumbnail}`);
+          const res = await api.get(`/api/upload/file-url`, { params: { fileKey: course.thumbnail } });
           if (isMounted && res.data.presignedUrl) {
             setImageUrl(res.data.presignedUrl);
           }
@@ -59,9 +63,17 @@ export const CourseCard = ({ course, enrolled, buttonclick }: CourseCardProps) =
       </div>
       </Link>
 
-      <div className='pl-2'>
-        <BigBlueButton children={enrolled} onClick={buttonclick} />
+      <div className='pl-2 pb-1 flex items-center gap-2'>
+        <BigBlueButton children={enrolled} onClick={missingRequirements.length > 0 ? undefined : buttonclick} disabled={missingRequirements.length > 0} />
+        {enrolled === "Unenroll" && isCompleted && (
+          <span className="text-emerald-500 font-bold text-lg" title="Completed">✓</span>
+        )}
       </div>
+      {missingRequirements.length > 0 && (
+        <div className='px-2 pb-2 text-xs text-red-500 font-medium whitespace-normal leading-tight'>
+          Requires: {missingRequirements.join(', ')}
+        </div>
+      )}
 
       {/* For progress bar */}
       {/* <div className='mt-auto pt-4 border-t border-gray-100 w-full'>

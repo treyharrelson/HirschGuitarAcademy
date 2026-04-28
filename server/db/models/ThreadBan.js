@@ -1,38 +1,35 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../db');
-const Module = require('./Module');
 
-const Lecture = sequelize.define(
-    'Lecture',
+const ThreadBan = sequelize.define(
+    'ThreadBan',
     {
         id: {
             type: DataTypes.INTEGER,
-            primaryKey: true,
             autoIncrement: true,
-            allowNull: false,
+            primaryKey: true,
+            allowNull: false
         },
-        title: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        order: {
+        threadId: {
             type: DataTypes.INTEGER,
             allowNull: false,
+            field: 'thread_id'
         },
-        blocks: {
-            type: DataTypes.JSONB,
-            defaultValue: []
-        },
-        moduleId: {
+        userId: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            field: 'module_id'
+            field: 'user_id'
         },
+        bannedById: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            field: 'banned_by_id'
+        }
     },
     {
-        tableName: 'Lectures',
+        tableName: 'ThreadBans',
         timestamps: true,
     }
 );
 
-module.exports = Lecture;
+module.exports = ThreadBan;

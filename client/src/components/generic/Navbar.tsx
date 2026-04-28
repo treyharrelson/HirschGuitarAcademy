@@ -17,7 +17,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'Create Account', path: '/', button: BigBlueButton }
   ],
   student: [
-    { label: 'Dashboard', path: '/student-dashboard', button: NavBarButton },
+    { label: 'Dashboard', path: '/home', button: NavBarButton },
     { label: 'My Courses', path: '/courses', button: NavBarButton },
   ],
   instructor: [
@@ -26,7 +26,10 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
   ],
   admin: [
     //dunno yet
-  ]
+  ],
+  moderator: [
+    { label: 'Forum', path: '/forum', button: NavBarButton },
+  ],
 };
 
 
@@ -53,7 +56,10 @@ const Navbar = () => {
   const RenderLinks = () => (
     <>
       {links.map((link, index) => (
-        <link.button onClick={() => navigate(link.path)}>
+        <link.button
+          key={`${link.path}-${index}`} // Unique key using path and index
+          onClick={() => navigate(link.path)}
+        >
           {link.label}
         </link.button>
       ))}
@@ -77,7 +83,7 @@ const Navbar = () => {
       </div>
       {/* For phone screens */}
       <div className='md:hidden flex items-center gap-2 sm:gap-5 text-gray-500'>
-        <div>
+        <div className='flex items-center gap-4'>
           <RenderLinks />
         </div>
         <button onClick={handleLogout}><img src={assets.logoutIcon} alt='Logout Icon' className='w-6 h-6' /></button>

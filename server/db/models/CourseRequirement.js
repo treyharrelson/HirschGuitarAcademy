@@ -1,8 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
 
-const Belt = sequelize.define(
-	'Belt',
+const CourseRequirement = sequelize.define(
+	'CourseRequirement',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -10,22 +10,21 @@ const Belt = sequelize.define(
 			autoIncrement: true,
 			allowNull: false,
 		},
-		userId: {
-			type: DataTypes.INTEGER,
-			allowNull: false,
-			field: 'user_id',
-		},
 		courseId: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 			field: 'course_id',
 		},
+		requiredCourseId: {
+			type: DataTypes.INTEGER,
+			allowNull: false,
+			field: 'required_course_id'
+		},
 	},
 	{
-		tableName: 'Belts',
+		tableName: 'CourseRequirements',
 		timestamps: true,
 	}
+);
 
-)
-
-module.exports = Belt;
+module.exports = CourseRequirement;

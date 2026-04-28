@@ -25,7 +25,7 @@ function Forum() {
             const response = await api.get('/api/threads', {
                 params: { limit: LIMIT, offset: currentOffset }
             });
-            const {threads: newThreads, hasMore: more } = response.data;
+            const {threads: newThreads = [], hasMore: more = false } = response.data || {};
             setThreads(prev => append ? [...prev, ...newThreads] : newThreads);
             setHasMore(more);
         } catch (err) {
@@ -76,7 +76,7 @@ function Forum() {
         }
     };
 
-    const filteredThreads = threads.filter(thread =>
+    const filteredThreads = (threads || []).filter(thread =>
         thread.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
     
@@ -85,7 +85,7 @@ function Forum() {
         {/* Header */}
         <div className="mb-6">
         <Link
-            to="/student-dashboard"
+            to="/home"
             className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-4"
         >
             ← Back to Dashboard

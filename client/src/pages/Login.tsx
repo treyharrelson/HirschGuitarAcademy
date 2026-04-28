@@ -40,6 +40,8 @@ function Login() {
                     navigate('/instructor')
                 } else if (response.data.user.role === 'admin') {
                     navigate('/home')
+                } else if (response.data.user.role === 'moderator') {
+                    navigate('/home')
                 }
             }
         } catch (err) {

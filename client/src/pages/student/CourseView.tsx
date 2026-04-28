@@ -1,180 +1,228 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import type { Course, Module, Lecture } from '../../types/course';
 import api from '../../api/axiosInstance';
 import Loading from '../../components/student/Loading';
 import { useAuth } from '../../context/AuthContext';
+import confetti from 'canvas-confetti';
+import LectureContentRenderer from '../../components/student/LectureContentRenderer';
+import "quill/dist/quill.snow.css";
 
 interface ExtendedCourse extends Course {
     modules: Module[];
+    description: string;
 }
 
 const CourseView: React.FC = () => {
     const { courseId } = useParams<{ courseId: string }>();
+    const navigate = useNavigate();
+    const { user } = useAuth();
+
     const [course, setCourse] = useState<ExtendedCourse | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-
+    const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
     const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
-    const { user } = useAuth();
-    const canEdit = user?.role === 'instructor' || course?.instructor;
+    const isInstructor = user?.role === 'instructor' || course?.instructorId === user?.id;
+
+    const flattenedLectures = useMemo(() => {
+        if (!course?.modules) return [];
+        const flattened: Lecture[] = [];
+        const traverse = (items: any[]) => {
+            items.forEach(item => {
+                if (item.blocks) flattened.push(item);
+                if (item.content) traverse(item.content);
+            });
+        };
+        traverse(course.modules);
+        return flattened;
+    }, [course]);
 
     useEffect(() => {
-        const fetchCourseContent = async () => {
+        const fetchCourseData = async () => {
             try {
                 const response = await api.get(`/api/courses/${courseId}`);
-                if (response.status !== 200) {
-                    throw new Error('Failed to fetch course content');
+                setCourse(response.data);
+
+                const initialExpanded: Record<string, boolean> = {};
+                response.data.modules.forEach((mod: Module) => { initialExpanded[mod.id] = true; });
+                setExpandedModules(initialExpanded);
+
+                if (user?.role === 'student') {
+                    const progressRes = await api.get(`/api/courses/${courseId}/progress`);
+                    setCompletedIds(progressRes.data.completedLectures || []);
                 }
-                const data = response.data;
-                setCourse(data);
-
-                const initialExpandedState: Record<string, boolean> = {};
-                if (data.modules && data.modules.length > 0) {
-                    data.modules.forEach((mod: Module) => {
-                        initialExpandedState[mod.id] = true;
-                    });
-                    setExpandedModules(initialExpandedState);
-
-                    const firstModule = data.modules[0];
-                    if (firstModule.content && firstModule.content.length > 0) {
-                        setSelectedLecture(firstModule.content[0] as Lecture);
-                    }
-                }
-
                 setLoading(false);
             } catch (err: any) {
                 setError(err.message);
                 setLoading(false);
             }
         };
+        if (courseId) fetchCourseData();
+    }, [courseId, user]);
 
-        if (courseId) {
-            fetchCourseContent();
+    const currentIndex = flattenedLectures.findIndex(l => l.id === selectedLecture?.id);
+    const isCurrentComplete = selectedLecture ? completedIds.map(String).includes(String(selectedLecture.id)) : false;
+
+    const handleMarkComplete = async () => {
+        if (!selectedLecture || isInstructor) return;
+        try {
+            await api.post(`/api/courses/${courseId}/lectures/${selectedLecture.id}/complete`);
+            setCompletedIds(prev => [...prev, selectedLecture.id]);
+        } catch (e) {
+            console.error(e);
         }
-    }, [courseId]);
-
-    const toggleModule = (moduleId: string) => {
-        setExpandedModules(prev => ({
-            ...prev,
-            [moduleId]: !prev[moduleId]
-        }));
     };
 
-    const handleSelectLecture = (lecture: Lecture) => {
-        setSelectedLecture(lecture);
-    };
+    const handleNext = () => {
+        if (!selectedLecture) {
+            if (flattenedLectures.length > 0) setSelectedLecture(flattenedLectures[0]);
+            return;
+        }
 
-    const getModuleHeaderClasses = (depth: number) => {
-        let classes = "flex justify-between items-center py-3 pr-6 cursor-pointer transition-all duration-200 border-l-4 border-l-transparent hover:bg-slate-200 hover:border-l-slate-400 ";
-        if (depth === 0) classes += "bg-slate-100 font-semibold text-slate-700 pl-6";
-        else if (depth === 1) classes += "bg-slate-50 font-medium text-slate-600 pl-9 text-sm";
-        else if (depth === 2) classes += "bg-white font-medium text-slate-500 pl-12";
-        else classes += "bg-white font-medium text-slate-500 pl-[60px]";
-        return classes;
-    }
-
-    const getLectureItemClasses = (depth: number, isActive: boolean) => {
-        let classes = "flex items-center py-2.5 pr-6 cursor-pointer text-sm transition-all duration-200 ";
-        if (depth === 0) classes += "pl-9 ";
-        else if (depth === 1) classes += "pl-12 ";
-        else if (depth === 2) classes += "pl-[60px] ";
-        else classes += "pl-[72px] ";
-
-        if (isActive) {
-            classes += "bg-sky-100 text-sky-700 font-medium border-r-[3px] border-r-sky-700 ";
+        if (currentIndex < flattenedLectures.length - 1) {
+            setSelectedLecture(flattenedLectures[currentIndex + 1]);
         } else {
-            classes += "text-slate-600 hover:bg-slate-50 hover:text-slate-900 ";
+            if (isInstructor) {
+                navigate('/instructor/my-courses');
+            } else {
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#0ea5e9', '#22c55e', '#ffffff']
+                });
+                setTimeout(() => {
+                    navigate(`/my-enrollments`);
+                }, 2000);
+            }
         }
-        return classes;
-    }
+    };
 
-    const renderModuleContent = (item: Module | Lecture, depth: number = 0) => {
-        if (Array.isArray(item.content)) {
-            const mod = item as Module;
-            const isExpanded = expandedModules[mod.id];
 
+    const renderSidebarItem = (item: any, depth: number = 0) => {
+        const isModule = Array.isArray(item.content);
+        if (isModule) {
+            const isExpanded = expandedModules[item.id];
             return (
-                <div key={`mod-${mod.id}`} className="mb-2">
+                <div key={item.id}>
                     <div
-                        className={getModuleHeaderClasses(depth)}
-                        onClick={() => toggleModule(mod.id)}
+                        className={`flex justify-between items-center py-2 px-4 cursor-pointer hover:bg-slate-100 ${depth > 0 ? 'pl-8 text-sm' : 'font-bold'}`}
+                        onClick={() => setExpandedModules(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
                     >
-                        <span className="text-[0.95rem]">{mod.title}</span>
-                        <span className={`text-xs text-slate-500 transition-transform duration-200 inline-block ${isExpanded ? '' : '-rotate-90'}`}>
-                            ▼
-                        </span>
+                        <span>{item.title}</span>
+                        <span className={`text-[10px] transition-transform ${isExpanded ? '' : '-rotate-90'}`}>▼</span>
                     </div>
-                    {isExpanded && (
-                        <div className="py-2 bg-white">
-                            {mod.content.map(subItem => renderModuleContent(subItem, depth + 1))}
+                    {isExpanded && item.content.map((child: any) => renderSidebarItem(child, depth + 1))}
+                </div>
+            );
+        }
+
+        const itemIndex = flattenedLectures.findIndex(l => String(l.id) === String(item.id));
+        const prevLecture = itemIndex > 0 ? flattenedLectures[itemIndex - 1] : null;
+
+        const isLocked = !isInstructor &&
+            itemIndex > 0 &&
+            !completedIds.includes(String(prevLecture?.id || ''));
+
+        const isActive = selectedLecture?.id === item.id;
+
+        return (
+            <button
+                key={item.id}
+                disabled={isLocked}
+                onClick={() => setSelectedLecture(item)}
+                className={`w-full text-left py-2 px-4 pl-12 text-sm transition-all ${isActive
+                    ? 'bg-sky-100 text-sky-700 border-r-4 border-sky-700 font-semibold'
+                    : isLocked ? 'opacity-30 grayscale cursor-not-allowed' : 'hover:bg-slate-50'
+                    }`}
+            >
+                {completedIds.includes(String(item.id)) ? '✅' : '📄'} {item.title}
+            </button>
+        );
+    };
+
+    if (loading || !course) return <Loading />;
+    if (flattenedLectures.length === 0 && course.modules.length > 0) return <Loading />;
+
+    const showNextButtonDisabled = !isInstructor && !!selectedLecture && !isCurrentComplete;
+
+
+    return (
+        <div className="flex h-screen bg-white">
+            <div className="w-80 border-r flex flex-col bg-slate-50">
+                <div className="p-6 bg-slate-900 text-white">
+                    <h2 className="font-bold truncate">{course?.name}</h2>
+                </div>
+                <div className="overflow-y-auto flex-1 py-4">
+                    <button
+                        onClick={() => setSelectedLecture(null)}
+                        className={`w-full text-left py-3 px-6 font-bold text-sm border-b transition-colors ${!selectedLecture ? 'bg-sky-600 text-white' : 'hover:bg-slate-200'}`}
+                    >
+                        🏠 Course Overview
+                    </button>
+                    {course?.modules.map(mod => renderSidebarItem(mod))}
+                </div>
+            </div>
+
+            <div className="flex-1 flex flex-col relative overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-12 pb-32">
+                    {!selectedLecture ? (
+                        <div className="max-w-3xl mx-auto">
+                            <h1 className="text-4xl font-bold mb-6">{course?.name}</h1>
+                            <div className="ql-editor prose max-w-none text-lg text-slate-700" dangerouslySetInnerHTML={{ __html: course?.description || '' }} />
+                            <button
+                                onClick={() => handleNext()}
+                                className="mt-8 bg-sky-600 text-white px-8 py-3 rounded-full font-bold hover:bg-sky-700 transition-all shadow-lg"
+                            >
+                                Start Learning →
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="max-w-4xl mx-auto">
+                            <h1 className="text-3xl font-bold border-b pb-4 mb-8">{selectedLecture.title}</h1>
+                            <LectureContentRenderer blocks={selectedLecture.blocks || []} />
                         </div>
                     )}
                 </div>
-            );
-        } else {
-            const lec = item as Lecture;
-            const isActive = selectedLecture?.id === lec.id;
 
-            return (
-                <div
-                    key={`lec-${lec.id}`}
-                    className={getLectureItemClasses(depth, isActive)}
-                    onClick={() => handleSelectLecture(lec)}
-                >
-                    <span className="mr-3 text-base opacity-70">📄</span>
-                    <span>{lec.title}</span>
-                </div>
-            );
-        }
-    };
-
-    if (loading) return <Loading />
-    if (error) return <div className="flex justify-center flex-col items-center h-screen text-xl text-red-500">Error: {error}</div>;
-    if (!course) return <div className="flex justify-center flex-col items-center h-screen text-xl text-red-500">Course not found</div>;
-
-    return (
-        
-        <div className="flex flex-col md:flex-row w-full bg-slate-50 overflow-hidden font-sans" style={{ height: 'calc(100vh - 64px)' }}>
-            
-            <div className="w-full md:w-[350px] shrink-0 bg-white md:border-r border-b md:border-b-0 border-slate-200 flex flex-col overflow-y-auto shadow-[2px_0_10px_rgba(0,0,0,0.02)] h-[35vh] md:h-auto">
-                <div className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 text-white flex">
-                    <h2 className="m-0 text-xl font-semibold leading-relaxed pr-15">{course.name}</h2>
-                    {canEdit && (
-                    <button
-                        onClick={() => window.location.href = `/instructor/edit-course/${courseId}`}
-                        className="w-30 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-1.5 px-3 rounded transition-colors"
-                    >
-                        EDIT COURSE
-                    </button>
-                )}
-                </div>
-                <div className="py-4">
-                    {course.modules && course.modules.map(mod => renderModuleContent(mod))}
-                    
-                </div>
-                
-            </div>
-
-            <div className="grow py-10 px-5 md:px-16 overflow-y-auto bg-white h-[65vh] md:h-auto">
-                {selectedLecture ? (
-                    <div className="max-w-[900px] mx-auto">
-                        <h1 className="text-4xl font-bold text-slate-900 mt-0 mb-6 pb-4 border-b border-slate-200">{selectedLecture.title}</h1>
-                        <div
-                            className="text-lg leading-relaxed text-slate-700 [&>p]:mb-4 [&>img]:!max-w-full [&>img]:!rounded-lg [&>img]:!shadow-sm"
-                            dangerouslySetInnerHTML={{ __html: selectedLecture.content || '<p>No content provided.</p>' }}
-                        />
+                <div className="absolute bottom-0 left-0 right-0 h-24 bg-white border-t flex items-center justify-between px-12 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-10">
+                    <div className="flex gap-4">
+                        {currentIndex > 0 && (
+                            <button onClick={() => setSelectedLecture(flattenedLectures[currentIndex - 1])} className="px-6 py-2 border border-slate-300 rounded-full font-bold hover:bg-slate-50 transition-colors">
+                                ← Previous
+                            </button>
+                        )}
+                        {!selectedLecture && currentIndex === -1 && flattenedLectures.length > 0 && isInstructor && (
+                            <button onClick={() => navigate(`/instructor/edit-course/${courseId}`)} className="px-6 py-2 bg-slate-800 text-white rounded-full font-bold hover:bg-slate-700">
+                                Edit Course
+                            </button>
+                        )}
+                        {selectedLecture && isInstructor && (
+                            <button onClick={() => navigate(`/instructor/edit-course/${courseId}`)} className="px-6 py-2 bg-slate-800 text-white rounded-full font-bold hover:bg-slate-700">
+                                Edit Course
+                            </button>
+                        )}
                     </div>
-                ) : (
-                    <div className="flex justify-center items-center h-full text-slate-400 text-xl">
-                        <p>Select a lecture from the sidebar to view its content.</p>
-                    </div>
-                )}
-                
-            </div>
 
+                    <div className="flex gap-4">
+                        {!isInstructor && selectedLecture && !isCurrentComplete && (
+                            <button onClick={handleMarkComplete} className="px-8 py-2 bg-green-600 text-white rounded-full font-bold hover:bg-green-700 shadow-md">
+                                Mark as Complete
+                            </button>
+                        )}
+                        <button
+                            disabled={showNextButtonDisabled}
+                            onClick={handleNext}
+                            className={`px-8 py-2 rounded-full font-bold transition-all ${(!isInstructor && selectedLecture && !isCurrentComplete) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white shadow-lg hover:bg-sky-700'}`}
+                        >
+                            {!selectedLecture ? 'Start Course' : (currentIndex === flattenedLectures.length - 1 ? 'Finish Course' : 'Next Lecture →')}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+.ql-toolbar.ql-snow, 
+.ql-container.ql-snow {
+  border: none !important;
+}
+
+.ql-toolbar.ql-snow {
+  border-bottom: 1px solid #e5e7eb !important; /* Tailwind gray-200 */
+  background-color: #f9fafb; /* Tailwind gray-50 */
+}
+
+.ql-editor {
+  min-height: 200px;
+}
+
 /*
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;

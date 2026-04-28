@@ -16,6 +16,7 @@ const MAX_SIZE_MB = 100;
 
 
 interface FileUploadProps {
+    folder: 'forum' | 'course-thumbnails' | 'profile-pictures' | 'lecture-content';
     onUploadComplete: (file: Attachment) => void;
 }
 

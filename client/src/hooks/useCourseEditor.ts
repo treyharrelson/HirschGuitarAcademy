@@ -1,23 +1,26 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import uniqid from 'uniqid';
-import Quill from 'quill';
 import "quill/dist/quill.snow.css";
 import { assets } from '../assets/assets'
-import { type Lecture, type Module } from '../types/course';
+import { type ContentBlock, type Lecture, type Module } from '../types/course';
+import { useNavigate } from 'react-router-dom';
 
 
 export const useCourseEditor = (initialData?: any) => {
   const [courseId] = useState(uniqid());
+  const navigate = useNavigate(); // Add this
 
   // States
   const [courseTitle, setCourseTitle] = useState(initialData?.title || '')
   const [isPrivate, setIsPrivate] = useState<boolean>(initialData?.isPrivate || false)
-  const [image, setImage] = useState<File | string>(initialData?.thumbnail || assets.defaultCourseThumbnail)
+  const [image, setImage] = useState<string>(initialData?.thumbnail || assets.defaultCourseThumbnail)
   const [currentModuleId, setCurrentModuleId] = useState<string | null>(null)
   const [currentSubModuleIndex, setCurrentSubModuleIndex] = useState<number | null>(null);
   const [modules, setModules] = useState<Module[]>(initialData?.modules || [])
   const [lectureDetails, setLectureDetails] = useState({ lectureTitle: '' })
   const [courseDescription, setCourseDescription] = useState("");
+
+  const [courseRequirements, setCourseRequirements] = useState<string[]>(initialData?.requirements?.map((r: any) => String(r.id)) || [])
 
   // UI States
   const [showPopup, setPopup] = useState<boolean>(false)
@@ -38,15 +41,34 @@ export const useCourseEditor = (initialData?: any) => {
     );
   };
 
-  const createItem = (title: string, currentLength: number, type: 'Module' | 'SubModule' | 'Lecture', parentId?: string) => ({
-    id: uniqid(),
-    title,
-    order: currentLength + 1,
-    // Both 'Module' and 'SubModule' need an empty array []
-    ...(type === 'Module' || type === 'SubModule'
-      ? { content: [], collapsed: false, courseId }
-      : { content: '', module_Id: parentId })
-  });
+  const createItem = (
+    title: string,
+    currentLength: number,
+    type: 'Module' | 'SubModule' | 'Lecture',
+    parentId?: string
+  ): Module | Lecture => {
+    const base = {
+      id: uniqid(),
+      title,
+      order: currentLength + 1,
+    };
+
+    if (type === 'Module' || type === 'SubModule') {
+      return {
+        ...base,
+        content: [],
+        collapsed: false,
+        courseId: courseId,
+      } as Module;
+    } else {
+      return {
+        ...base,
+        blocks: [],
+        module_Id: parentId || '',
+      } as Lecture;
+    }
+  };
+
 
   const handleModule = (action: ModuleAction, moduleId?: string): void => {
     if (action === 'add') {
@@ -55,14 +77,11 @@ export const useCourseEditor = (initialData?: any) => {
       return;
     } else if (action === 'remove' && moduleId) {
       setModules((prev) => prev.filter((m) => String(m.id) !== String(moduleId)));
-    } else if (action === 'toggle' && moduleId) {
-      updateModuleById(moduleId, (m) => ({ ...m, collapsed: !m.collapsed }));
     }
   };
 
   const handleLecture = (action: ModuleAction, moduleId?: string, index?: number, subIndex?: number) => {
     const title = lectureDetails.lectureTitle.trim();
-    // Add lecture
     if (action === 'add' && moduleId) {
       setCurrentModuleId(moduleId);
       setCurrentSubModuleIndex(index ?? null);
@@ -72,12 +91,9 @@ export const useCourseEditor = (initialData?: any) => {
     }
     if (action === 'save' && title) {
       if (popupType === 'Module') {
-        // 1. Create a top-level Module
         setModules(prev => [...prev, createItem(title, prev.length, 'Module') as Module]);
       } else {
         updateModuleById(currentModuleId!, (module): Module => {
-
-          // 2. Add a lecture INTO an existing Sub-Module
           if (popupType === 'Lecture' && currentSubModuleIndex !== null) {
             const updatedContent = [...module.content];
             const subMod = { ...(updatedContent[currentSubModuleIndex] as Module) };
@@ -88,9 +104,6 @@ export const useCourseEditor = (initialData?: any) => {
             updatedContent[currentSubModuleIndex] = subMod;
             return { ...module, content: updatedContent };
           }
-
-          // 3. Create either a Sub-Module or a standard Lecture inside the Module
-          // FIX: Ensure 'SubModule' remains 'SubModule' for createItem logic
           const typeForCreate = popupType === 'SubModule' ? 'SubModule' : 'Lecture';
           const newItem = createItem(title, module.content.length, typeForCreate as any, module.id);
 
@@ -119,25 +132,6 @@ export const useCourseEditor = (initialData?: any) => {
     }
   };
 
-  const updateLectureContent = (moduleId: string, lectureIndex: number, newContent: string) => {
-    setModules((prev) =>
-      prev.map((m) => {
-        if (m.id !== moduleId) return m;
-
-        const updatedContent = [...m.content];
-        const targetLecture = updatedContent[lectureIndex];
-
-        if (targetLecture) {
-          updatedContent[lectureIndex] = {
-            ...targetLecture,
-            content: newContent
-          } as any;
-        }
-        return { ...m, content: updatedContent };
-      })
-    );
-  };
-
   const handleSubModule = (action: ModuleAction, moduleId: string, index?: number): void => {
     if (action === 'add') {
       setCurrentModuleId(moduleId);
@@ -164,7 +158,7 @@ export const useCourseEditor = (initialData?: any) => {
     type: 'module' | 'submodule' | 'lecture',
     id: string,
     newTitle: string,
-    extraArgs?: { moduleId: string; subModuleIndex?: number } // Add this 4th arg
+    extraArgs?: { moduleId: string; subModuleIndex?: number }
   ) => {
     setModules((prev) => {
       if (type === 'module') {
@@ -178,14 +172,6 @@ export const useCourseEditor = (initialData?: any) => {
           }
           if (type === 'lecture' && item.id === id) {
             return { ...item, title: newTitle };
-          }
-          if ('collapsed' in item && Array.isArray(item.content)) {
-            return {
-              ...item,
-              content: item.content.map((subLec) =>
-                subLec.id === id ? { ...subLec, title: newTitle } : subLec
-              ),
-            };
           }
           return item;
         });
@@ -201,42 +187,103 @@ export const useCourseEditor = (initialData?: any) => {
       handleSubModule(action, modId)
     }
   };
-  const updateSubLectureContent = (
-    moduleId: string,
-    subModuleIndex: number,
-    lectureIndex: number,
-    newContent: string
-  ) => {
-    setModules((prev) =>
-      prev.map((m) => {
-        if (m.id !== moduleId) return m;
 
-        const updatedContent = [...m.content];
-        // Clone the submodule
-        const subMod = { ...(updatedContent[subModuleIndex] as Module) };
+  const updateLectureBlocks = (lectureId: string, newBlocks: ContentBlock[]) => {
+    setModules((prev) => {
+      const deepUpdate = (list: any[]): any[] => {
+        return list.map((item) => {
+          // Match found (Lecture)
+          if (item.id === lectureId) {
+            return { ...item, blocks: newBlocks };
+          }
+          // If container (Module/Submodule), search deeper
+          if (item.content) {
+            return { ...item, content: deepUpdate(item.content) };
+          }
+          return item;
+        });
+      };
+      return deepUpdate(prev);
+    });
+  };
 
-        if (subMod && Array.isArray(subMod.content)) {
-          const updatedSubContent = [...subMod.content];
-          // Update the specific lecture inside the submodule
-          updatedSubContent[lectureIndex] = {
-            ...updatedSubContent[lectureIndex],
-            content: newContent
-          } as Lecture;
+  const validateCourse = (): string | null => {
+    if (modules.length === 0) return "You must add at least one module.";
 
-          subMod.content = updatedSubContent;
-          updatedContent[subModuleIndex] = subMod;
+    const checkTree = (list: any[]): string | null => {
+      for (const item of list) {
+        // 1. Check Modules/Submodules
+        if ('content' in item && !item.blocks) { // It's a container
+          if (!item.content || item.content.length === 0) {
+            return `${item.id.startsWith('mod') ? 'Module' : 'Submodule'} "${item.title || 'Untitled'}" is empty.`;
+          }
+          const error = checkTree(item.content);
+          if (error) return error;
         }
+        // 2. Check Lectures
+        else if ('blocks' in item) {
+          if (!item.blocks || item.blocks.length === 0) {
+            return `Lecture "${item.title || 'Untitled'}" must have content.`;
+          }
+          for (const block of item.blocks) {
+            if (block.type === 'text') {
+              const text = (block.content || '').replace(/<(.|\n)*?>/g, '').trim();
+              if (text.length === 0) return `Empty text block in "${item.title}".`;
+            } else if (block.type === 'image' || block.type === 'video') {
+              if (!block.url || block.url.trim().length === 0) {
+                return `Empty ${block.type} block in "${item.title}".`;
+              }
+            }
+          }
+        }
+      }
+      return null;
+    };
 
-        return { ...m, content: updatedContent };
-      })
-    );
+    return checkTree(modules);
+  };
+
+  const toggleAll = (shouldCollapse: boolean) => {
+    setModules(prev => {
+      const deepToggle = (list: any[]): any[] => {
+        return list.map(item => ({
+          ...item,
+          collapsed: shouldCollapse,
+          // Recurse into content if it exists (Submodules/Lectures)
+          content: item.content ? deepToggle(item.content) : item.content,
+          // Recurse into blocks if needed (though usually only containers collapse)
+        }));
+      };
+      return deepToggle(prev);
+    });
+  };
+
+  const toggleItem = (id: string) => {
+    setModules(prev => {
+      const deepSearch = (list: any[]): any[] => {
+        return list.map(item => {
+          if (item.id === id) {
+            return { ...item, collapsed: !item.collapsed };
+          }
+          if (item.content) {
+            return { ...item, content: deepSearch(item.content) };
+          }
+          return item;
+        });
+      };
+      return deepSearch(prev);
+    });
   };
 
 
+  const viewCourse = (id: string) => {
+    navigate(`/course/${id}`);
+  };
+
   return {
-    state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription },
-    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription },
+    state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription, courseRequirements },
+    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription, setCourseRequirements },
     refs: { inputRef, quillRef, editorRef },
-    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateLectureContent, updateSubLectureContent, updateTitle },
+    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateTitle, updateLectureBlocks, validateCourse, toggleAll, toggleItem, viewCourse },
   };
 };
