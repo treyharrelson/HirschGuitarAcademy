@@ -385,19 +385,28 @@ const EditCourse: React.FC = () => {
                                                         <div className="flex items-center gap-3">
                                                             <img
                                                                 src={assets.dropDown_icon}
-                                                                className={`w-3 h-3 transition-transform ${module.collapsed ? '-rotate-90' : ''}`}/>
+                                                                className={`w-3 h-3 transition-transform ${module.collapsed ? '-rotate-90' : ''}`} />
                                                             <div className="flex-1 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
                                                                 <input
                                                                     type="text"
                                                                     value={module.title}
                                                                     onChange={(e) => handlers.updateTitle('module', module.id, e.target.value)}
-                                                                    className="font-bold text-gray-800 bg-transparent outline-none w-full text-xl cursor-text"/>
+                                                                    className="font-bold text-gray-800 bg-transparent outline-none w-full text-xl cursor-text" />
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <span className={`text-[10px] font-bold uppercase pt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${module.collapsed ? 'text-blue-500' : 'text-red-500'}`}>
-                                                        {module.collapsed ? 'Expand' : 'Collapse'}
-                                                    </span>
+                                                    <div className="flex items-center gap-3 ml-4">
+                                                        <span className={`text-[10px] font-bold uppercase pt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${module.collapsed ? 'text-blue-500' : 'text-red-500'}`}>
+                                                            {module.collapsed ? 'Expand' : 'Collapse'}
+                                                        </span>
+                                                        <img
+                                                            src={assets.cross_icon}
+                                                            className='w-4 h-4 cursor-pointer opacity-30 hover:opacity-100 transition-opacity'
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handlers.handleModule('remove', module.id);
+                                                            }} />
+                                                    </div>
                                                 </div>
                                                 {/* NESTED CONTENT AREA: Stacks correctly below header */}
                                                 {!module.collapsed && (
@@ -423,14 +432,14 @@ const EditCourse: React.FC = () => {
                                                                                             <div className="flex items-center gap-2">
                                                                                                 <img
                                                                                                     src={assets.dropDown_icon}
-                                                                                                    className={`w-2.5 h-2.5 transition-transform duration-200 ${item.collapsed ? "-rotate-90" : ""}`}/>
+                                                                                                    className={`w-2.5 h-2.5 transition-transform duration-200 ${item.collapsed ? "-rotate-90" : ""}`} />
                                                                                                 <div
                                                                                                     className="flex-1 pointer-events-auto"
                                                                                                     onClick={(e) => e.stopPropagation()}>
                                                                                                     <input
                                                                                                         className="font-bold text-gray-700 bg-transparent outline-none w-full text-sm cursor-text"
                                                                                                         value={item.title}
-                                                                                                        onChange={(e) => handlers.updateTitle('submodule', item.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })}/>
+                                                                                                        onChange={(e) => handlers.updateTitle('submodule', item.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })} />
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
@@ -444,7 +453,7 @@ const EditCourse: React.FC = () => {
                                                                                                 onClick={(e) => {
                                                                                                     e.stopPropagation();
                                                                                                     handlers.handleSubModule('remove', module.id, lIdx);
-                                                                                                }}/>
+                                                                                                }} />
                                                                                         </div>
                                                                                     </div>
                                                                                     {!item.collapsed && (
