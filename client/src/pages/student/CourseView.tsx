@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import type { Course, Module, Lecture } from '../../types/course';
 import api from '../../api/axiosInstance';
+import Loading from '../../components/student/Loading';
+import { useAuth } from '../../context/AuthContext';
 
 interface ExtendedCourse extends Course {
     modules: Module[];
@@ -15,6 +17,9 @@ const CourseView: React.FC = () => {
 
     const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
     const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+
+    const { user } = useAuth();
+    const canEdit = user?.role === 'instructor' || course?.instructor;
 
     useEffect(() => {
         const fetchCourseContent = async () => {
@@ -126,19 +131,31 @@ const CourseView: React.FC = () => {
         }
     };
 
-    if (loading) return <div className="flex justify-center flex-col items-center h-screen text-xl text-slate-500">Loading course content...</div>;
+    if (loading) return <Loading />
     if (error) return <div className="flex justify-center flex-col items-center h-screen text-xl text-red-500">Error: {error}</div>;
     if (!course) return <div className="flex justify-center flex-col items-center h-screen text-xl text-red-500">Course not found</div>;
 
     return (
+        
         <div className="flex flex-col md:flex-row w-full bg-slate-50 overflow-hidden font-sans" style={{ height: 'calc(100vh - 64px)' }}>
+            
             <div className="w-full md:w-[350px] shrink-0 bg-white md:border-r border-b md:border-b-0 border-slate-200 flex flex-col overflow-y-auto shadow-[2px_0_10px_rgba(0,0,0,0.02)] h-[35vh] md:h-auto">
-                <div className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 text-white">
-                    <h2 className="m-0 text-xl font-semibold leading-relaxed">{course.name}</h2>
+                <div className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 text-white flex">
+                    <h2 className="m-0 text-xl font-semibold leading-relaxed pr-15">{course.name}</h2>
+                    {canEdit && (
+                    <button
+                        onClick={() => window.location.href = `/instructor/edit-course/${courseId}`}
+                        className="w-30 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold py-1.5 px-3 rounded transition-colors"
+                    >
+                        EDIT COURSE
+                    </button>
+                )}
                 </div>
                 <div className="py-4">
                     {course.modules && course.modules.map(mod => renderModuleContent(mod))}
+                    
                 </div>
+                
             </div>
 
             <div className="grow py-10 px-5 md:px-16 overflow-y-auto bg-white h-[65vh] md:h-auto">
@@ -155,7 +172,9 @@ const CourseView: React.FC = () => {
                         <p>Select a lecture from the sidebar to view its content.</p>
                     </div>
                 )}
+                
             </div>
+
         </div>
     );
 };

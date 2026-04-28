@@ -7,12 +7,15 @@ import { type Thread } from '../types/thread'
 import FileUpload from '../components/FileUpload';
 import FileAttachment from '../components/FileAttachment';
 import PostCard from '../components/generic/PostCard';
+import SkeletonPostCard from '../components/generic/SkeletonPostCard';
 
 function ThreadDetail() {
   const { threadId } = useParams<{ threadId: string }>();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [postsLoaded, setPostsLoaded] = useState(false);
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploadKey, setUploadKey] = useState(0);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [thread, setThread] = useState<Thread | null>(null);
   const [error, setError] = useState('');
@@ -51,17 +54,29 @@ function ThreadDetail() {
   };
 
   const loadPosts = async () => {
+    setPostsLoaded(false);
     try {
       const response = await api.get(
         `/api/threads/${threadId}/posts`,
       );
       setPosts(response.data);
+      setPostsLoaded(true);
     } catch (err) {
       setError('Error loading posts');
+      setPostsLoaded(true); // so errors don't block empty state
+    }
+  };
+
+  const markAsRead = async () => {
+    try {
+        await api.post(`/api/threads/${threadId}/read`);
+    } catch {
+        // non-critical
     }
   };
 
   useEffect(() => {
+    markAsRead();
     loadSubscriptionStatus();
     loadPosts();
     loadThread();
@@ -92,6 +107,7 @@ function ThreadDetail() {
       
       setContent('');
       setAttachments([]);
+      setUploadKey(k => k + 1);
       loadPosts();
     } catch (err) {
       setError('Error creating post');
@@ -120,7 +136,7 @@ function ThreadDetail() {
               : 'bg-blue-600 text-white hover:bg-blue-700 border-transparent'
           }`}
         >
-          {isSubscribed ? '✓ Subscribed' : '+ Subscribe'}
+          {isSubscribed ? '✓ Following' : '+ Follow'}
         </button>
       </div>
     </div>
@@ -128,9 +144,17 @@ function ThreadDetail() {
     {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
     <div className="flex flex-col gap-4">
-      {posts.map(post => (
-        <PostCard key={post.id} post={post} />
-      ))}
+      {!postsLoaded
+          ? Array.from({ length: 3 }).map((_, i) => <SkeletonPostCard key={i} />)
+          : postsLoaded && posts.length === 0
+              ? (
+                  <div className="text-center py-12 text-gray-400">
+                      <p className="text-lg font-medium">No replies yet</p>
+                      <p className="text-sm mt-1">Be the first to respond!</p>
+                  </div>
+              )
+              : posts.map(post => <PostCard key={post.id} post={post} />)
+      }
     </div>
 
     {user && (
@@ -144,7 +168,7 @@ function ThreadDetail() {
           style={{ width: '100%' }}
         />
 
-        <FileUpload onUploadComplete={(file) => setAttachments((prev) => [...prev, file])} />
+        <FileUpload key={uploadKey} onUploadComplete={(file) => setAttachments((prev) => [...prev, file])} />
 
         {attachments.length > 0 && (
           <div style={{ marginTop: '8px' }}>
@@ -153,7 +177,11 @@ function ThreadDetail() {
               <div key={i} style={{ fontSize: '0.85em' }}>
                 📎{att.fileName}
                 <button
-                  onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
+                  onClick={() => {
+                    setAttachments((prev) => prev.filter((_, j) => j !== i));
+                    setUploadKey(k => k + 1);
+                  }}
+                  
                   style={{ marginLeft: '8px', color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   Remove

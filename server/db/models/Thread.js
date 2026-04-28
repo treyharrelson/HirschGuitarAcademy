@@ -6,9 +6,9 @@ const Thread = sequelize.define(
     {
         id: {
             type: DataTypes.INTEGER,
-            primaryKey: true,
             autoIncrement: true,
-            allowNull: false,
+            primaryKey: true,
+            allowNull: true
         },
         title: {
             type: DataTypes.STRING,
