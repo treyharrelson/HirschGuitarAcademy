@@ -4,3 +4,4 @@ node_modules
 server/.env
 server/.env.example
 package-lock.json
+.vs/
