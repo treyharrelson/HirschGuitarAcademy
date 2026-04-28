@@ -95,4 +95,30 @@ router.post('/logout', (req, res, next) => {
 	});
 });
 
+// Search users - used by ThreadManager for private thread member managemetn
+router.get('/api/users', async (req, res) => {
+	try {
+		// get the search query from the GET URL
+		const search = req.query.search || '';
+		// if search exists, apply filters, otherwise return all users (up to limit)
+		const users = await Models.User.findAll({
+			where: search ? {
+				// Op.or makes it match any of the fields, Op.iLike makes it case-insensitive
+				[Op.or]: [
+					{ userName: { [Op.iLike]: `%${search}%` } },
+					{ firstName: { [Op.iLike]: `%${search}%` } },
+					{ lastName: { [Op.iLike]: `%${search}%` } },
+				]
+			} : {},
+			// return these fields only
+			attributes: ['id', 'userName', 'firstName', 'lastName'],
+			limit: 10,
+			order: [['userName', 'ASC']]
+		});
+		res.json(users);
+	} catch (error) {
+		res.status(500).json({ message: `Error searching users: ${error}` });
+	}
+});
+
 module.exports = router;

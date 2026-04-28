@@ -20,14 +20,14 @@ function ThreadFollows() {
             const res = await api.get('/api/threads/follows');
             setFollows(res.data);
         } catch {
-            setError('Error loading subscriptions');
+            setError('Error loading follows');
         }
     };
 
     // Submit event for unfollow buttons
     const handleUnfollow = async (threadId: number) => {
         try { 
-            await api.delete(`/api/threads/${threadId}/subscribe`);
+            await api.delete(`/api/threads/${threadId}/follow`);
             setFollows(prev => prev.filter(s => s.threadId !== threadId));
         } catch {
             setError('Error unfollowing');

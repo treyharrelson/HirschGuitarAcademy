@@ -10,8 +10,24 @@ router.get('/', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 20;
         const offset = parseInt(req.query.offset) || 0;
+		const userId = req.session.user.id;
+
+		// find private threadIds this user has access to
+		const memberOf = await Models.ThreadMember.findAll({
+			where: { userId },
+			attributes: ['threadId']
+		});
+		// pull out the list of threadIds
+		const memberThreadIds = memberOf.map(m => m.threadId);
 
         const { count, rows: threads } = await Models.Thread.findAndCountAll({
+			where: {
+				// if the thread is not private or it is private but the user is in it, it is included
+				[Op.or]: [
+					{ visibility: ['public', 'global'] },
+					...(memberThreadIds.length > 0 ? [{ id: memberThreadIds}] : [])
+				]
+			},
             include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }],
             order: [['createdAt', 'DESC']],
             limit,
@@ -28,35 +44,54 @@ router.get('/', async (req, res) => {
 // Also auto-creates a global announcement post and broadcasts it via SSE
 router.post('/', async (req, res) => {
 	try {
-		const { title } = req.body;
+		const { title, visibility = 'public', makeAnnouncement = true } = req.body;
+		
+		// validate visibility
+		if (!['public', 'global', 'private'].includes(visibility)) {
+			return res.status(400).json({ message: "visibility must be 'public', 'global', or 'private'" });
+		}
+
 		const newThread = await Models.Thread.create({
 			title,
-			authorId: req.session.user.id
-		});
-
-		// Auto-create a global announcement post for the new thread
-		const announcementPost = await Models.Post.create({
-			content: `New thread started: "${title}" — jump in and join the discussion!`,
 			authorId: req.session.user.id,
-			scope: 'global',
-			threadId: null,
-			announcedThreadId: newThread.id
+			visibility,
 		});
 
-		const postWithAuthor = await Models.Post.findByPk(announcementPost.id, {
-			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
-				{ model: Models.Attachment, as: 'attachments' },
-				{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'] }
-			]
-		});
+		// if private, immediately add the creator as a member so they can see their own thread
+		if (visibility === 'private') {
+			await Models.ThreadMember.findOrCreate({
+				where: {
+					threadId: newThread.id,
+					userId: req.session.user.id
+				}
+			});
+		}
 
-		// Broadcast the announcement to all connected users
-		const payload = `data: ${JSON.stringify({ type: 'new_global_post', post: postWithAuthor })}\n\n`;
-		userClients.forEach(clients => clients.forEach(client => client.write(payload)));
+		if (makeAnnouncement) {
+			// Auto-create a global announcement post for the new thread
+			const announcementPost = await Models.Post.create({
+				content: `New thread started: "${title}" — jump in and join the discussion!`,
+				authorId: req.session.user.id,
+				scope: 'global',
+				threadId: null,
+				announcedThreadId: newThread.id
+			});
 
-		// auto subscribe the thread author
-		await Models.Subscription.findOrCreate({
+			const postWithAuthor = await Models.Post.findByPk(announcementPost.id, {
+				include: [
+					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+					{ model: Models.Attachment, as: 'attachments' },
+					{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'] }
+				]
+			});
+
+			// Broadcast the announcement to all connected users
+			const payload = `data: ${JSON.stringify({ type: 'new_global_post', post: postWithAuthor })}\n\n`;
+			userClients.forEach(clients => clients.forEach(client => client.write(payload)));
+		}
+		
+		// auto follow the thread author
+		await Models.Follow.findOrCreate({
 			where: {
 				userId: req.session.user.id,
 				threadId: newThread.id
@@ -146,25 +181,37 @@ router.post('/feed', async (req, res) => {
 });
 
 // Gets a merged, chronologically sorted feed of:
-//   - posts from threads the user is subscribed to
+//   - posts from threads the user follows
 //   - global announcement posts (visible to everyone)
+//	 - global feed threads (threads that have been designated as Global)
 // Uses offset pagination. Maps to GET /api/threads/feed/posts
 router.get('/feed/posts', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 20;
         const offset = parseInt(req.query.offset) || 0;
 
-        const subs = await Models.Subscription.findAll({
+		// grab threads that the user follows
+        const follows = await Models.Follow.findAll({
             where: { userId: req.session.user.id }
         });
-        const threadIds = subs.map(s => s.threadId);
+        const followedThreadIds = follows.map(f => f.threadId);
+
+		// also grab all threads marked as global feed
+		const globalThreads = await Models.Thread.findAll({
+			where: { visibility: 'global' },
+			attributes: ['id']
+		});
+		const globalThreadIds = globalThreads.map(t => t.id);
+
+		// Merge followed threads and global threads
+		const threadIds = [...new Set([...followedThreadIds, ...globalThreadIds])];
 
         const { count, rows: posts } = await Models.Post.findAndCountAll({
             where: {
                 [Op.or]: [
-                    // posts from subscribed threads (only if the user follows at least one)
+                    // posts from followed threads (only if the user follows at least one)
                     ...(threadIds.length > 0 ? [{ threadId: threadIds }] : []),
-                    // global announcements always included
+                    // standalone global posts (announcements, feed-only posts)
                     { scope: 'global' }
                 ]
             },
@@ -233,6 +280,50 @@ router.get('/unread-counts', async (req, res) => {
     }
 });
 
+// Get members of a private thread (GET /api/threads/:threadId/members)
+router.get('/:threadId/members', async (req, res) => {
+	try {
+		// find members of the thread given by the GET URL param, 
+		const members = await Models.ThreadMember.findAll({
+			where: { threadId: req.params.threadId },
+			// join Users table
+			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName'] }]
+		});
+		// map the nested users from the query so that the response is only the users
+		res.json(members.map(m => m.user));
+	} catch (error) {
+		res.status(500).json({ message: `Error fetching members: ${error}`});
+	}
+});
+
+// Add a member to a private thread (POST /api/threads/:threadId/members)
+router.post('/:threadId/members', async (req, res) => {
+	try {
+		// get userId from request
+		const { userId } = req.body;
+		if (!userId) return res.status(400).json({ message: 'userId is required' });
+		// add new record for ThreadMember
+		const [member, created] = await Models.ThreadMember.findOrCreate({
+			where: { threadId: req.params.threadId, userId }
+		});
+		res.status(created ? 201 : 200).json(member);
+	} catch (error) {
+		res.status(500).json({ message: `Error adding member: ${error}` });
+	}
+});
+
+// Remove a member from a private thread (DELETE /api/threads/:threadId/members/:userId)
+router.delete('/:threadId/members/:userId', async (req, res) => {
+	try {
+		await Models.ThreadMember.destroy({
+			where: { threadId: req.params.threadId, userId: req.params.userId }
+		});
+		res.status(204).end();
+	} catch (error) {
+		res.status(500).json({ message: `Error deleting member: ${error}`});
+	}
+});
+
 // Get a single thread by ID
 router.get('/:threadId', async (req, res) => {
 	try {
@@ -291,8 +382,8 @@ router.post('/:threadId/posts', async (req, res) => {
 			await Models.Attachment.bulkCreate(attachmentRecords);
 		}
 
-		//Auto-subscribe the poster to this thread if not already subscribed
-		await Models.Subscription.findOrCreate({
+		//Auto-follow the poster to this thread if not already followed
+		await Models.Follow.findOrCreate({
 		where: {
 			userId: req.session.user.id,
 			threadId: req.params.threadId
@@ -307,7 +398,7 @@ router.post('/:threadId/posts', async (req, res) => {
 			]
 		});
 
-		// find who should receive this event, either users who are subscribed or everyone, if thread is global
+		// find who should receive this event, either users who are followed or everyone, if thread is global
 		const thread = await Models.Thread.findByPk(req.params.threadId);
 
 		let recipientUserIds;
@@ -315,11 +406,11 @@ router.post('/:threadId/posts', async (req, res) => {
 			// broadcast to all connected users
 			recipientUserIds = [...userClients.keys()];
 		} else {
-			// broadcast to subscribed users
-			const subs = await Models.Subscription.findAll({
+			// broadcast to followed users
+			const follows = await Models.Follow.findAll({
 				where: { threadId: req.params.threadId }
 			});
-			recipientUserIds = subs.map(s => s.userId);
+			recipientUserIds = follows.map(f => f.userId);
 		}
 
 		const payload = `data: ${JSON.stringify({ type: 'new_post', threadId: req.params.threadId, post: postWithAuthor })}\n\n`;
@@ -334,40 +425,40 @@ router.post('/:threadId/posts', async (req, res) => {
 	}
 });
 
-// Get subscription status for current user on this thread
-router.get('/:threadId/subscribe', async (req, res) => {
+// Get follow status for current user on this thread
+router.get('/:threadId/follow', async (req, res) => {
 	try {
-		const subscription = await Models.Subscription.findOne({
+		const follow = await Models.Follow.findOne({
 			where: {
 				userId: req.session.user.id,
 				threadId: req.params.threadId
 			}
 		});
-		res.json({ subscribed: !!subscription });
+		res.json({ followed: !!follow });
 	} catch (error) {
-		res.status(500).json({ message: `Error checking subscription: ${error} `});
+		res.status(500).json({ message: `Error checking follow status: ${error} `});
 	}
 });
 
-// Subscribe to a thread (maps to /api/threads/:threadId/subscribe)
-router.post('/:threadId/subscribe', async (req, res) => {
+// follow a thread (maps to /api/threads/:threadId/follow)
+router.post('/:threadId/follow', async (req, res) => {
 	try {
-		const [subscription, created] = await Models.Subscription.findOrCreate({
+		const [follow, created] = await Models.Follow.findOrCreate({
 			where: {
 				userId: req.session.user.id,
 				threadId: req.params.threadId
 			}
 		});
-		res.status(created ? 201 : 200).json(subscription);
+		res.status(created ? 201 : 200).json(follow);
 	} catch (error) {
-		res.status(500).json({ message: `Error subscribing: ${error}` });
+		res.status(500).json({ message: `Error following: ${error}` });
 	}
 });
 
-// Unsubscribe from a thread
-router.delete('/:threadId/subscribe', async (req, res) => {
+// Unfollow a thread
+router.delete('/:threadId/follow', async (req, res) => {
 	try {
-		await Models.Subscription.destroy({
+		await Models.Follow.destroy({
 			where: {
 				userId: req.session.user.id,
 				threadId: req.params.threadId
@@ -375,14 +466,14 @@ router.delete('/:threadId/subscribe', async (req, res) => {
 		});
 		res.status(204).end();
 	} catch (error) {
-		res.status(500).json({ message: `Error unsubscribing: ${error}` });
+		res.status(500).json({ message: `Error unfollowing: ${error}` });
 	}
 });
 
 // updates lastReadAt on the followed thread
 router.post('/:threadId/read', async (req, res) => {
     try {
-        const [follow] = await Models.Subscription.findOne({
+        const follow = await Models.follow.findOne({
             where: { userId: req.session.user.id, threadId: req.params.threadId }
         });
 
@@ -393,6 +484,78 @@ router.post('/:threadId/read', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: `Error marking as read: ${error}` });
     }
+});
+
+// update visibility of a thread (PATCH /api/threads/:threadId/visibility)
+// NOTE: a thread should not be able to be private and global at the same time
+// TODO: add requireRole([ROLES.MODERATOR]) once roles are finalized
+// PATCH /api/threads/:threadId/visibility — set to 'public', 'global', or 'private'
+router.patch('/:threadId/visibility', async (req, res) => {
+    try {
+		// get visibility and ensure it is valid
+        const { visibility } = req.body;
+        if (!['public', 'global', 'private'].includes(visibility)) {
+            return res.status(400).json({ message: "visibility must be 'public', 'global', or 'private'" });
+        }
+
+		// find the thread to update
+        const thread = await Models.Thread.findByPk(req.params.threadId);
+        if (!thread) return res.status(404).json({ message: 'Thread not found' });
+        
+		// if making private:
+		if (visibility === 'private') {
+
+			// make the current user (should be admin) a member
+			await Models.ThreadMember.findOrCreate({
+				where: {
+					threadId: thread.id,
+					userId: req.session.user.id
+				}
+			});
+
+			// block making a private thread with 0 members - invalid state
+			const count = await Models.ThreadMember.count({
+				where: { threadId: req.params.threadId }
+			});
+			if (count === 0) {
+				return res.status(400).json({
+					message: 'Cannot make thread private without members'
+				});
+			}
+		}
+		await thread.update({ visibility });
+        res.json({ id: thread.id, visibility: thread.visibility });
+    } catch (error) {
+        res.status(500).json({ message: `Error updating thread: ${error}` });
+    }
+});
+
+// delete a thread and its posts/follows (DELETE /api/threads/:threadId)
+// TODO: add requireRole([ROLES.MODERATOR]) once roles are finalized
+router.delete('/:threadId', async (req, res) => {
+	try {
+		const thread = await Models.Thread.findByPk(req.params.threadId);
+		if (!thread) return res.status(404).json({ message: 'Thread not found' });
+		
+		// delete posts inside the thread
+		await Models.Post.destroy({ where: { threadId: thread.id } });
+
+		// delete the announcement post that was auto-created when this thread was made
+		// (it has threadId: null but announcedThreadId pointing here)
+		await Models.Post.destroy({ where: {announcedThreadId: thread.id } });
+
+		// delete the follow relationships between users and the thread
+		await Models.Follow.destroy({ where: { threadId: thread.id } });
+		
+		// delete the member records if it was a private thread
+		await Models.ThreadMember.destroy({ where: { threadId: thread.id } });
+
+		// finally, delete the thread
+		await thread.destroy();
+		res.status(204).end();
+	} catch (error) {
+		res.status(500).json({ message: `Error deleting thread: ${error}` });
+	}
 });
 
 module.exports = router;

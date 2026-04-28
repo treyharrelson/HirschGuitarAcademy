@@ -1,9 +1,8 @@
-// going to use this for Forum subscriptions
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../db');
 
-const Subscription = sequelize.define(
-	'Subscription',
+const Follow = sequelize.define(
+	'Follow',
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -29,10 +28,10 @@ const Subscription = sequelize.define(
 		},
 	},
 	{
-		tableName: 'Subscriptions',
+		tableName: 'Follows',
 		timestamps: true,
 	}
 
 )
 
-module.exports = Subscription;
+module.exports = Follow;

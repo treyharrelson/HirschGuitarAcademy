@@ -20,10 +20,10 @@ const Thread = sequelize.define(
             allowNull: false,
             field: 'author_id'
         },
-        isGlobalFeed: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-            field: 'is_global_feed',
+        visibility: {
+            type: DataTypes.ENUM('public', 'global', 'private'),
+            allowNull: false,
+            defaultValue: 'public',
         },
     },
     {

@@ -32,7 +32,8 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
         { label: 'Add Course', path: '/instructor/add-course', button: DashButton },
     ],
     admin: [
-        //dunno yet
+        { label: 'Forum', path: '/forum', button: DashButton },
+        { label: 'Manage Threads', path: '/manage/threads', button: DashButton },
     ]
 };
 
@@ -65,7 +66,7 @@ function Dashboard() {
     // Follow a thread from an announcement post card
     const handleFollowFromPost = async (threadId: number) => {
         try {
-            await api.post(`/api/threads/${threadId}/subscribe`);
+            await api.post(`/api/threads/${threadId}/follow`);
         } catch { console.error('Error following thread'); }
     };
 
@@ -86,7 +87,7 @@ function Dashboard() {
         es.onmessage = (e) => {
             const { type, post } = JSON.parse(e.data);
 
-            // thread post from a subscribed thread
+            // thread post from a followed thread
             if (type === 'new_post') {
                 setFeedPosts(prev => prev.some(p => p.id === post.id) ? prev : [post, ...prev]);
             }
@@ -149,7 +150,7 @@ function Dashboard() {
                             <SkeletonPostCard key={i} />
                         ))
                         : feedPosts.length === 0
-                            ? <p>No posts yet. Subscribe to some threads in the forum to see them here.</p>
+                            ? <p>No posts yet. Follow some threads in the forum to see them here.</p>
                             : (
                                 <div className="flex flex-col gap-4">
                                     {feedPosts.map(post => (

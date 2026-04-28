@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
 const app = express();
+const { sequelize } = require('./db/models');
 app.set('trust proxy', 1); // tells Express to trust Railway proxy
 
 // FOR USERS UNTIL SERVER SET UP IN CLOUD
@@ -80,14 +81,27 @@ app.use('/api/courses', requireAuth, courseRoutes); // Protects and prefixes cou
 app.use('/api/upload', requireAuth, uploadRouter);
 
 // -- START SERVER --
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}/`);
-});
+async function init() {
+  try {
+    await sequelize.authenticate();
+    console.log('DB connected');
 
-if (DEV) {
-    devusers.doit().then(() => {
+    await sequelize.sync({ alter: true });
+    await sequelize.query('SET session_replication_role = DEFAULT;');
+    console.log("Tables synced successfully.");
+
+    if (DEV) {
+      await devusers.doit();
       console.log("Dev users synced");
-    }).catch((err) => {
-      console.error("Failed to sync devusers: ", err);
+    }
+
+    app.listen(port, () => {
+      console.log(`Server running at http://localhost:${port}/`);
     });
-};
+
+  } catch(err) {
+    console.error("Startup failed:", err);
+  }
+}
+
+init();

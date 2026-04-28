@@ -16,7 +16,7 @@ function ThreadDetail() {
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploadKey, setUploadKey] = useState(0);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [thread, setThread] = useState<Thread | null>(null);
   const [error, setError] = useState('');
   const { user } = useAuth();
@@ -30,26 +30,26 @@ function ThreadDetail() {
     }
   }
 
-  const loadSubscriptionStatus = async () => {
+  const loadFollowStatus = async () => {
     try {
-      const response = await api.get(`/api/threads/${threadId}/subscribe`);
-      setIsSubscribed(response.data.subscribed);
+      const response = await api.get(`/api/threads/${threadId}/follow`);
+      setIsFollowing(response.data.followed);
     } catch (err) {
-      console.error('Error loading subscription status');
+      console.error('Error loading follow status');
     }
   };
 
-  const handleSubscribeToggle = async () => {
+  const handleFollowToggle = async () => {
     try {
-      if (isSubscribed) {
-        await api.delete(`/api/threads/${threadId}/subscribe`);
-        setIsSubscribed(false);
+      if (isFollowing) {
+        await api.delete(`/api/threads/${threadId}/follow`);
+        setIsFollowing(false);
       } else {
-        await api.post(`/api/threads/${threadId}/subscribe`);
-        setIsSubscribed(true);
+        await api.post(`/api/threads/${threadId}/follow`);
+        setIsFollowing(true);
       }
     } catch (err) {
-      setError('Error updating subscription');
+      setError('Error updating follow status');
     }
   };
 
@@ -77,7 +77,6 @@ function ThreadDetail() {
 
   useEffect(() => {
     markAsRead();
-    loadSubscriptionStatus();
     loadPosts();
     loadThread();
 
@@ -95,6 +94,13 @@ function ThreadDetail() {
 
     return () => es.close();
   }, [threadId]);
+
+  // load follow status only once thread is loaded and only if its not global
+  useEffect(() => {
+    if (!thread) return;
+    if (thread.visibility === 'global') return;
+    loadFollowStatus();
+  }, [thread]);
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
@@ -125,19 +131,28 @@ function ThreadDetail() {
         ← Back to Forum
       </Link>
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-blue-700 tracking-tight">
-          {thread ? thread.title : 'Loading...'}
-        </h1>
-        <button
-          onClick={handleSubscribeToggle}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all border ${
-            isSubscribed
-              ? 'border-blue-600 text-blue-600 hover:bg-blue-50'
-              : 'bg-blue-600 text-white hover:bg-blue-700 border-transparent'
-          }`}
-        >
-          {isSubscribed ? '✓ Following' : '+ Follow'}
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-3xl font-bold text-blue-700 tracking-tight">
+            {thread ? thread.title : 'Loading...'}
+          </h1>
+          {thread?.visibility === 'global' && (
+            <span className="text-sm bg-green-100 text-green-700 font-semibold px-3 py-1 rounded-full">
+              Global
+            </span>
+          )}
+        </div>
+        {!thread || thread.visibility !== 'global' && (
+          <button
+            onClick={handleFollowToggle}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all border ${
+              isFollowing
+                ? 'border-blue-600 text-blue-600 hover:bg-blue-50'
+                : 'bg-blue-600 text-white hover:bg-blue-700 border-transparent'
+            }`}
+          >
+            {isFollowing? '✓ Following' : '+ Follow'}
+          </button>
+        )}
       </div>
     </div>
 
