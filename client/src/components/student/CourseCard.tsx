@@ -69,7 +69,7 @@ export const CourseCard = ({
 
           {/* PROGRESS BAR */}
           {!isInstructor && isEnrolled && (
-          <div className="pt-2 flex flex-col items-center justify-center">
+            <div className="pt-2 flex flex-col items-center justify-center">
               <>
                 <div className="w-48 bg-gray-100 rounded-full h-1.5 overflow-hidden">
                   <div
@@ -79,7 +79,7 @@ export const CourseCard = ({
                 </div>
                 <span className="text-[10px] text-gray-400 font-bold mt-0.5">{progressValue}%</span>
               </>
-          </div>)}
+            </div>)}
 
           {/* DESCRIPTION */}
           <div className='text-sm text-gray-600 ql-snow'>
@@ -92,21 +92,31 @@ export const CourseCard = ({
           </div>
         </div>
       </Link>
-
+      
+      {/* BUTTONS */}
       <div className='px-3 pb-3 mt-auto flex items-center gap-2'>
         {!isInstructor ? (
           <BigBlueButton
             children={isFinished ? "Review" : enrolled}
             onClick={isFinished ? () => navigate(`/course/${course.id}`) : buttonclick}
-            disabled={missingRequirements.length > 0}
-          />
+            disabled={missingRequirements.length > 0}/>
         ) : (
-          <button
-            onClick={() => navigate(`/instructor/edit-course/${course.id}`)}
-            className="w-full py-2 bg-slate-800 text-white rounded-full text-xs font-bold hover:bg-slate-700 transition"
-          >
-            Edit Course
-          </button>
+          <>
+            <button
+              onClick={() => navigate(`/instructor/edit-course/${course.id}`)}
+              className="px-2 py-2 bg-slate-800 text-white rounded-full text-xs font-bold hover:bg-slate-700 transition cursor-pointer">
+              ⚙️ Edit Course
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm("Are you sure you want to delete this course?")) {
+                  buttonclick();
+                }
+              }}
+              className="px-4 py-2 border border-blue-200 text-white bg-blue-600 rounded-full text-xs font-bold hover:bg-blue-700 transition cursor-pointer">
+              🗑️ Delete
+            </button>
+          </>
         )}
       </div>
 
