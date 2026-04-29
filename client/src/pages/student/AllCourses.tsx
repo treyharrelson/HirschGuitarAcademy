@@ -41,7 +41,6 @@ const AllCourses = () => {
       data.forEach(e => pMap.set(String(e.courseId), e.progress));
       setProgressMap(pMap);
     } catch {
-      // non-critical
     }
   };
 
@@ -65,7 +64,7 @@ const AllCourses = () => {
     try {
       await api.delete(`/api/courses/${courseId}/enroll`);
       setActionMsg('Successfully dropped.');
-      fetchEnrollments(); // Refresh statuses
+      fetchEnrollments();
       fetchCourses();
     } catch (err: any) {
       setActionMsg(err.response?.data?.message || 'Drop failed.');

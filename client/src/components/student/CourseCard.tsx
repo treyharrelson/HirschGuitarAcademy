@@ -36,7 +36,7 @@ export const CourseCard = ({
     let isMounted = true;
     const loadThumbnail = async () => {
       const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/'];
-      if (course.thumbnail && typeof course.thumbnail === 'string' && R2_FOLDERS.some(p => course.thumbnail.startsWith(p))) {
+      if (course.thumbnail && typeof course.thumbnail === 'string' && R2_FOLDERS.some(p => course.thumbnail?.startsWith(p))) {
         try {
           const res = await api.get(`/api/upload/file-url`, { params: { fileKey: course.thumbnail } });
           if (isMounted && res.data.presignedUrl) setImageUrl(res.data.presignedUrl);
