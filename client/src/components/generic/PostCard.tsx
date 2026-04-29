@@ -40,7 +40,6 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
     const [replyContent, setReplyContent] = useState('');
     const [submittingReply, setSubmittingReply] = useState(false);
     const [replyError, setReplyError] = useState('');
-    const { user } = useAuth();
 
     const handleFollow = async () => {
         if (!onFollowThread || !post.announcedThread || followed) return;
