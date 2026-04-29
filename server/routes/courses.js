@@ -14,7 +14,7 @@ router.get('/my-enrollments', requireAuth, requireRole('student'), async (req, r
         if (!userId) return res.status(401).json({ message: "No session ID" });
 
         // Fetch RAW enrollments ONLY - No associations here to avoid crashes
-        const enrolledCourses = await Enrollment.findAll({
+        const enrolledCourses = await Models.Enrollment.findAll({
             where: { userId: userId },
             raw: true
         });
@@ -24,9 +24,9 @@ router.get('/my-enrollments', requireAuth, requireRole('student'), async (req, r
         }
 
         // Fetch data for each enrollment independently
-        const enrollments = await Promise.all(enrolledCourses.map(async (enrol) => {
+        const enrollments = await Promise.all(enrolledCourses.map(async (enroll) => {
             // Find the course manually
-            const course = await Course.findByPk(enrol.courseId, {
+            const course = await Models.Course.findByPk(enroll.courseId, {
                 attributes: ['id', 'name', 'thumbnail'],
                 raw: true
             });
@@ -38,7 +38,7 @@ router.get('/my-enrollments', requireAuth, requireRole('student'), async (req, r
             });
 
             // Find all module IDs for this course
-            const courseModules = await Module.findAll({
+            const courseModules = await Models.Module.findAll({
                 where: { courseId: course.id },
                 attributes: ['id'],
                 raw: true
@@ -47,14 +47,15 @@ router.get('/my-enrollments', requireAuth, requireRole('student'), async (req, r
             const moduleIds = courseModules.map(m => m.id);
 
             // Count lectures linked to those modules
-            const totalLectures = await Lecture.count({
+            const totalLectures = await Models.Lecture.count({
                 where: { moduleId: moduleIds }
             });
 
             const progress = totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0;
 
             return {
-                id: enrol.id,
+                id: course.id,
+                enrollmentId: enrol.id,
                 courseId: course.id,
                 name: course.name,
                 thumbnail: course.thumbnail,
@@ -417,6 +418,89 @@ router.delete('/:courseId', requireRole('admin', 'instructor'), async (req, res)
     }
 });
 
+// === INSTRUCTOR ENROLLMENT MANAGEMENT ===
+
+// Get all students and their enrolled courses
+router.get('/instructor/students', requireRole('instructor', 'admin'), async (req, res) => {
+    try {
+        const students = await Models.User.findAll({
+            where: { role: 'student' },
+            attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email'],
+            include: [{
+                model: Models.Course,
+                as: 'enrolledCourses',
+                attributes: ['id', 'name']
+            }]
+        });
+        res.status(200).json(students);
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching students: ${error.message}` });
+    }
+});
+
+// Get all students for a specific course
+router.get('/:courseId/students', requireRole('instructor', 'admin'), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const course = await Models.Course.findByPk(courseId, {
+            include: [{
+                model: Models.User,
+                as: 'students',
+                attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email']
+            }]
+        });
+        
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+        res.status(200).json(course.students);
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching course students: ${error.message}` });
+    }
+});
+
+// Instructor manually enrolls student
+router.post('/:courseId/enroll/:studentId', requireRole('instructor', 'admin'), async (req, res) => {
+    try {
+        const { courseId, studentId } = req.params;
+
+        const course = await Models.Course.findByPk(courseId);
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+
+        const student = await Models.User.findByPk(studentId);
+        if (!student || student.role !== 'student') return res.status(404).json({ message: 'Student not found' });
+
+        const existingEnrollment = await Models.Enrollment.findOne({ where: { userId: studentId, courseId } });
+        if (existingEnrollment) return res.status(400).json({ message: 'Student already enrolled' });
+
+        await Models.Enrollment.create({ userId: studentId, courseId });
+        await course.increment('enrolled');
+
+        res.status(201).json({ message: 'Student successfully enrolled' });
+    } catch (error) {
+        res.status(500).json({ message: `Error enrolling student: ${error.message}` });
+    }
+});
+
+// Instructor manually removes student
+router.delete('/:courseId/enroll/:studentId', requireRole('instructor', 'admin'), async (req, res) => {
+    try {
+        const { courseId, studentId } = req.params;
+
+        const enrollment = await Models.Enrollment.findOne({ where: { userId: studentId, courseId } });
+        if (!enrollment) return res.status(404).json({ message: 'Student not enrolled' });
+
+        await enrollment.destroy();
+
+        const course = await Models.Course.findByPk(courseId);
+        if (course) await course.decrement('enrolled');
+
+        res.status(200).json({ message: 'Student successfully completely removed' });
+    } catch (error) {
+        res.status(500).json({ message: `Error removing student: ${error.message}` });
+    }
+});
+
 // === ALL AUTHENTICATED USERS ===
 // (requireAuth done first)
 // had to move down because wildcard ":id" was catching post for "enrollment"
@@ -426,7 +510,10 @@ router.get('/', async (req, res) => {
     try {
         const courses = await Models.Course.findAll({
             order: [['createdAt', 'DESC']],
-            include: [{ model: Models.Course, as: 'requirements', attributes: ['id', 'name'] }]
+            include: [
+                { model: Models.Course, as: 'requirements', attributes: ['id', 'name'] },
+                { model: Models.User, as: 'instructor', attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role'] }
+            ]
         });
         res.status(200).json(courses);
     } catch (error) {
@@ -466,6 +553,11 @@ router.get('/:courseId', async (req, res) => {
                     model: Models.Course,
                     as: 'requirements',
                     attributes: ['id', 'name']
+                },
+                {
+                    model: Models.User,
+                    as: 'instructor',
+                    attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role']
                 }
             ],
             order: [
@@ -521,7 +613,7 @@ router.get('/:courseId', async (req, res) => {
         const courseData = {
             id: course.id.toString(),
             name: course.name,
-            instructorId: course.instructorId,
+            instructor: course.instructor,
             enrolled: course.enrolled,
             isPrivate: course.isPrivate,
             description: course.description,

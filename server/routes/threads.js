@@ -195,7 +195,7 @@ router.get('/follows', async (req, res) => {
 			include: [{
 				model: Models.Thread,
 				as: 'thread',
-				include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }]
+				include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName', 'name'] }]
 			}],
 			order: [['createdAt', 'DESC']]
 		});
@@ -239,7 +239,7 @@ router.get('/unread-counts', async (req, res) => {
 router.get('/:threadId', async (req, res) => {
 	try {
 		const thread = await Models.Thread.findByPk(req.params.threadId, {
-			include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }]
+			include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName', 'name'] }]
 		});
 		if (!thread) return res.status(404).json({ message: 'Thread not found' });
 		res.json(thread);
@@ -257,11 +257,16 @@ router.get('/:threadId/posts', async (req, res) => {
 				{
 					model: Models.User,
 					as: 'author',
-					attributes: ['id', 'userName', 'email', 'role']
+					attributes: ['id', 'userName', 'name', 'email', 'role']
 				},
 				{
 					model: Models.Attachment,
 					as: 'attachments'
+				},
+				{
+					model: Models.Thread,
+					as: 'thread',
+					attributes: ['id', 'title']
 				}
 			],
 			order: [['createdAt', 'ASC']]
@@ -315,8 +320,9 @@ router.post('/:threadId/posts', async (req, res) => {
 		// fetch post with author included for the broadcast payload
 		const postWithAuthor = await Models.Post.findByPk(newPost.id, {
 			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
-				{ model: Models.Attachment, as: 'attachments' }
+				{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role'] },
+				{ model: Models.Attachment, as: 'attachments' },
+				{ model: Models.Thread, as: 'thread', attributes: ['id', 'title'] }
 			]
 		});
 
@@ -467,7 +473,7 @@ router.get('/:threadId/ban', requireRole(roles.MODERATOR, roles.ADMIN), async (r
 	try {
 		const bans = await Models.ThreadBan.findAll({
 			where: { threadId: req.params.threadId },
-			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName'] }]
+			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }]
 		});
 		res.status(200).json(bans);
 	} catch (error) {
