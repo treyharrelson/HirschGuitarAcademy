@@ -34,7 +34,10 @@ const MyEnrollments: React.FC = () => {
     fetchEnrollments();
   }, []);
 
-  if (loading) return <Loading />;
+  if (loading) return (<div className="flex flex-col items-center justify-center min-h-screen w-full bg-white">
+    <Loading />
+    <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading course...</p>
+  </div>);
 
   return (
     <div className="p-8 max-w-7xl mx-auto">

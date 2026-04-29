@@ -143,8 +143,21 @@ const CourseView: React.FC = () => {
         );
     };
 
-    if (loading || !course) return <Loading />;
-    if (flattenedLectures.length === 0 && course.modules.length > 0) return <Loading />;
+    if (loading || !course) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen w-full bg-white">
+                <Loading />
+                <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading course...</p>
+            </div>
+        );
+    }
+
+    if (flattenedLectures.length === 0 && course.modules.length > 0) return (
+        <div className="flex flex-col items-center justify-center min-h-screen w-full bg-white">
+            <Loading />
+            <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading course...</p>
+        </div>
+    );;
 
     const showNextButtonDisabled = !isInstructor && !!selectedLecture && !isCurrentComplete;
 
