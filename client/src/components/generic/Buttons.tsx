@@ -10,7 +10,7 @@ export const BigBlueButton = ({ children, onClick, disabled }: ButtonProps) => (
 	<button
 		onClick={disabled ? undefined : onClick}
 		disabled={disabled}
-		className={`px-5 py-2 rounded-full transition-all text-white ${
+		className={`px-4 py-1 rounded-full transition-all text-white cursor-pointer ${
 			disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
 		}`}
 	>

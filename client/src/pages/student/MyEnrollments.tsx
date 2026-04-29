@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 import Loading from '../../components/student/Loading';
+import { assets } from '../../assets/assets';
 
 interface EnrollmentData {
   id: number;
@@ -54,7 +55,7 @@ const MyEnrollments: React.FC = () => {
               <tr key={enrol.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
                 <td className="p-5">
                   <div className="flex items-center gap-4">
-                    <img src={enrol.thumbnail} className="w-16 h-10 object-cover rounded-md shadow-sm" alt="" />
+                    <img src={enrol.thumbnail || assets.defaultCourseThumbnail} className="w-16 h-10 object-cover rounded-md shadow-sm" alt="Course Thumbnail" />
                     <span className="font-bold text-slate-800">{enrol.name}</span>
                   </div>
                 </td>
@@ -85,7 +86,7 @@ const MyEnrollments: React.FC = () => {
                 <td className="p-5 text-right">
                   <button
                     onClick={() => navigate(`/course/${enrol.courseId}`)}
-                    className="bg-black text-white px-5 py-2 rounded-lg font-bold text-xs hover:bg-slate-800 transition-all"
+                    className="bg-black text-white px-5 py-2 rounded-lg font-bold text-xs hover:bg-slate-800 transition-all cursor-pointer"
                   >
                     {enrol.completed ? 'Review Content' : 'Continue Learning'}
                   </button>

@@ -101,7 +101,6 @@ const CourseView: React.FC = () => {
         }
     };
 
-
     const renderSidebarItem = (item: any, depth: number = 0) => {
         const isModule = Array.isArray(item.content);
         if (isModule) {
@@ -148,7 +147,6 @@ const CourseView: React.FC = () => {
     if (flattenedLectures.length === 0 && course.modules.length > 0) return <Loading />;
 
     const showNextButtonDisabled = !isInstructor && !!selectedLecture && !isCurrentComplete;
-
 
     return (
         <div className="flex h-screen bg-white">
