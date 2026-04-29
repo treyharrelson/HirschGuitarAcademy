@@ -6,6 +6,7 @@ import api from '../api/axiosInstance';
 import {type Post } from '../types/post';
 import PostCard from '../components/generic/PostCard';
 import SkeletonPostCard from '../components/generic/SkeletonPostCard';
+import PostComposer from '../components/generic/PostComposer';
 
 type RoleLink = {
     label: string;
@@ -147,6 +148,15 @@ function Dashboard() {
                 <div className='flex-1'>
                     <h2 className="mb-4 text-xl font-semibold">My Feed</h2>
 
+                    {/* Global post composer */}
+                    <div className="mb-6">
+                        <PostComposer
+                            onPosted={() => loadFeed(0, false)}
+                            placeholder="Share something with everyone..."
+                            submitLabel="Post"
+                        />
+                    </div>
+                    
                     {feedLoading
                         ? Array.from({ length: 3 }).map((_, i) => (
                             <SkeletonPostCard key={i} />

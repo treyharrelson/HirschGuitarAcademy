@@ -21,6 +21,7 @@ const CourseRequirement = require('./CourseRequirement');
 const ThreadBan = require('./ThreadBan');
 const Progress = require('./Progress');
 const ThreadMember = require('./ThreadMember');
+const Reaction = require('./Reaction');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -102,6 +103,16 @@ Attachment.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
 User.hasMany(Comment, { foreignKey: 'authorId', as: 'comments' });
 Comment.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
 
+// Reactions on posts
+Post.hasMany(Reaction, { foreignKey: 'postId', as: 'reactions' });
+Reaction.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
+User.hasMany(Reaction, { foreignKey: 'userId', as: 'reactions' });
+Reaction.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Reactions on comments
+Comment.hasMany(Reaction, { foreignKey: 'commentId', as: 'reactions' });
+Reaction.belongsTo(Comment, { foreignKey: 'commentId', as: 'comment' });
+
 // User to messages
 User.hasMany(Message, { foreignKey: 'senderId', as: 'sentMessages' });
 Message.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
@@ -169,4 +180,5 @@ module.exports = {
     CourseRequirement,
     ThreadBan,
     ThreadMember,
+    Reaction,
 };
