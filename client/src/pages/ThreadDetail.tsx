@@ -183,7 +183,10 @@ function ThreadDetail() {
           style={{ width: '100%' }}
         />
 
-        <FileUpload key={uploadKey} onUploadComplete={(file) => setAttachments((prev) => [...prev, file])} />
+        <FileUpload 
+          key={uploadKey} 
+          folder="forum"
+          onUploadComplete={(file) => setAttachments((prev) => [...prev, file])} />
 
         {attachments.length > 0 && (
           <div style={{ marginTop: '8px' }}>
