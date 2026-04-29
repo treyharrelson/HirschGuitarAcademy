@@ -149,34 +149,6 @@ router.delete('/:courseId/enroll', requireRole('student'), async (req, res) => {
     }
 });
 
-/* Complete a course (Maps to POST /api/courses/:courseId/complete)
-router.post('/:courseId/complete', requireRole('student'), async (req, res) => {
-    try {
-        const userId = req.session.user.id;
-        const { courseId } = req.params;
-
-        const enrollment = await Models.Enrollment.findOne({
-            where: { userId, courseId }
-        });
-
-        if (!enrollment) {
-            return res.status(404).json({ message: 'Not enrolled in this course' });
-        }
-
-        if (enrollment.completed) {
-            return res.status(400).json({ message: 'Course is already completed' });
-        }
-
-        enrollment.completed = true;
-        await enrollment.save();
-
-        res.status(200).json({ message: 'Successfully completed the course' });
-    } catch (error) {
-        res.status(500).json({ message: `Error completing course: ${error.message}` });
-    }
-});
-*/
-
 // STUDENT COURSE PROGRESS
 router.get('/:courseId/progress', requireRole('student'), async (req, res) => {
     try {
@@ -214,8 +186,6 @@ router.post('/:courseId/lectures/:lectureId/complete', requireAuth, requireRole(
         res.status(500).json({ message: err.message });
     }
 });
-
-
 
 // === INSTRUCTOR OR ADMIN ===
 

@@ -47,6 +47,7 @@ export interface Course {
     instructorId: number;
     instructor?: CourseInstructor;
     enrolled: number;
+    description: string,
     completed?: boolean;
     isPrivate: boolean;
     thumbnail: string | null;
