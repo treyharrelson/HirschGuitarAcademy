@@ -49,7 +49,7 @@ function App() {
           <Route path="/courses" element={<MyCourses />} />
           {/* elements set to this so it won't crash */}
           <Route path="/metronome" element={<MyCourses />} />
-          <Route path="/timer" element={<MyCourses />} />
+          <Route path="/timer" element={<Timer />} />
           <Route path="/profile" element={<ProfilePage />} />
 
           {/**<Route path='/home' element={<Home />} /> */}
