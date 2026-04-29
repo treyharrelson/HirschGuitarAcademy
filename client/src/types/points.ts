@@ -1,17 +1,20 @@
+import type { User } from "./user";
+import type { Course } from "./course";
+
 export interface Award {
 	id: string,
-	userId: string,
+	user?: User,
 };
 
 export interface Belt {
 	id: string,
-	userId: string,
-	courseId: string,
+	user?: User,
+	course?: Course,
 };
 
 export interface PracticeTime {
 	id: string,
-	userId: string,
+	user?: User,
 	totalTime: Number,
 	timeThisWeek: Number,
 };

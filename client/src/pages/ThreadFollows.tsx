@@ -5,7 +5,6 @@ import { type Thread } from '../types/thread';
 
 interface FollowEntry {
     id: number;
-    threadId: number;
     createdAt: string;
     thread: Thread;
     unreadCount?: number;
@@ -28,7 +27,7 @@ function ThreadFollows() {
     const handleUnfollow = async (threadId: number) => {
         try { 
             await api.delete(`/api/threads/${threadId}/subscribe`);
-            setFollows(prev => prev.filter(s => s.threadId !== threadId));
+            setFollows(prev => prev.filter(s => s.thread.id !== threadId));
         } catch {
             setError('Error unfollowing');
         }
@@ -59,7 +58,7 @@ function ThreadFollows() {
                             key={follow.id}
                             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow-md transition-all"
                         >
-                            <Link to={`/forum/thread/${follow.threadId}`} className="flex-1 min-w-0">
+                            <Link to={`/forum/thread/${follow.thread.id}`} className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                     <h3 className="text-lg font-semibold text-blue-700 truncate">{follow.thread.title}</h3>
                                     {follow.unreadCount !== undefined && follow.unreadCount > 0 && (
@@ -70,12 +69,12 @@ function ThreadFollows() {
                                 </div>
                                 {follow.thread.author && (
                                     <p className="text-sm text-gray-400 mt-1">
-                                        by {follow.thread.author.userName} · followed {new Date(follow.createdAt).toLocaleDateString()}
+                                        by {follow.thread.author?.name || 'Unknown'} · followed {new Date(follow.createdAt).toLocaleDateString()}
                                     </p>
                                 )}
                             </Link>
                             <button
-                                onClick={() => handleUnfollow(follow.threadId)}
+                                onClick={() => handleUnfollow(follow.thread.id)}
                                 className="ml-4 flex-shrink-0 text-sm text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-full transition-all"
                             >
                                 Unfollow

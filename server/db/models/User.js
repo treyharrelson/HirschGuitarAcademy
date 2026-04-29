@@ -1,5 +1,6 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../db');
+const ProfileSettings = require('./ProfileSettings');
 
 const User = sequelize.define(
 	'User',
@@ -23,6 +24,17 @@ const User = sequelize.define(
 			unique: true,
 			allowNull: false,
 			field: 'user_name'
+		},
+		name: {
+			type: DataTypes.VIRTUAL,
+			get() {
+				const first = this.getDataValue('firstName');
+				const last = this.getDataValue('lastName');
+				if (first || last) {
+					return `${first || ''} ${last || ''}`.trim();
+				}
+				return this.getDataValue('userName');
+			}
 		},
 		email: {
 			type: DataTypes.STRING,

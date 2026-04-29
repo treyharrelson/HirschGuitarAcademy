@@ -13,7 +13,7 @@ type Props = {
 };
 
 function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: Props) {
-    const initials = post.author?.userName?.slice(0, 2).toUpperCase() || '??';
+    const initials = post.author?.name?.slice(0, 2).toUpperCase() || '??';
     const [followed, setFollowed] = useState(false);
     const [following, setFollowing] = useState(false);
     const { user } = useAuth();
@@ -30,7 +30,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this post?')) return;
         try {
-            const threadId = post.threadId || post.announcedThread?.id || 'global';
+            const threadId = post.thread?.id || post.announcedThread?.id || 'global';
             await api.delete(`/api/threads/${threadId}/posts/${post.id}`);
             if (onPostDeleted) onPostDeleted(post.id);
         } catch (error: any) {
@@ -40,9 +40,9 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
     };
 
     const handleBan = async () => {
-        if (!confirm(`Are you sure you want to ban ${post.author?.userName} (${post.userId}) from this thread?`)) return;
+        if (!confirm(`Are you sure you want to ban ${post.author?.name} (${post.author?.id}) from this thread?`)) return;
         try {
-            const threadId = post.threadId || post.announcedThread?.id;
+            const threadId = post.thread?.id || post.announcedThread?.id;
             await api.post(`/api/threads/${threadId}/ban`, { userId: post.author?.id });
             alert('User banned successfully.');
         } catch (error) {
@@ -84,7 +84,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
             {/* Thread label for feed view (non-announcement posts) */}
             {showThread && post.thread && !post.announcedThread && (
                 <Link
-                    to={`/forum/thread/${post.threadId}`}
+                    to={`/forum/thread/${post.thread.id}`}
                     className="text-xs font-semibold text-blue-600 uppercase tracking-wide hover:underline"
                 >
                     {post.thread.title}
@@ -99,7 +99,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
                     </Link>
                     <div>
                         <Link to={`/profile/${post.author?.id}`} className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline">
-                            {post.author?.userName || 'Unknown'}
+                            {post.author?.name || 'Unknown'}
                         </Link>
                         <p className="text-xs text-gray-400">
                             {new Date(post.createdAt).toLocaleString()}

@@ -42,7 +42,7 @@ const MyCourses: React.FC = () => {
     );
   }
 
-  const myCourses = allCourses ? allCourses.filter(c => String(c.instructorId) === String(user?.id)) : [];
+  const myCourses = allCourses ? allCourses.filter(c => String(c.instructor?.id) === String(user?.id)) : [];
 
   return (
     <div className='p-8 relative'>

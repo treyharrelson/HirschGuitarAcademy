@@ -10,7 +10,9 @@ export interface User {
 
 // probably not best practice, but works
 export interface UserInfo extends User {
+    realName?: string;
     bio?: string;
     courses?: Course[];
     privacy: boolean;
+    dateCreated: Date;
 }

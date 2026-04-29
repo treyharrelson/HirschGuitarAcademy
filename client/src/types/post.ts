@@ -9,11 +9,8 @@ export interface Attachment {
 
 export interface Post {
     id: number;
-    threadId: number | null;
-    userId: number;
     content: string;
     scope: 'thread' | 'global';
-    announcedThreadId?: number | null;
     createdAt: string;
     author?: User;
     attachments?: Attachment[];

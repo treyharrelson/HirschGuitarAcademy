@@ -25,10 +25,10 @@ function ThreadCard({ thread, unreadCount }: Props) {
             {thread.author && (
                 <p className="text-sm text-gray-400 mt-1">
                     Started by <button 
-                        onClick={(e) => { e.stopPropagation(); navigate(`/profile/${thread.author.id}`); }} 
+                        onClick={(e) => { e.stopPropagation(); navigate(`/profile/${thread.author?.id}`); }} 
                         className="hover:underline hover:text-blue-600 font-medium"
                     >
-                        {thread.author.userName}
+                        {thread.author?.name || 'Unknown'}
                     </button> · {new Date(thread.createdAt).toLocaleDateString()}
                 </p>
             )}

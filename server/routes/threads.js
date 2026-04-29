@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
 		const offset = parseInt(req.query.offset) || 0;
 
 		const { count, rows: threads } = await Models.Thread.findAndCountAll({
-			include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }],
+			include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName', 'name'] }],
 			order: [['createdAt', 'DESC']],
 			limit,
 			offset
@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
 
 		const postWithAuthor = await Models.Post.findByPk(announcementPost.id, {
 			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role'] },
 				{ model: Models.Attachment, as: 'attachments' },
 				{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'] }
 			]
@@ -126,7 +126,7 @@ router.post('/feed', async (req, res) => {
 		// fetch post with author included for the broadcast payload
 		const postWithAuthor = await Models.Post.findByPk(newPost.id, {
 			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role'] },
 				{ model: Models.Attachment, as: 'attachments' }
 			]
 		});
@@ -171,7 +171,7 @@ router.get('/feed/posts', async (req, res) => {
 				]
 			},
 			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role'] },
 				{ model: Models.Attachment, as: 'attachments' },
 				{ model: Models.Thread, as: 'thread', attributes: ['id', 'title'], required: false },
 				{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'], required: false }

@@ -1,3 +1,5 @@
+import type { User } from "./user";
+
 export type BlockType = 'text' | 'image' | 'video';
 export interface BaseBlock {
     id: string;
@@ -34,18 +36,10 @@ export interface Module {
     content: (Module | Lecture)[];
 }
 
-export interface CourseInstructor {
-    id: string;
-    userName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-}
 export interface Course {
     id: string;
     name: string;
-    instructorId: number;
-    instructor?: CourseInstructor;
+    instructor?: User;
     enrolled: number;
     completed?: boolean;
     isPrivate: boolean;

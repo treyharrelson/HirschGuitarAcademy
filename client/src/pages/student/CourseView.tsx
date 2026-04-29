@@ -24,7 +24,7 @@ const CourseView: React.FC = () => {
     const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
     const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
-    const isInstructor = user?.role === 'instructor' || course?.instructorId === user?.id;
+    const isInstructor = user?.role === 'instructor' || course?.instructor?.id === user?.id;
 
     const flattenedLectures = useMemo(() => {
         if (!course?.modules) return [];
