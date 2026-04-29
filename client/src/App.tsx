@@ -9,7 +9,7 @@ import ThreadDetail from './pages/ThreadDetail';
 import AllCourses from './pages/student/AllCourses';
 import MyCourses from './pages/MyCourses';
 import ThreadFollows from './pages/ThreadFollows';
-import Metronome from './pages/Metronome';
+import Metronome from './components/Metronome/Metronome';
 import Timer from './pages/Timer'
 import MainLayout from './pages/MainLayout';
 import CourseDetails from './pages/student/CourseDetails';
