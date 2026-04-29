@@ -25,12 +25,14 @@ function PostCard({ post, showThread = false, onFollowThread }: Props) {
     const [following, setFollowing] = useState(false);
 
     // reaction states
-    const [postReactions, setPostReactions] = useState<ReactionSummary>(EMPTY_REACTIONS);
-    const [postReactionsLoaded, setPostReactionsLoaded] = useState(false);
+    const [postReactions, setPostReactions] = useState<ReactionSummary>({
+        counts: post.counts ?? EMPTY_REACTIONS.counts,
+        userReaction: post.userReaction ?? null,
+    });
 
     // reply states
     const [showReplies, setShowReplies] = useState(false);
-    const [comments, setComments] = useState<Comment[]>([]);
+    const [comments, setComments] = useState<Comment[]>(post.comments ?? []);
     const [commentsLoaded, setCommentsLoaded] = useState(false);
     const [replyContent, setReplyContent] = useState('');
     const [submittingReply, setSubmittingReply] = useState(false);
@@ -45,14 +47,6 @@ function PostCard({ post, showThread = false, onFollowThread }: Props) {
         setFollowed(true);
     };
 
-    const loadPostReactions = async () => {
-        try {
-            const { data } = await api.get(`/api/posts/${post.id}/reactions`);
-            setPostReactions(data);
-            setPostReactionsLoaded(true);
-        } catch { /* silent */ }
-    };
-
     const loadComments = async () => {
         try {
             const res = await api.get(`/api/posts/${post.id}/comments`);
@@ -61,11 +55,6 @@ function PostCard({ post, showThread = false, onFollowThread }: Props) {
         } catch {
             console.error('Error loading comments');
         }
-    };
-
-    // lazy-load reactions when card is first interacted with
-    const ensureReactions = () => {
-        if (!postReactionsLoaded) loadPostReactions();
     };
 
     const handleToggleReplies = () => {
@@ -151,9 +140,7 @@ function PostCard({ post, showThread = false, onFollowThread }: Props) {
             )}
 
             {/* Post reactions — lazy loaded on first hover/click */}
-            <div onMouseEnter={ensureReactions}>
-                <ReactionBar postId={post.id} initial={postReactions} />
-            </div>
+            <ReactionBar postId={post.id} initial={postReactions} />
 
             {/* Reply toggle */}
             <div className="mt-3 pt-3 border-t border-gray-100">

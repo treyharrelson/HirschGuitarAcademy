@@ -4,6 +4,7 @@ const Models = require('../db/models');
 // for Server-Sent-Events(SSE), used to map connected userId's to their response objects
 const userClients = new Map();
 const { Op } = require('sequelize');
+const { getReactionSummary } = require('./posts');
 
 // Get a # of threads at a time with offset pagination logic (Maps to /api/threads)
 router.get('/', async (req, res) => {
@@ -220,14 +221,26 @@ router.get('/feed/posts', async (req, res) => {
                 { model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
                 { model: Models.Attachment, as: 'attachments' },
                 { model: Models.Thread, as: 'thread', attributes: ['id', 'title'], required: false },
-                { model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title', 'visibility'], required: false }
+                { model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title', 'visibility'], required: false },
+				{ model: Models.Comment, as: 'comments', separate: true, order: [['createdAt', 'ASC']], include: [
+					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }
+				]}
             ],
             order: [['createdAt', 'DESC']],
             limit,
             offset
         });
 
-        res.json({ posts, total: count, hasMore: offset + limit < count });
+        const userId = req.session.user.id;
+		const postsWithReactions = await Promise.all(posts.map(async p => {
+			const summary = await getReactionSummary({ postId: p.id }, userId);
+			const commentsWithReactions = await Promise.all((p.comments || []).map(async c => {
+				const cs = await getReactionSummary({ commentId: c.id }, userId);
+				return { ...c.toJSON(), ...cs };
+			}));
+			return { ...p.toJSON(), ...summary, comments: commentsWithReactions };
+		}));
+		res.json({ posts: postsWithReactions, total: count, hasMore: offset + limit < count });
     } catch (error) {
         res.status(500).json({ message: `Error fetching feed: ${error}` });
     }
@@ -345,19 +358,24 @@ router.get('/:threadId/posts', async (req, res) => {
 		const posts = await Models.Post.findAll({
 			where: { threadId: req.params.threadId },
 			include: [
-				{
-					model: Models.User,
-					as: 'author',
-					attributes: ['userName', 'firstName', 'lastName']
-				},
-				{
-					model: Models.Attachment,
-					as: 'attachments'
-				}
+				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.Attachment, as: 'attachments' },
+				{ model: Models.Comment, as: 'comments', separate: true, order: [['createdAt', 'ASC']], include: [
+					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }
+				]}
 			],
 			order: [['createdAt', 'ASC']]
 		});
-		res.json(posts);
+		const userId = req.session.user.id;
+		const postsWithReactions = await Promise.all(posts.map(async p => {
+			const summary = await getReactionSummary({ postId: p.id }, userId);
+			const commentsWithReactions = await Promise.all((p.comments || []).map(async c => {
+				const cs = await getReactionSummary({ commentId: c.id }, userId);
+				return { ...c.toJSON(), ...cs };
+			}));
+			return { ...p.toJSON(), ...summary, comments: commentsWithReactions };
+		}));
+		res.json(postsWithReactions);
 	} catch (error) {
 		res.status(500).json({ message: `Error fetching posts: ${error}` });
 	}

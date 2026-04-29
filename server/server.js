@@ -22,7 +22,7 @@ const authRoutes = require('./routes/auth');
 const threadRoutes = require('./routes/threads');
 const courseRoutes = require('./routes/courses');
 const uploadRouter = require('./routes/upload');
-const postRoutes = require('./routes/posts');
+const {router: postRoutes} = require('./routes/posts');
 
 // allows connection from frontend
 app.use(cors({

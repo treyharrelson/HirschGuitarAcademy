@@ -146,4 +146,4 @@ router.post('/:postId/comments/:commentId/reactions', async (req, res) => {
     }
 });
 
-module.exports = router;
+module.exports = {router, getReactionSummary };

@@ -1,3 +1,6 @@
+import { type ReactionType } from './reaction'
+import { type Comment } from './comment';
+
 export interface Attachment {
     fileKey: string;
     fileType: string;
@@ -12,6 +15,9 @@ export interface Post {
     scope: 'thread' | 'global';
     announcedThreadId?: number | null;
     createdAt: string;
+    counts: Record<ReactionType, number>;
+    userReaction: ReactionType | null;
+    comments: Comment[];
     author?: {
         userName: string;
         firstName: string;
