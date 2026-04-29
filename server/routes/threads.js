@@ -277,7 +277,7 @@ router.get('/follows', async (req, res) => {
 // get unread count for all followed threads (maps to /api/threads/unread-counts)
 router.get('/unread-counts', async (req, res) => {
     try {
-        const follows = await Models.Subscription.findAll({
+        const follows = await Models.Follow.findAll({
             where: { userId: req.session.user.id }
         });
 

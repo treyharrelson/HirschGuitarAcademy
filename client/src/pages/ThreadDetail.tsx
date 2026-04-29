@@ -151,51 +151,17 @@ function ThreadDetail() {
       }
     </div>
 
-    {user && (
-      <form onSubmit={handleSubmit} className="mt-6">
-        <textarea
-          placeholder="Write a reply..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          required
-          rows={4}
-          style={{ width: '100%' }}
-        />
-
-        <FileUpload 
-          key={uploadKey} 
-          folder="forum"
-          onUploadComplete={(file) => setAttachments((prev) => [...prev, file])} />
-
-        {attachments.length > 0 && (
-          <div style={{ marginTop: '8px' }}>
-            <p style={{ fontSize: '0.85em', color: '#555' }}>Attached files:</p>
-            {attachments.map((att, i) => (
-              <div key={i} style={{ fontSize: '0.85em' }}>
-                📎{att.fileName}
-                <button
-                  onClick={() => {
-                    setAttachments((prev) => prev.filter((_, j) => j !== i));
-                    setUploadKey(k => k + 1);
-                  }}
-                  
-                  style={{ marginLeft: '8px', color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full text-sm font-semibold transition-all"
-        >
-          Post Reply
-        </button>
-      </form>
-    )}
+    {/* Composer */}
+    {user && threadId && (
+        <div className="mt-6">
+          <PostComposer
+            threadId={parseInt(threadId)}
+            onPosted={loadPosts}
+            placeholder="Write a reply..."
+            submitLabel="Post Reply"
+          />
+        </div>
+      )}
   </div>
 );
 }

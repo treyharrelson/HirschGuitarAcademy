@@ -58,6 +58,7 @@ export default function PostComposer({
 
                 <FileUpload
                     key={uploadKey}
+                    folder="forum"
                     onUploadComplete={file => setAttachments(prev => [...prev, file])}
                 />
 
