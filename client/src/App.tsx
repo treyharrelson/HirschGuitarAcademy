@@ -50,6 +50,7 @@ function App() {
           <Route path="/metronome" element={<MyCourses />} />
           <Route path="/timer" element={<MyCourses />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/:userId" element={<ProfilePage />} />
 
           {/**<Route path='/home' element={<Home />} /> */}
           <Route path='/course-info/:id' element={<CourseDetails />} />

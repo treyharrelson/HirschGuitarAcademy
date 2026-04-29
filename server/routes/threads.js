@@ -257,7 +257,7 @@ router.get('/:threadId/posts', async (req, res) => {
 				{
 					model: Models.User,
 					as: 'author',
-					attributes: ['userName', 'firstName', 'lastName']
+					attributes: ['id', 'userName', 'email', 'role']
 				},
 				{
 					model: Models.Attachment,

@@ -94,13 +94,13 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
             <div className="flex justify-between items-start mt-2 mb-3">
                 <div className="flex items-center gap-3">
                     {/* Avatar */}
-                    <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                    <Link to={`/profile/${post.author?.id}`} className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 hover:ring-2 hover:ring-blue-300 transition-all">
                         {initials}
-                    </div>
+                    </Link>
                     <div>
-                        <p className="text-sm font-semibold text-gray-800">
+                        <Link to={`/profile/${post.author?.id}`} className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline">
                             {post.author?.userName || 'Unknown'}
-                        </p>
+                        </Link>
                         <p className="text-xs text-gray-400">
                             {new Date(post.createdAt).toLocaleString()}
                         </p>

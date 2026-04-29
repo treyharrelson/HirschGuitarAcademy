@@ -1,3 +1,6 @@
+import type { User } from "./user";
+import type { Thread } from "./thread";
+
 export interface Attachment {
     fileKey: string;
     fileType: string;
@@ -12,19 +15,8 @@ export interface Post {
     scope: 'thread' | 'global';
     announcedThreadId?: number | null;
     createdAt: string;
-    author?: {
-        id: number;
-        userName: string;
-        firstName: string;
-        lastName: string;
-    };
+    author?: User;
     attachments?: Attachment[];
-    thread?: {
-        id: number;
-        title: string;
-    };
-    announcedThread?: {
-        id: number;
-        title: string;
-    };
+    thread?: Thread;
+    announcedThread?: Thread;
 }
