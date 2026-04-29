@@ -9,7 +9,7 @@ import ThreadDetail from './pages/ThreadDetail';
 import AllCourses from './pages/student/AllCourses';
 import MyCourses from './pages/MyCourses';
 import ThreadFollows from './pages/ThreadFollows';
-// import Metronome from './pages/student/metronome-tool/js/metronome';
+import Metronome from './pages/Metronome';
 import Timer from './pages/Timer'
 import MainLayout from './pages/MainLayout';
 import CourseDetails from './pages/student/CourseDetails';
@@ -48,7 +48,7 @@ function App() {
           <Route path="/all-courses" element={<AllCourses />} />
           <Route path="/courses" element={<MyCourses />} />
           {/* elements set to this so it won't crash */}
-          <Route path="/metronome" element={<MyCourses />} />
+          <Route path="/metronome" element={<Metronome />} />
           <Route path="/timer" element={<Timer />} />
           <Route path="/profile" element={<ProfilePage />} />
 
