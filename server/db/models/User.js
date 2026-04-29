@@ -50,11 +50,6 @@ const User = sequelize.define(
 			defaultValue: 'student',
 			allowNull: false,
 		},
-		private: {
-			type: DataTypes.BOOLEAN,
-			defaultValue: false,
-			allowNull: false,
-		},
 		bio: {
 			type: DataTypes.TEXT,
 			allowNull: true,

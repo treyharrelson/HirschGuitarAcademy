@@ -7,8 +7,14 @@ const requireAuth = require('../middleware/requireAuth');
 router.get('/:userId', requireAuth, async (req, res) => {
 	try {
 		const { userId } = req.params;
+
+		// Ensure ProfileSettings row exists for this user
+		const [profileSettings] = await Models.ProfileSettings.findOrCreate({
+			where: { userId }
+		});
+
 		const user = await Models.User.findByPk(userId, {
-			attributes: ['id', 'name', 'userName', 'email', 'role', 'private', 'bio', 'createdAt']
+			attributes: ['id', 'name', 'userName', 'email', 'role', 'bio', 'createdAt']
 		});
 
 		if (!user) {
@@ -18,9 +24,9 @@ router.get('/:userId', requireAuth, async (req, res) => {
 		const isSelf = user.id === req.session.user.id;
 
 		if (isSelf) {
-			return res.json({ success: true, user });
+			return res.json({ success: true, user, profileSettings });
 		} else {
-			if (user.private) {
+			if (profileSettings.private) {
 				return res.status(403).json({ success: false, message: 'This profile is private' });
 			} else {
 				// Don't send email or other sensitive info for public profiles
@@ -33,6 +39,10 @@ router.get('/:userId', requireAuth, async (req, res) => {
 						role: user.role,
 						bio: user.bio,
 						createdAt: user.createdAt,
+					},
+					profileSettings: {
+						private: profileSettings.private,
+						showName: profileSettings.showName,
 					}
 				});
 			}
@@ -46,7 +56,7 @@ router.get('/:userId', requireAuth, async (req, res) => {
 router.put('/:userId', requireAuth, async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const { bio, private } = req.body;
+		const { bio, private: isPrivate, showName } = req.body;
 
 		// Ensure user is editing their own profile
 		if (parseInt(userId) !== req.session.user.id) {
@@ -58,12 +68,27 @@ router.put('/:userId', requireAuth, async (req, res) => {
 			return res.status(404).json({ success: false, message: 'User not found' });
 		}
 
+		// Update bio on user if provided
 		if (bio !== undefined) user.bio = bio;
-		if (private !== undefined) user.private = private;
-
 		await user.save();
 
-		res.json({ success: true, user: { id: user.id, bio: user.bio, private: user.private } });
+		// Update privacy settings on ProfileSettings
+		const [profileSettings] = await Models.ProfileSettings.findOrCreate({
+			where: { userId }
+		});
+
+		if (isPrivate !== undefined) profileSettings.private = isPrivate;
+		if (showName !== undefined) profileSettings.showName = showName;
+		await profileSettings.save();
+
+		res.json({
+			success: true,
+			user: { id: user.id, bio: user.bio },
+			profileSettings: {
+				private: profileSettings.private,
+				showName: profileSettings.showName,
+			}
+		});
 	} catch (error) {
 		console.error("Error updating user:", error);
 		res.status(500).json({ success: false, message: "Internal server error" });
