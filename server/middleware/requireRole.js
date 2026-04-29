@@ -1,16 +1,15 @@
-const requireRole = (roles) => {
+const requireRole = (...roles) => {
 	return (req, res, next) => {
-		// should use in conjunction with requireAuth.js, so assume session exists
-		if (roles.includes(req.session.user.role)) {
+		if (req.session && req.session.user && roles.includes(req.session.user.role)) {
 			next();
-		}
-		else {
+		} else {
 			res.status(403).json({
 				success: false,
-				message: `No access. Required role(s): ${roles.join(', ')}.`
+				message: req.session?.user
+					? `No access. Required role(s): ${roles.join(', ')}.`
+					: "Session expired or user not logged in."
 			});
 		}
 	}
 }
-
 module.exports = requireRole;

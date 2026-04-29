@@ -23,14 +23,16 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
         { label: 'Forum', path: '/forum', button: DashButton },
         { label: 'Followed Threads', path: '/follows', button: DashButton },
         { label: 'View Available Courses', path: '/all-courses', button: DashButton },
-        { label: 'My Courses', path: '/courses', button: DashButton },
+        { label: 'My Enrollments', path: '/my-enrollments', button: DashButton },
         { label: 'Metronome', path: '/metronome', button: DashButton },
         { label: 'Timer', path: '/timer', button: DashButton },
-        { label: 'LMS Redirect', path: '/home', button: DashButton }
     ],
     instructor: [
         { label: 'Instructor View', path: '/instructor', button: DashButton },
-        { label: 'Add Course', path: '/instructor/add-course', button: DashButton },
+    ],
+    moderator: [
+        { label: 'Forum', path: '/forum', button: DashButton },
+        { label: 'Followed Threads', path: '/follows', button: DashButton },
     ],
     admin: [
         { label: 'Forum', path: '/forum', button: DashButton },
@@ -54,7 +56,7 @@ function Dashboard() {
             const response = await api.get('/api/threads/feed/posts', {
                 params: { limit: LIMIT, offset: currentOffset }
             });
-            const { posts, hasMore } = response.data;
+            const { posts = [], hasMore = false } = response.data || {};
             setFeedPosts(prev => append ? [...prev, ...posts] : posts);
             setFeedHasMore(hasMore);
         } catch (err) {
@@ -163,7 +165,7 @@ function Dashboard() {
                             ? <p>No posts yet. Follow some threads in the forum to see them here.</p>
                             : (
                                 <div className="flex flex-col gap-4">
-                                    {feedPosts.map(post => (
+                                    {(feedPosts || []).map(post => (
                                         <PostCard
                                             key={post.id}
                                             post={post}

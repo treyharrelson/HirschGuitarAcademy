@@ -19,6 +19,7 @@ export interface Post {
     userReaction: ReactionType | null;
     comments: Comment[];
     author?: {
+        id: number;
         userName: string;
         firstName: string;
         lastName: string;
