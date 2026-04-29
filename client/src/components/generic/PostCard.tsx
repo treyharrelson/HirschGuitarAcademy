@@ -85,7 +85,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this post?')) return;
         try {
-            const threadId = post.threadId || post.announcedThread?.id || 'global';
+            const threadId = post.thread?.id || post.announcedThread?.id || 'global';
             await api.delete(`/api/threads/${threadId}/posts/${post.id}`);
             if (onPostDeleted) onPostDeleted(post.id);
         } catch (error: any) {
@@ -95,9 +95,9 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
     };
 
     const handleBan = async () => {
-        if (!confirm(`Are you sure you want to ban ${post.author?.userName} (${post.userId}) from this thread?`)) return;
+        if (!confirm(`Are you sure you want to ban ${post.author?.userName} (${post.author?.id}) from this thread?`)) return;
         try {
-            const threadId = post.threadId || post.announcedThread?.id;
+            const threadId = post.thread?.id || post.announcedThread?.id;
             await api.post(`/api/threads/${threadId}/ban`, { userId: post.author?.id });
             alert('User banned successfully.');
         } catch (error) {
@@ -135,19 +135,28 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
 
             {/* Thread label */}
             {showThread && post.thread && !post.announcedThread && (
-                <Link to={`/forum/thread/${post.threadId}`} className="text-xs font-semibold text-blue-600 uppercase tracking-wide hover:underline">
+                <Link
+                    to={`/forum/thread/${post.thread.id}`}
+                    className="text-xs font-semibold text-blue-600 uppercase tracking-wide hover:underline"
+                >
                     {post.thread.title}
                 </Link>
             )}
 
-            {/* Author */}
-            <div className="flex items-center gap-3 mt-2 mb-3">
-                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {initials}
-                </div>
-                <div>
-                    <p className="text-sm font-semibold text-gray-800">{post.author?.userName || 'Unknown'}</p>
-                    <p className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleString()}</p>
+            <div className="flex justify-between items-start mt-2 mb-3">
+                <div className="flex items-center gap-3">
+                    {/* Avatar */}
+                    <Link to={`/profile/${post.author?.id}`} className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 hover:ring-2 hover:ring-blue-300 transition-all">
+                        {initials}
+                    </Link>
+                    <div>
+                        <Link to={`/profile/${post.author?.id}`} className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline">
+                            {post.author?.userName || 'Unknown'}
+                        </Link>
+                        <p className="text-xs text-gray-400">
+                            {new Date(post.createdAt).toLocaleString()}
+                        </p>
+                    </div>
                 </div>
 
                 {isModerator && (

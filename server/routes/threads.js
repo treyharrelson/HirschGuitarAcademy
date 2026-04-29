@@ -161,7 +161,7 @@ router.post('/feed', async (req, res) => {
 		// fetch post with author included for the broadcast payload
 		const postWithAuthor = await Models.Post.findByPk(newPost.id, {
 			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role'] },
 				{ model: Models.Attachment, as: 'attachments' }
 			]
 		});
@@ -343,7 +343,7 @@ router.delete('/:threadId/members/:userId', async (req, res) => {
 router.get('/:threadId', async (req, res) => {
 	try {
 		const thread = await Models.Thread.findByPk(req.params.threadId, {
-			include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }]
+			include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName', 'name'] }]
 		});
 		if (!thread) return res.status(404).json({message: 'Thread not found' });
 		res.json(thread);
@@ -413,8 +413,9 @@ router.post('/:threadId/posts', async (req, res) => {
 		// fetch post with author included for the broadcast payload
 		const postWithAuthor = await Models.Post.findByPk(newPost.id, {
 			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
-				{ model: Models.Attachment, as: 'attachments' }
+				{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role'] },
+				{ model: Models.Attachment, as: 'attachments' },
+				{ model: Models.Thread, as: 'thread', attributes: ['id', 'title'] }
 			]
 		});
 
@@ -574,7 +575,33 @@ router.delete('/:threadId', async (req, res) => {
 		await thread.destroy();
 		res.status(204).end();
 	} catch (error) {
-		res.status(500).json({ message: `Error deleting thread: ${error}` });
+		res.status(500).json({ message: `Error banning user: ${error}` });
+	}
+});
+
+// Unban user from thread
+router.delete('/:threadId/ban/:userId', requireRole(roles.MODERATOR, roles.ADMIN), async (req, res) => {
+	try {
+		const { threadId, userId } = req.params;
+		await Models.ThreadBan.destroy({
+			where: { userId, threadId }
+		});
+		res.status(200).json({ message: 'User unbanned successfully' });
+	} catch (error) {
+		res.status(500).json({ message: `Error unbanning user: ${error}` });
+	}
+});
+
+// Get banned users in a thread
+router.get('/:threadId/ban', requireRole(roles.MODERATOR, roles.ADMIN), async (req, res) => {
+	try {
+		const bans = await Models.ThreadBan.findAll({
+			where: { threadId: req.params.threadId },
+			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }]
+		});
+		res.status(200).json(bans);
+	} catch (error) {
+		res.status(500).json({ message: `Error fetching bans: ${error}` });
 	}
 });
 

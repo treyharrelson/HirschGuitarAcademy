@@ -23,6 +23,7 @@ const threadRoutes = require('./routes/threads');
 const courseRoutes = require('./routes/courses');
 const uploadRouter = require('./routes/upload');
 const {router: postRoutes} = require('./routes/posts');
+const userRoutes = require('./routes/users');
 
 // allows connection from frontend
 app.use(cors({
@@ -81,6 +82,7 @@ app.use('/api/threads', requireAuth, threadRoutes); // This prefixes all routes 
 app.use('/api/courses', requireAuth, courseRoutes); // Protects and prefixes course edit routing with /api/courses
 app.use('/api/upload', requireAuth, uploadRouter);
 app.use('/api/posts', requireAuth, postRoutes);
+app.use('/api/user', userRoutes);
 
 // -- START SERVER --
 async function init() {

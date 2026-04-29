@@ -1,5 +1,5 @@
 import { useState, useEffect, type SubmitEvent } from 'react'
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Thread } from '../types/thread';
@@ -7,6 +7,7 @@ import ThreadCard from '../components/generic/ThreadCard';
 import SkeletonPostCard from '../components/generic/SkeletonPostCard';
 import SkeletonThreadCard from '../components/generic/SkeletonThreadCard';
 import NewThreadModal from '../components/generic/NewThreadModal';
+import Sidebar, { SidebarLink } from '../components/generic/Sidebar';
 
 function Forum() {
     const LIMIT = 20;
@@ -19,14 +20,16 @@ function Forum() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showModal, setShowModal] = useState(false);
+    const [title, setTitle] = useState<string>();
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     const loadThreads = async (currentOffset = 0, append = false) => {
         try {
             const response = await api.get('/api/threads', {
                 params: { limit: LIMIT, offset: currentOffset }
             });
-            const {threads: newThreads, hasMore: more } = response.data;
+            const { threads: newThreads = [], hasMore: more = false } = response.data || {};
             setThreads(prev => append ? [...prev, ...newThreads] : newThreads);
             setHasMore(more);
         } catch (err) {
@@ -64,10 +67,10 @@ function Forum() {
         loadUnreadCounts();
     }, []);
 
-    const filteredThreads = threads.filter(thread =>
+    const filteredThreads = (threads || []).filter(thread =>
         thread.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    
+
     return (
         <div>
             {/* Header */}
@@ -110,6 +113,31 @@ function Forum() {
                         d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
                 </svg>
             </div>
+
+            <Sidebar title="Filter">
+
+                <SidebarLink
+                    node={<div className="relative mb-6">
+                        <input
+                            type="text"
+                            placeholder="Search threads..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full border border-gray-200 rounded-full px-4 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50/50"
+                        />
+                        <svg
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                        </svg>
+                    </div>}
+                >
+                </SidebarLink>
+            </Sidebar>
 
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 

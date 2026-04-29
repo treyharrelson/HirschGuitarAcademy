@@ -1,3 +1,5 @@
+import type { User } from "./user";
+
 export interface Thread {
     id: number;
     title: string;
@@ -5,9 +7,5 @@ export interface Thread {
     visibility: 'public' | 'global' | 'private';
     parentThreadId: number | null;
     createdAt: string;
-    author?: {
-        userName: string;
-        firstName: string;
-        lastName: string;
-    };
+    author?: User;
 }

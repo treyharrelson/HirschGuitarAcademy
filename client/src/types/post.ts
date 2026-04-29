@@ -1,5 +1,7 @@
 import { type ReactionType } from './reaction'
 import { type Comment } from './comment';
+import type { User } from "./user";
+import type { Thread } from "./thread";
 
 export interface Attachment {
     fileKey: string;
@@ -9,29 +11,11 @@ export interface Attachment {
 
 export interface Post {
     id: number;
-    threadId: number | null;
-    userId: number;
     content: string;
     scope: 'thread' | 'global';
-    announcedThreadId?: number | null;
     createdAt: string;
-    counts: Record<ReactionType, number>;
-    userReaction: ReactionType | null;
-    comments: Comment[];
-    author?: {
-        id: number;
-        userName: string;
-        firstName: string;
-        lastName: string;
-    };
+    author?: User;
     attachments?: Attachment[];
-    thread?: {
-        id: number;
-        title: string;
-    };
-    announcedThread?: {
-        id: number;
-        title: string;
-        visibility: 'public' | 'global' | 'private';
-    };
+    thread?: Thread;
+    announcedThread?: Thread;
 }

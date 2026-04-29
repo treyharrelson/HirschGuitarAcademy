@@ -61,7 +61,7 @@ const CourseDetails: React.FC = () => {
         <div className='max-w-xl z-10 text-gray-500'>
           <h1 className='font-semibold text-gray-800 text-3xl'>{courseData.name}</h1>
           <p className='pt-4 md:text-base text-sm'>
-            Instructor: {courseData.instructorId ? `${courseData.instructorId} ${courseData.instructorId}` : "TBA"}
+            Instructor: {courseData.instructor?.name || "TBA"}
           </p>
           <p className='pt-2'>Enrolled: {courseData.enrolled}</p>
         </div>
