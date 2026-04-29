@@ -10,7 +10,7 @@ import AllCourses from './pages/student/AllCourses';
 import MyCourses from './pages/MyCourses';
 import ThreadFollows from './pages/ThreadFollows';
 // import Metronome from './pages/student/metronome-tool/js/metronome';
-// import Timer from './pages/student/metronome-tool/js/timer';
+import Timer from './pages/Timer'
 import MainLayout from './pages/MainLayout';
 import CourseDetails from './pages/student/CourseDetails';
 import MyEnrollments from './pages/student/MyEnrollments';
