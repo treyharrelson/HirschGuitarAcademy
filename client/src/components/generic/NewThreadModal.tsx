@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
 import VisibilityToggle from './VisibilityToggle';
@@ -16,6 +16,14 @@ function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
     const [makeAnnouncement, setMakeAnnouncement] = useState(true);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (visibility === 'private') {
+            setMakeAnnouncement(false);
+        } else {
+            setMakeAnnouncement(true);
+        }
+    }, [visibility]);
 
     if (!isOpen) return null;
 

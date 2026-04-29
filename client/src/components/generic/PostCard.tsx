@@ -1,7 +1,17 @@
 import { Link } from 'react-router-dom';
 import { type Post } from '../../types/post';
+import { type Comment } from '../../types/comment';
+import { type ReactionSummary } from '../../types/reaction';
 import FileAttachment from '../FileAttachment';
+import ReactionBar from './ReactionBar';
 import { useState } from 'react';
+import api from '../../api/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
+
+const EMPTY_REACTIONS: ReactionSummary = {
+    counts: { like: 0, love: 0, laugh: 0, fire: 0, celebrate: 0 },
+    userReaction: null
+};
 
 type Props = {
     post: Post;
@@ -14,6 +24,19 @@ function PostCard({ post, showThread = false, onFollowThread }: Props) {
     const [followed, setFollowed] = useState(false);
     const [following, setFollowing] = useState(false);
 
+    // reaction states
+    const [postReactions, setPostReactions] = useState<ReactionSummary>(EMPTY_REACTIONS);
+    const [postReactionsLoaded, setPostReactionsLoaded] = useState(false);
+
+    // reply states
+    const [showReplies, setShowReplies] = useState(false);
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [commentsLoaded, setCommentsLoaded] = useState(false);
+    const [replyContent, setReplyContent] = useState('');
+    const [submittingReply, setSubmittingReply] = useState(false);
+    const [replyError, setReplyError] = useState('');
+    const { user } = useAuth();
+
     const handleFollow = async () => {
         if (!onFollowThread || !post.announcedThread || followed) return;
         setFollowing(true);
@@ -22,18 +45,62 @@ function PostCard({ post, showThread = false, onFollowThread }: Props) {
         setFollowed(true);
     };
 
+    const loadPostReactions = async () => {
+        try {
+            const { data } = await api.get(`/api/posts/${post.id}/reactions`);
+            setPostReactions(data);
+            setPostReactionsLoaded(true);
+        } catch { /* silent */ }
+    };
+
+    const loadComments = async () => {
+        try {
+            const res = await api.get(`/api/posts/${post.id}/comments`);
+            setComments(res.data);
+            setCommentsLoaded(true);
+        } catch {
+            console.error('Error loading comments');
+        }
+    };
+
+    // lazy-load reactions when card is first interacted with
+    const ensureReactions = () => {
+        if (!postReactionsLoaded) loadPostReactions();
+    };
+
+    const handleToggleReplies = () => {
+        if (!showReplies && !commentsLoaded) {
+            loadComments();
+        }
+        setShowReplies(prev => !prev);
+    };
+
+    const handleSubmitReply = async (e: React.SubmitEvent) => {
+        e.preventDefault();
+        if (!replyContent.trim()) return;
+        setSubmittingReply(true);
+        setReplyError('');
+        try {
+            const res = await api.post(`/api/posts/${post.id}/comments`, { content: replyContent});
+            setComments(prev => [...prev, res.data]);
+            setReplyContent('');
+            if (!showReplies) setShowReplies(true);
+        } catch {
+            setReplyError('Failed to post reply.');
+        } finally {
+            setSubmittingReply(false);
+        }
+    }
+
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
 
-            {/* Announcement banner — shown when this post announces a new thread */}
+            {/* Announcement banner */}
             {post.announcedThread && (
                 <div className="flex items-center justify-between mb-3 px-3 py-2.5 bg-blue-50 rounded-xl border border-blue-100">
                     <div>
                         <p className="text-xs text-blue-400 font-semibold uppercase tracking-wide mb-0.5">New Thread</p>
-                        <Link
-                            to={`/forum/thread/${post.announcedThread.id}`}
-                            className="text-sm font-bold text-blue-700 hover:underline"
-                        >
+                        <Link to={`/forum/thread/${post.announcedThread.id}`} className="text-sm font-bold text-blue-700 hover:underline">
                             {post.announcedThread.title}
                         </Link>
                     </div>
@@ -53,43 +120,95 @@ function PostCard({ post, showThread = false, onFollowThread }: Props) {
                 </div>
             )}
 
-            {/* Thread label for feed view (non-announcement posts) */}
+            {/* Thread label */}
             {showThread && post.thread && !post.announcedThread && (
-                <Link
-                    to={`/forum/thread/${post.threadId}`}
-                    className="text-xs font-semibold text-blue-600 uppercase tracking-wide hover:underline"
-                >
+                <Link to={`/forum/thread/${post.threadId}`} className="text-xs font-semibold text-blue-600 uppercase tracking-wide hover:underline">
                     {post.thread.title}
                 </Link>
             )}
 
+            {/* Author */}
             <div className="flex items-center gap-3 mt-2 mb-3">
-                {/* Avatar */}
                 <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                     {initials}
                 </div>
                 <div>
-                    <p className="text-sm font-semibold text-gray-800">
-                        {post.author?.userName || 'Unknown'}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                        {new Date(post.createdAt).toLocaleString()}
-                    </p>
+                    <p className="text-sm font-semibold text-gray-800">{post.author?.userName || 'Unknown'}</p>
+                    <p className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleString()}</p>
                 </div>
             </div>
 
+            {/* Content */}
             <p className="text-gray-700 text-sm leading-relaxed">{post.content}</p>
 
+            {/* Attachments */}
             {post.attachments && post.attachments.length > 0 && (
                 <div className="mt-3 flex flex-col gap-1">
                     {post.attachments.map((att, i) => (
-                        <FileAttachment
-                            key={i}
-                            fileKey={att.fileKey}
-                            fileType={att.fileType}
-                            fileName={att.fileName}
-                        />
+                        <FileAttachment key={i} fileKey={att.fileKey} fileType={att.fileType} fileName={att.fileName} />
                     ))}
+                </div>
+            )}
+
+            {/* Post reactions — lazy loaded on first hover/click */}
+            <div onMouseEnter={ensureReactions}>
+                <ReactionBar postId={post.id} initial={postReactions} />
+            </div>
+
+            {/* Reply toggle */}
+            <div className="mt-3 pt-3 border-t border-gray-100">
+                <button onClick={handleToggleReplies} className="text-xs text-gray-400 hover:text-blue-500 transition-colors font-medium">
+                    💬 {showReplies ? 'Hide replies' : comments.length > 0 ? `${comments.length} replies` : 'Reply'}
+                </button>
+            </div>
+
+            {/* Reply section */}
+            {showReplies && (
+                <div className="mt-3 flex flex-col gap-3">
+                    {commentsLoaded && comments.length === 0 && (
+                        <p className="text-xs text-gray-400 pl-2">No replies yet.</p>
+                    )}
+
+                    {comments.map(c => {
+                        const cInitials = c.author?.userName?.slice(0, 2).toUpperCase() || '??';
+                        return (
+                            <div key={c.id} className="pl-3 border-l-2 border-blue-100">
+                                <div className="flex gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-bold flex-shrink-0">
+                                        {cInitials}
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-xs font-semibold text-gray-700">{c.author?.userName || 'Unknown'}</p>
+                                        <p className="text-xs text-gray-600 leading-relaxed">{c.content}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">{new Date(c.createdAt).toLocaleString()}</p>
+                                        <ReactionBar
+                                            commentId={c.id}
+                                            initial={{ counts: c.counts, userReaction: c.userReaction }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {user && (
+                        <form onSubmit={handleSubmitReply} className="flex gap-2 mt-1">
+                            <input
+                                value={replyContent}
+                                onChange={e => setReplyContent(e.target.value)}
+                                placeholder="Write a reply..."
+                                className="flex-1 border border-gray-200 rounded-full px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            />
+                            <button
+                                type="submit"
+                                disabled={submittingReply || !replyContent.trim()}
+                                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-full text-xs font-semibold"
+                            >
+                                {submittingReply ? '...' : 'Reply'}
+                            </button>
+                        </form>
+                    )}
+                    {replyError && <p className="text-xs text-red-500">{replyError}</p>}
                 </div>
             )}
         </div>

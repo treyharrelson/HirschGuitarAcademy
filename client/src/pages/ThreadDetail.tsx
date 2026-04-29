@@ -4,18 +4,14 @@ import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Post, type Attachment } from '../types/post';
 import { type Thread } from '../types/thread'
-import FileUpload from '../components/FileUpload';
-import FileAttachment from '../components/FileAttachment';
 import PostCard from '../components/generic/PostCard';
 import SkeletonPostCard from '../components/generic/SkeletonPostCard';
+import PostComposer from '../components/generic/PostComposer';
 
 function ThreadDetail() {
   const { threadId } = useParams<{ threadId: string }>();
   const [posts, setPosts] = useState<Post[]>([]);
   const [postsLoaded, setPostsLoaded] = useState(false);
-  const [content, setContent] = useState('');
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [uploadKey, setUploadKey] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [thread, setThread] = useState<Thread | null>(null);
   const [error, setError] = useState('');
@@ -102,24 +98,6 @@ function ThreadDetail() {
     loadFollowStatus();
   }, [thread]);
 
-  const handleSubmit = async (e: SubmitEvent) => {
-    e.preventDefault();
-    
-    try {
-      await api.post(
-        `/api/threads/${threadId}/posts`,
-        { content, attachments }
-      );
-      
-      setContent('');
-      setAttachments([]);
-      setUploadKey(k => k + 1);
-      loadPosts();
-    } catch (err) {
-      setError('Error creating post');
-    }
-  };
-
   return (
   <div>
     {/* Header */}
@@ -158,13 +136,14 @@ function ThreadDetail() {
 
     {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
+    {/* Post list */}
     <div className="flex flex-col gap-4">
       {!postsLoaded
           ? Array.from({ length: 3 }).map((_, i) => <SkeletonPostCard key={i} />)
           : postsLoaded && posts.length === 0
               ? (
                   <div className="text-center py-12 text-gray-400">
-                      <p className="text-lg font-medium">No replies yet</p>
+                      <p className="text-lg font-medium">No posts yet</p>
                       <p className="text-sm mt-1">Be the first to respond!</p>
                   </div>
               )
@@ -172,47 +151,16 @@ function ThreadDetail() {
       }
     </div>
 
-    {user && (
-      <form onSubmit={handleSubmit} className="mt-6">
-        <textarea
-          placeholder="Write a reply..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          required
-          rows={4}
-          style={{ width: '100%' }}
-        />
-
-        <FileUpload key={uploadKey} onUploadComplete={(file) => setAttachments((prev) => [...prev, file])} />
-
-        {attachments.length > 0 && (
-          <div style={{ marginTop: '8px' }}>
-            <p style={{ fontSize: '0.85em', color: '#555' }}>Attached files:</p>
-            {attachments.map((att, i) => (
-              <div key={i} style={{ fontSize: '0.85em' }}>
-                📎{att.fileName}
-                <button
-                  onClick={() => {
-                    setAttachments((prev) => prev.filter((_, j) => j !== i));
-                    setUploadKey(k => k + 1);
-                  }}
-                  
-                  style={{ marginLeft: '8px', color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full text-sm font-semibold transition-all"
-        >
-          Post Reply
-        </button>
-      </form>
+    {/* Composer */}
+    {user && threadId && (
+      <div className="mt-6">
+          <PostComposer
+            threadId={parseInt(threadId)}
+            onPosted={loadPosts}
+            placeholder="Write a reply..."
+            submitLabel="Post Reply"
+          />
+      </div>
     )}
   </div>
 );

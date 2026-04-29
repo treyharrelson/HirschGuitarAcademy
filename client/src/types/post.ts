@@ -25,5 +25,6 @@ export interface Post {
     announcedThread?: {
         id: number;
         title: string;
+        visibility: 'public' | 'global' | 'private';
     };
 }

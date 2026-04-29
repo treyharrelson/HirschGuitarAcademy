@@ -77,11 +77,12 @@ router.post('/', async (req, res) => {
 				announcedThreadId: newThread.id
 			});
 
+
 			const postWithAuthor = await Models.Post.findByPk(announcementPost.id, {
 				include: [
 					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
 					{ model: Models.Attachment, as: 'attachments' },
-					{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'] }
+					{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title', 'visibility'] }
 				]
 			});
 
@@ -219,7 +220,7 @@ router.get('/feed/posts', async (req, res) => {
                 { model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
                 { model: Models.Attachment, as: 'attachments' },
                 { model: Models.Thread, as: 'thread', attributes: ['id', 'title'], required: false },
-                { model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title'], required: false }
+                { model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title', 'visibility'], required: false }
             ],
             order: [['createdAt', 'DESC']],
             limit,
@@ -235,7 +236,8 @@ router.get('/feed/posts', async (req, res) => {
 // Get a user's followed threads (maps to /api/threads/follows)
 router.get('/follows', async (req, res) => {
 	try {
-		const follows = await Models.Subscription.findAll({
+
+		const follows = await Models.Follow.findAll({
 			where: { userId: req.session.user.id },
 			include: [{
 				model: Models.Thread,
