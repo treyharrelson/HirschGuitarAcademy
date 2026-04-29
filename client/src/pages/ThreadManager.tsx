@@ -261,7 +261,7 @@ function ThreadManager() {
                                         )}
                                     </div>
                                     <p className="text-xs text-gray-400 mt-0.5">
-                                        by {thread.author?.userName ?? 'unknown'} &middot; {new Date(thread.createdAt).toLocaleDateString()}
+                                        by {thread.author?.name ?? 'unknown'} &middot; {new Date(thread.createdAt).toLocaleDateString()}
                                     </p>
                                 </div>
 

@@ -18,4 +18,7 @@ export interface Post {
     attachments?: Attachment[];
     thread?: Thread;
     announcedThread?: Thread;
+    comments?: Comment[];
+    counts: Record<ReactionType, number>;
+    userReaction: ReactionType | null;
 }

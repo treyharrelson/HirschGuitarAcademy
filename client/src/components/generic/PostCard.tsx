@@ -21,7 +21,7 @@ type Props = {
 };
 
 function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: Props) {
-    const initials = post.author?.userName?.slice(0, 2).toUpperCase() || '??';
+    const initials = post.author?.name?.slice(0, 2).toUpperCase() || '??';
     const [followed, setFollowed] = useState(false);
     const [following, setFollowing] = useState(false);
     const { user } = useAuth();
@@ -95,7 +95,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
     };
 
     const handleBan = async () => {
-        if (!confirm(`Are you sure you want to ban ${post.author?.userName} (${post.author?.id}) from this thread?`)) return;
+        if (!confirm(`Are you sure you want to ban ${post.author?.name} (${post.author?.id}) from this thread?`)) return;
         try {
             const threadId = post.thread?.id || post.announcedThread?.id;
             await api.post(`/api/threads/${threadId}/ban`, { userId: post.author?.id });
@@ -151,7 +151,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
                     </Link>
                     <div>
                         <Link to={`/profile/${post.author?.id}`} className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline">
-                            {post.author?.userName || 'Unknown'}
+                            {post.author?.name || 'Unknown'}
                         </Link>
                         <p className="text-xs text-gray-400">
                             {new Date(post.createdAt).toLocaleString()}
