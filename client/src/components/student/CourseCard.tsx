@@ -52,11 +52,13 @@ export const CourseCard = ({
   return (
     <div className='flex flex-col w-60 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 bg-white group overflow-hidden'>
       <Link to={`/course/${course.id}`} className='flex flex-col'>
-        <div className='h-32 w-full overflow-hidden bg-gray-50'>
+
+        {/* THUMBNAIL */}
+        <div className='h-32 w-full overflow-hidden bg-gray-100 flex-shrink-0'>
           <img
             className='w-full h-full object-cover'
             src={imageUrl}
-            alt={course.name}
+            alt={`${course.name} Thumbnail`}
             onError={() => setImageUrl(assets.defaultCourseThumbnail)}
           />
         </div>
@@ -92,14 +94,14 @@ export const CourseCard = ({
           </div>
         </div>
       </Link>
-      
+
       {/* BUTTONS */}
       <div className='px-3 pb-3 mt-auto flex items-center gap-2'>
         {!isInstructor ? (
           <BigBlueButton
             children={isFinished ? "Review" : enrolled}
             onClick={isFinished ? () => navigate(`/course/${course.id}`) : buttonclick}
-            disabled={missingRequirements.length > 0}/>
+            disabled={missingRequirements.length > 0} />
         ) : (
           <>
             <button
