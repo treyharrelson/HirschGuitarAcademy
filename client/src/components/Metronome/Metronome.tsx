@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import "./style.css";
+import "./metronome.css";
 
 export default function Metronome() {
   const [time, setTime] = useState(0);
