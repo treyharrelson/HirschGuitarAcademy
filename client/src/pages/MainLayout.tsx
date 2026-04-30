@@ -112,8 +112,7 @@ const MainLayout = () => {
                     className={`w-5 h-5 object-contain transition-all ${isActive
                       ? 'brightness-0 invert-[30%] sepia(100%) saturate(500%) hue-rotate(190deg)'
                       : 'grayscale opacity-60'
-                      }`}
-                  />
+                      }`}/>
                 );
               }
 
@@ -130,14 +129,13 @@ const MainLayout = () => {
                 icon={renderIcon()}
                 label={link.label}
                 isActive={isActive}
-                onClick={() => { navigate(link.path); scrollToTop(); }}
-              />
+                onClick={() => { navigate(link.path); scrollToTop(); }}/>
             );
           })}
         </Sidebar>
 
         {/* The Outlet is where your actual page content renders */}
-        <main className="flex-grow overflow-y-auto relative px-8 pb-20" ref={scrollRef}>
+        <main className="flex-grow overflow-y-auto relative pl-8 pr-0 pb-20" ref={scrollRef}>
           <Outlet />
           {showButton && (
             <button
