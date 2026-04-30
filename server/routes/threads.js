@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 					...(memberThreadIds.length > 0 ? [{ id: memberThreadIds}] : [])
 				]
 			},
-            include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }],
+            include: [{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }],
             order: [['createdAt', 'DESC']],
             limit,
             offset
@@ -84,7 +84,7 @@ router.post('/', async (req, res) => {
 
 			const postWithAuthor = await Models.Post.findByPk(announcementPost.id, {
 				include: [
-					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+					{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] },
 					{ model: Models.Attachment, as: 'attachments' },
 					{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title', 'visibility'] }
 				]
@@ -221,12 +221,12 @@ router.get('/feed/posts', async (req, res) => {
                 ]
             },
             include: [
-                { model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+                { model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] },
                 { model: Models.Attachment, as: 'attachments' },
                 { model: Models.Thread, as: 'thread', attributes: ['id', 'title'], required: false },
                 { model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title', 'visibility'], required: false },
 				{ model: Models.Comment, as: 'comments', separate: true, order: [['createdAt', 'ASC']], include: [
-					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }
+					{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }
 				]}
             ],
             order: [['createdAt', 'DESC']],
@@ -258,7 +258,7 @@ router.get('/follows', async (req, res) => {
 			include: [{
 				model: Models.Thread,
 				as: 'thread',
-				include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName']}]
+				include: [{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name']}]
 			}],
 			order: [['createdAt', 'DESC']]
 		});
@@ -305,7 +305,7 @@ router.get('/:threadId/members', async (req, res) => {
 		const members = await Models.ThreadMember.findAll({
 			where: { threadId: req.params.threadId },
 			// join Users table
-			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName'] }]
+			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }]
 		});
 		// map the nested users from the query so that the response is only the users
 		res.json(members.map(m => m.user));
@@ -346,10 +346,16 @@ router.delete('/:threadId/members/:userId', async (req, res) => {
 router.get('/:threadId', async (req, res) => {
 	try {
 		const thread = await Models.Thread.findByPk(req.params.threadId, {
-			include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName', 'name'] }]
+			include: [{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }]
 		});
 		if (!thread) return res.status(404).json({message: 'Thread not found' });
-		res.json(thread);
+		
+		const userId = req.session.user.id;
+		const isBanned = await Models.ThreadBan.findOne({
+			where: { userId, threadId: thread.id }
+		});
+
+		res.json({ ...thread.toJSON(), isBanned: !!isBanned });
 	} catch (error) {
 		res.status(500).json({ message: `Error fetching thread: ${error}` });
 	}
@@ -361,10 +367,11 @@ router.get('/:threadId/posts', async (req, res) => {
 		const posts = await Models.Post.findAll({
 			where: { threadId: req.params.threadId },
 			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] },
 				{ model: Models.Attachment, as: 'attachments' },
+				{ model: Models.Thread, as: 'thread', attributes: ['id', 'title'] },
 				{ model: Models.Comment, as: 'comments', separate: true, order: [['createdAt', 'ASC']], include: [
-					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }
+					{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }
 				]}
 			],
 			order: [['createdAt', 'ASC']]
@@ -387,10 +394,21 @@ router.get('/:threadId/posts', async (req, res) => {
 // Create a post in a thread (Maps to /api/threads/:threadId/posts)
 router.post('/:threadId/posts', async (req, res) => {
 	try {
+		const { threadId } = req.params;
+		const userId = req.session.user.id;
 		const { content, attachments } = req.body;
+
+		// Check for ban
+		const isBanned = await Models.ThreadBan.findOne({
+			where: { userId, threadId }
+		});
+		if (isBanned) {
+			return res.status(403).json({ message: 'You are banned from posting in this thread.' });
+		}
+
 		const newPost = await Models.Post.create({
 			threadId: req.params.threadId,
-			authorId: req.session.user.id,
+			authorId: userId,
 			content,
 			scope: 'thread'
 		});
@@ -579,6 +597,33 @@ router.delete('/:threadId', async (req, res) => {
 		res.status(204).end();
 	} catch (error) {
 		res.status(500).json({ message: `Error banning user: ${error}` });
+	}
+});
+
+
+
+// ban user from a thread
+router.post('/:threadId/ban', requireRole(roles.MODERATOR, roles.ADMIN), async (req, res) => {
+	try {
+		const { threadId } = req.params;
+		const { userId } = req.body;
+		if (!userId) return res.status(400).json({ message: 'userId is required' });
+		
+		const parsedThreadId = parseInt(threadId);
+		const parsedUserId = parseInt(userId);
+
+		if (isNaN(parsedThreadId) || isNaN(parsedUserId)) {
+			return res.status(400).json({ message: 'Valid threadId and userId are required for banning' });
+		}
+
+		await Models.ThreadBan.findOrCreate({
+			where: { userId: parsedUserId, threadId: parsedThreadId },
+			defaults: { bannedById: req.session.user.id }
+		});
+		res.status(200).json({ message: 'User banned successfully' });
+	} catch (error) {
+		console.error('Error in /ban route:', error);
+		res.status(500).json({ message: `Error banning user: ${error.message || error}` });
 	}
 });
 

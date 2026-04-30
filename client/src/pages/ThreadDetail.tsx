@@ -152,7 +152,7 @@ function ThreadDetail() {
     </div>
 
     {/* Composer */}
-    {user && threadId && (
+    {user && threadId && thread && !thread.isBanned && (
         <div className="mt-6">
           <PostComposer
             threadId={parseInt(threadId)}
@@ -162,6 +162,11 @@ function ThreadDetail() {
           />
         </div>
       )}
+    {user && thread?.isBanned && (
+        <div className="mt-6 p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-center text-sm font-medium">
+            You have been banned from this thread.
+        </div>
+    )}
   </div>
 );
 }

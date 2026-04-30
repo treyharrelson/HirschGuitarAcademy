@@ -8,4 +8,5 @@ export interface Thread {
     parentThreadId: number | null;
     createdAt: string;
     author?: User;
+    isBanned?: boolean;
 }
