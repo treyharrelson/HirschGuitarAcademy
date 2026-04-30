@@ -32,17 +32,7 @@ function Login() {
                     email: response.data.user.email,
                     role: response.data.user.role
                 });
-
-                // navigate based on role
-                if (response.data.user.role === 'student') {
-                    navigate('/home')
-                } else if (response.data.user.role === 'instructor') {
-                    navigate('/instructor')
-                } else if (response.data.user.role === 'admin') {
-                    navigate('/home')
-                } else if (response.data.user.role === 'moderator') {
-                    navigate('/home')
-                }
+                navigate('/home')
             }
         } catch (err) {
             setError('Invalid credentials');
@@ -55,45 +45,45 @@ function Login() {
                 <div className='bg-white rounded-md shadow-xl p-8'>
                     { /* Logo */}
                     <div className='flex items-center justify-center'>
-                        <img src={assets.logoNoBackground} alt='Big Logo' width="300" height="300"/>
+                        <img src={assets.logoNoBackground} alt='Big Logo' width="300" height="300" />
                     </div>
-                        {/* Login Form */}
-                        <form onSubmit={handleSubmit} className='space-y-6'>
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                                <input
-                                    type="text"
-                                    placeholder="Email or Username"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)} // update state on every keystroke
-                                    required
-                                    className='w-full border focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition duration-200'
-                                />
-                            </div>
+                    {/* Login Form */}
+                    <form onSubmit={handleSubmit} className='space-y-6'>
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <input
+                                type="text"
+                                placeholder="Email or Username"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)} // update state on every keystroke
+                                required
+                                className='w-full border focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition duration-200'
+                            />
+                        </div>
 
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                                <input
-                                    type="password"
-                                    placeholder="Password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    className='w-full border focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition duration-200'
-                                />
-                            </div>
+                        <div>
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                            <input
+                                type="password"
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className='w-full border focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition duration-200'
+                            />
+                        </div>
 
 
 
-                            <button className='w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded' type="submit">Login</button>
+                        <button className='w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded' type="submit">Login</button>
 
-                            {error && <p style={{ color: 'red' }}>{error}</p>}
-                        </form>
-                        {/* End of Form */}
+                        {error && <p style={{ color: 'red' }}>{error}</p>}
+                    </form>
+                    {/* End of Form */}
 
-                        <p className='pt-2'>
-                            Don't have an account? <Link className='text-blue-600' to="/register">Register</Link>
-                        </p>
+                    <p className='pt-2'>
+                        Don't have an account? <Link className='text-blue-600' to="/register">Register</Link>
+                    </p>
                 </div>
             </div>
         </div>

@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const path = require('path');
 const app = express();
+const { sequelize } = require('./db/models');
 app.set('trust proxy', 1); // tells Express to trust Railway proxy
 
 // FOR USERS UNTIL SERVER SET UP IN CLOUD
@@ -20,7 +21,9 @@ const requireAuth = require('./middleware/requireAuth')
 const authRoutes = require('./routes/auth');
 const threadRoutes = require('./routes/threads');
 const courseRoutes = require('./routes/courses');
-const uploadRouter = require('./routes/upload')
+const uploadRouter = require('./routes/upload');
+const {router: postRoutes} = require('./routes/posts');
+const userRoutes = require('./routes/users');
 
 // allows connection from frontend
 app.use(cors({
@@ -78,16 +81,31 @@ app.use('/', authRoutes);
 app.use('/api/threads', requireAuth, threadRoutes); // This prefixes all routes in threads.js with /api/threads
 app.use('/api/courses', requireAuth, courseRoutes); // Protects and prefixes course edit routing with /api/courses
 app.use('/api/upload', requireAuth, uploadRouter);
+app.use('/api/posts', requireAuth, postRoutes);
+app.use('/api/user', userRoutes);
 
 // -- START SERVER --
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}/`);
-});
+async function init() {
+  try {
+    await sequelize.authenticate();
+    console.log('DB connected');
 
-if (DEV) {
-    devusers.doit().then(() => {
+    await sequelize.sync({ alter: true });
+    await sequelize.query('SET session_replication_role = DEFAULT;');
+    console.log("Tables synced successfully.");
+
+    if (DEV) {
+      await devusers.doit();
       console.log("Dev users synced");
-    }).catch((err) => {
-      console.error("Failed to sync devusers: ", err);
+    }
+
+    app.listen(port, () => {
+      console.log(`Server running at http://localhost:${port}/`);
     });
-};
+
+  } catch(err) {
+    console.error("Startup failed:", err);
+  }
+}
+
+init();

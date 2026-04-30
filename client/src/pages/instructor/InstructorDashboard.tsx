@@ -3,7 +3,6 @@ import Loading from '../../components/student/Loading';
 import api from '../../api/axiosInstance';
 import { type Course } from '../../types/course';
 import type { User } from '../../types/user';
-import { InstructorCourseButton } from '../../components/generic/Buttons';
 
 type EnrolledCourse = { id: string | number; name: string };
 type Student = User & {
@@ -14,7 +13,7 @@ export default function InstructorDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [view, setView] = useState<'courses' | 'students'>('courses');
   const [selectedCourseId, setSelectedCourseId] = useState<string | number | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
@@ -64,26 +63,29 @@ export default function InstructorDashboard() {
   };
 
 
-  if (loading) return <Loading />;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Loading />
+    </div>);
 
   // Render helpers
-  const filteredStudents = students.filter(s => 
+  const filteredStudents = students.filter(s =>
     (s.name + s.email).toLowerCase().includes(studentSearch.toLowerCase())
   );
 
   return (
     <div className='min-h-screen p-8'>
-      <h1 className="text-3xl font-bold mb-6 text-blue-700">Course & Enrollment Management</h1>
-      
+      <h1 className="text-3xl font-bold mb-6 text-blue-700">Enrollment Management</h1>
+
       {/* Tabs */}
       <div className="flex gap-4 mb-6 border-b pb-2">
-        <button 
+        <button
           onClick={() => { setView('courses'); setSelectedCourseId(null); }}
           className={`font-semibold px-4 py-2 ${view === 'courses' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
         >
           View By Course
         </button>
-        <button 
+        <button
           onClick={() => { setView('students'); setSelectedStudentId(null); }}
           className={`font-semibold px-4 py-2 ${view === 'students' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
         >
@@ -107,7 +109,7 @@ export default function InstructorDashboard() {
               ))}
             </div>
           </div>
-          
+
           <div className="w-2/3">
             {selectedCourseId !== null ? (
               <div>
@@ -121,7 +123,7 @@ export default function InstructorDashboard() {
                         <p className="font-bold">{student.name} <span className="text-sm font-normal text-gray-500"></span></p>
                         <p className="text-sm text-gray-500">{student.email}</p>
                       </div>
-                      <button 
+                      <button
                         onClick={() => handleUnenroll(selectedCourseId!, student.id)}
                         className="text-red-500 font-semibold px-3 py-1 border border-red-200 rounded hover:bg-red-50"
                       >
@@ -136,9 +138,9 @@ export default function InstructorDashboard() {
 
                 <div className="mt-8 border-t pt-6">
                   <h3 className="font-bold mb-4 text-lg">Enroll a Student</h3>
-                  <input 
-                    type="text" 
-                    placeholder="Search students..." 
+                  <input
+                    type="text"
+                    placeholder="Search students..."
                     className="w-full p-2 border border-gray-300 rounded mb-4"
                     value={studentSearch}
                     onChange={e => setStudentSearch(e.target.value)}
@@ -147,7 +149,7 @@ export default function InstructorDashboard() {
                     {filteredStudents.filter(s => !s.enrolledCourses.some(ec => String(ec.id) === String(selectedCourseId!))).map(student => (
                       <div key={student.id} className="flex justify-between items-center p-3 border border-gray-100 rounded hover:bg-gray-50">
                         <span>{student.name} ({student.email})</span>
-                        <button 
+                        <button
                           onClick={() => handleEnroll(selectedCourseId!, student.id)}
                           className="text-blue-600 font-semibold text-sm px-3 py-1 border border-blue-200 rounded hover:bg-blue-50"
                         >
@@ -171,9 +173,9 @@ export default function InstructorDashboard() {
         <div className="flex gap-8">
           <div className="w-1/3 border-r pr-6">
             <h2 className="text-xl font-bold mb-4">All Students</h2>
-            <input 
-              type="text" 
-              placeholder="Search students..." 
+            <input
+              type="text"
+              placeholder="Search students..."
               className="w-full p-2 border border-gray-300 rounded mb-4"
               value={studentSearch}
               onChange={e => setStudentSearch(e.target.value)}
@@ -191,12 +193,12 @@ export default function InstructorDashboard() {
               ))}
             </div>
           </div>
-          
+
           <div className="w-2/3">
             {selectedStudentId ? (() => {
               const student = students.find(s => s.id === selectedStudentId);
               if (!student) return null;
-              
+
               const unenrolledCourses = courses.filter(c => !student.enrolledCourses.some(ec => String(ec.id) === String(c.id)));
 
               return (
@@ -208,7 +210,7 @@ export default function InstructorDashboard() {
                     {student.enrolledCourses.map(course => (
                       <div key={course.id} className="p-4 border border-gray-200 rounded-lg flex justify-between items-center bg-white shadow-sm">
                         <span className="font-bold text-gray-800">{course.name}</span>
-                        <button 
+                        <button
                           onClick={() => handleUnenroll(course.id, student.id)}
                           className="text-red-500 font-semibold px-3 py-1 border border-red-200 rounded hover:bg-red-50"
                         >
@@ -227,7 +229,7 @@ export default function InstructorDashboard() {
                       {unenrolledCourses.map(course => (
                         <div key={course.id} className="flex justify-between items-center p-3 border border-gray-100 rounded hover:bg-gray-50">
                           <span className="font-medium text-gray-700">{course.name}</span>
-                          <button 
+                          <button
                             onClick={() => handleEnroll(course.id, student.id)}
                             className="text-blue-600 font-semibold text-sm px-3 py-1 border border-blue-200 rounded hover:bg-blue-50"
                           >

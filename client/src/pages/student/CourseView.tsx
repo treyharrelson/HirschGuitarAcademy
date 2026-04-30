@@ -5,6 +5,7 @@ import api from '../../api/axiosInstance';
 import Loading from '../../components/student/Loading';
 import { useAuth } from '../../context/AuthContext';
 import confetti from 'canvas-confetti';
+import LectureContentRenderer from '../../components/student/LectureContentRenderer';
 import "quill/dist/quill.snow.css";
 
 interface ExtendedCourse extends Course {
@@ -19,12 +20,13 @@ const CourseView: React.FC = () => {
 
     const [course, setCourse] = useState<ExtendedCourse | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
     const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
-    const isInstructor = user?.role === 'instructor' || course?.instructorId === user?.id;
+    const isInstructor = user?.role === 'instructor' || course?.instructor?.id === user?.id;
 
     const flattenedLectures = useMemo(() => {
         if (!course?.modules) return [];
@@ -76,30 +78,39 @@ const CourseView: React.FC = () => {
     };
 
     const handleNext = () => {
-        if (!selectedLecture) {
-            if (flattenedLectures.length > 0) setSelectedLecture(flattenedLectures[0]);
-            return;
-        }
-
-        if (currentIndex < flattenedLectures.length - 1) {
-            setSelectedLecture(flattenedLectures[currentIndex + 1]);
-        } else {
-            if (isInstructor) {
-                navigate('/instructor/my-courses');
-            } else {
-                confetti({
-                    particleCount: 150,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    colors: ['#0ea5e9', '#22c55e', '#ffffff']
-                });
-                setTimeout(() => {
-                    navigate(`/my-enrollments`);
-                }, 2000);
+        if (isProcessing) return;
+        setIsProcessing(true);
+        try {
+            if (!selectedLecture) {
+                if (flattenedLectures.length > 0) setSelectedLecture(flattenedLectures[0]); {
+                    setIsProcessing(false);
+                    return;
+                }
             }
+
+            if (currentIndex < flattenedLectures.length - 1) {
+                setSelectedLecture(flattenedLectures[currentIndex + 1]);
+                setIsProcessing(false);
+            } else {
+                if (isInstructor) {
+                    navigate('/instructor/my-courses');
+                } else {
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#0ea5e9', '#22c55e', '#ffffff']
+                    });
+                    setTimeout(() => {
+                        navigate(`/my-enrollments`);
+                    }, 2000);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            setIsProcessing(false);
         }
     };
-
 
     const renderSidebarItem = (item: any, depth: number = 0) => {
         const isModule = Array.isArray(item.content);
@@ -143,64 +154,50 @@ const CourseView: React.FC = () => {
         );
     };
 
-    if (loading || !course) return <Loading />;
-    if (flattenedLectures.length === 0 && course.modules.length > 0) return <Loading />;
+    if (loading || !course) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen w-full bg-white">
+                <Loading />
+                <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading course...</p>
+            </div>
+        );
+    }
+
+    if (flattenedLectures.length === 0 && course.modules.length > 0) return (
+        <div className="flex flex-col items-center justify-center min-h-screen w-full bg-white">
+            <Loading />
+            <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading course...</p>
+        </div>
+    );;
 
     const showNextButtonDisabled = !isInstructor && !!selectedLecture && !isCurrentComplete;
 
-
     return (
-        <div className="flex h-screen bg-white">
-            <div className="w-80 border-r flex flex-col bg-slate-50">
-                <div className="p-6 bg-slate-900 text-white">
-                    <h2 className="font-bold truncate">{course?.name}</h2>
-                </div>
-                <div className="overflow-y-auto flex-1 py-4">
-                    <button
-                        onClick={() => setSelectedLecture(null)}
-                        className={`w-full text-left py-3 px-6 font-bold text-sm border-b transition-colors ${!selectedLecture ? 'bg-sky-600 text-white' : 'hover:bg-slate-200'}`}
-                    >
-                        🏠 Course Overview
-                    </button>
-                    {course?.modules.map(mod => renderSidebarItem(mod))}
-                </div>
-            </div>
-
-            <div className="flex-1 flex flex-col relative overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-12 pb-32">
+        <div className="flex flex-row w-full h-screen bg-white overflow--y-auto">
+            {/* MAIN CONTENT */}
+            <div className="flex-1 flex flex-col min-h-screen">
+                <div className="">
                     {!selectedLecture ? (
-                        <div className="max-w-3xl mx-auto">
+                        <div className="max-w-3xl mx-auto pt-2 pb-2">
                             <h1 className="text-4xl font-bold mb-6">{course?.name}</h1>
                             <div className="ql-editor prose max-w-none text-lg text-slate-700" dangerouslySetInnerHTML={{ __html: course?.description || '' }} />
                             <button
                                 onClick={() => handleNext()}
-                                className="mt-8 bg-sky-600 text-white px-8 py-3 rounded-full font-bold hover:bg-sky-700 transition-all shadow-lg"
-                            >
+                                className="mt-8 bg-sky-600 text-white px-8 py-3 rounded-full font-bold hover:bg-sky-700 transition-all shadow-lg">
                                 Start Learning →
                             </button>
                         </div>
                     ) : (
                         <div className="max-w-4xl mx-auto">
-                            <h1 className="text-3xl font-bold border-b pb-4 mb-8">{selectedLecture.title}</h1>
-                            <div className="space-y-8">
-                                {selectedLecture.blocks?.map((block, i) => (
-                                    <div key={i}>
-                                        {block.type === 'text' && <div className="ql-editor text-lg leading-relaxed text-slate-700" dangerouslySetInnerHTML={{ __html: block.content || '' }} />}
-                                        {block.type === 'image' && <img src={block.url} className="rounded-xl shadow-lg mx-auto max-h-[600px] object-contain" />}
-                                        {block.type === 'video' && (
-                                            <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-lg">
-                                                <iframe className="w-full h-full" src={block.url.replace("watch?v=", "embed/")} allowFullScreen />
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                            <h1 className="text-3xl font-bold border-b pb-4 mb-0">{selectedLecture.title}</h1>
+                            <LectureContentRenderer blocks={selectedLecture.blocks || []} />
                         </div>
                     )}
                 </div>
 
-                <div className="absolute bottom-0 left-0 right-0 h-24 bg-white border-t flex items-center justify-between px-12 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-10">
-                    <div className="flex gap-4">
+                {/* FOOTER NAV */}
+                <div className="h-24 bg-white border-t flex items-center justify-between px-12 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-10">
+                    <div className="pt-2 pb-2 flex gap-4">
                         {currentIndex > 0 && (
                             <button onClick={() => setSelectedLecture(flattenedLectures[currentIndex - 1])} className="px-6 py-2 border border-slate-300 rounded-full font-bold hover:bg-slate-50 transition-colors">
                                 ← Previous
@@ -217,7 +214,6 @@ const CourseView: React.FC = () => {
                             </button>
                         )}
                     </div>
-
                     <div className="flex gap-4">
                         {!isInstructor && selectedLecture && !isCurrentComplete && (
                             <button onClick={handleMarkComplete} className="px-8 py-2 bg-green-600 text-white rounded-full font-bold hover:bg-green-700 shadow-md">
@@ -225,13 +221,26 @@ const CourseView: React.FC = () => {
                             </button>
                         )}
                         <button
-                            disabled={showNextButtonDisabled}
+                            disabled={showNextButtonDisabled || isProcessing}
                             onClick={handleNext}
-                            className={`px-8 py-2 rounded-full font-bold transition-all ${(!isInstructor && selectedLecture && !isCurrentComplete) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white shadow-lg hover:bg-sky-700'}`}
-                        >
-                            {!selectedLecture ? 'Start Course' : (currentIndex === flattenedLectures.length - 1 ? 'Finish Course' : 'Next Lecture →')}
+                            className={`px-8 py-2 rounded-full font-bold transition-all ${(showNextButtonDisabled || isProcessing) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white shadow-lg hover:bg-sky-700'}`}> 
+                            {isProcessing ? 'Processing...' : (!selectedLecture ? 'Start Course' : (currentIndex === flattenedLectures.length - 1 ? 'Finish Course' : 'Next Lecture →'))}
                         </button>
                     </div>
+                </div>
+            </div>
+            {/* SIDEBAR */}
+            <div className="w-80 border-l flex flex-col bg-slate-50">
+                <div className="p-6 pr-0 bg-slate-900 text-white">
+                    <h2 className="font-bold truncate">{course?.name}</h2>
+                </div>
+                <div className="overflow-y-auto flex-1 py-4">
+                    <button
+                        onClick={() => setSelectedLecture(null)}
+                        className={`w-full text-left py-3 px-6 font-bold text-sm border-b transition-colors ${!selectedLecture ? 'bg-sky-600 text-white' : 'hover:bg-slate-200'}`}>
+                        🏠 Course Overview
+                    </button>
+                    {course?.modules.map(mod => renderSidebarItem(mod))}
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 import { useCourseEditor } from '../../hooks/useCourseEditor';
@@ -272,7 +272,7 @@ const EditCourse: React.FC = () => {
 
     if (loading) return <div className="p-10">Loading Course Editor...</div>;
     return (
-        <div className='h-screen overflow-scroll flex flex-col items-start md:p-8 p-4 pt-8'>
+        <div className='w-full pb-10 flex flex-col items-start md:p-8 p-4 pt-8'>
             <form onSubmit={handleUpdate} className='flex flex-col gap-6 w-full max-w-4xl text-gray-500 pb-20'>
                 <h1 className='text-2xl font-bold text-black'>Editing: {state.courseTitle}</h1>
                 {/* COURSE TITLE */}
@@ -298,11 +298,12 @@ const EditCourse: React.FC = () => {
 
                     <div className="max-w-md aspect-video overflow-hidden rounded-lg border border-gray-200">
                         <MediaBlockEditor
-                            key={Image ? 'preview' : 'input'} // This forces a full UI reset
+                            //key={Image ? 'preview' : 'input'} // This forces a full UI reset
                             type="image"
+                            folder="course-thumbnails"
                             url={typeof state.image === 'string' ? state.image : assets.defaultCourseThumbnail}
-                            onUploadSuccess={(url) => {
-                                setters.setImage(url);
+                            onUploadSuccess={(fileKey) => {
+                                setters.setImage(fileKey);
                             }}
                         />
                     </div>
@@ -384,19 +385,28 @@ const EditCourse: React.FC = () => {
                                                         <div className="flex items-center gap-3">
                                                             <img
                                                                 src={assets.dropDown_icon}
-                                                                className={`w-3 h-3 transition-transform ${module.collapsed ? '-rotate-90' : ''}`}/>
+                                                                className={`w-3 h-3 transition-transform ${module.collapsed ? '-rotate-90' : ''}`} />
                                                             <div className="flex-1 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
                                                                 <input
                                                                     type="text"
                                                                     value={module.title}
                                                                     onChange={(e) => handlers.updateTitle('module', module.id, e.target.value)}
-                                                                    className="font-bold text-gray-800 bg-transparent outline-none w-full text-xl cursor-text"/>
+                                                                    className="font-bold text-gray-800 bg-transparent outline-none w-full text-xl cursor-text" />
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <span className={`text-[10px] font-bold uppercase pt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${module.collapsed ? 'text-blue-500' : 'text-red-500'}`}>
-                                                        {module.collapsed ? 'Expand' : 'Collapse'}
-                                                    </span>
+                                                    <div className="flex items-center gap-3 ml-4">
+                                                        <span className={`text-[10px] font-bold uppercase pt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap ${module.collapsed ? 'text-blue-500' : 'text-red-500'}`}>
+                                                            {module.collapsed ? 'Expand' : 'Collapse'}
+                                                        </span>
+                                                        <img
+                                                            src={assets.cross_icon}
+                                                            className='w-4 h-4 cursor-pointer opacity-30 hover:opacity-100 transition-opacity'
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handlers.handleModule('remove', module.id);
+                                                            }} />
+                                                    </div>
                                                 </div>
                                                 {/* NESTED CONTENT AREA: Stacks correctly below header */}
                                                 {!module.collapsed && (
@@ -422,14 +432,14 @@ const EditCourse: React.FC = () => {
                                                                                             <div className="flex items-center gap-2">
                                                                                                 <img
                                                                                                     src={assets.dropDown_icon}
-                                                                                                    className={`w-2.5 h-2.5 transition-transform duration-200 ${item.collapsed ? "-rotate-90" : ""}`}/>
+                                                                                                    className={`w-2.5 h-2.5 transition-transform duration-200 ${item.collapsed ? "-rotate-90" : ""}`} />
                                                                                                 <div
                                                                                                     className="flex-1 pointer-events-auto"
                                                                                                     onClick={(e) => e.stopPropagation()}>
                                                                                                     <input
                                                                                                         className="font-bold text-gray-700 bg-transparent outline-none w-full text-sm cursor-text"
                                                                                                         value={item.title}
-                                                                                                        onChange={(e) => handlers.updateTitle('submodule', item.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })}/>
+                                                                                                        onChange={(e) => handlers.updateTitle('submodule', item.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })} />
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
@@ -443,7 +453,7 @@ const EditCourse: React.FC = () => {
                                                                                                 onClick={(e) => {
                                                                                                     e.stopPropagation();
                                                                                                     handlers.handleSubModule('remove', module.id, lIdx);
-                                                                                                }}/>
+                                                                                                }} />
                                                                                         </div>
                                                                                     </div>
                                                                                     {!item.collapsed && (
@@ -583,14 +593,14 @@ const EditCourse: React.FC = () => {
                     )}
                 </div>
                 { /* NAV BUTTONS */}
-                <div className="fixed bottom-8 right-8 flex flex-col items-end gap-3 z-[9999]">
+                <div className="fixed bottom-8 right-24 flex flex-row items-center gap-3 z-[9999]">
                     <button
                         type="button"
                         onClick={() => handlers.viewCourse(courseId || "")}
-                        className="flex items-center gap-2 px-5 py-3 bg-black text-white rounded-full shadow-2xl font-bold text-sm hover:bg-gray-800 transition-all hover:-translate-y-1 active:translate-y-0">
+                        className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full shadow-2xl font-bold text-sm hover:bg-gray-800 transition-all">
                         <span>View Course</span>
                     </button>
-                    <div className="flex bg-white rounded-full shadow-2xl border border-gray-100 p-1.5">
+                    <div className="flex bg-white rounded-full shadow-2xl border border-gray-100 p-1">
                         <div className="relative group flex items-center">
                             <span className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap uppercase tracking-tighter">
                                 Expand All

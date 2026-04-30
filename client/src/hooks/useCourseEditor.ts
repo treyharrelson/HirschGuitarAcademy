@@ -13,7 +13,7 @@ export const useCourseEditor = (initialData?: any) => {
   // States
   const [courseTitle, setCourseTitle] = useState(initialData?.title || '')
   const [isPrivate, setIsPrivate] = useState<boolean>(initialData?.isPrivate || false)
-  const [image, setImage] = useState<File | string>(initialData?.thumbnail || assets.defaultCourseThumbnail)
+  const [image, setImage] = useState<string>(initialData?.thumbnail || assets.defaultCourseThumbnail)
   const [currentModuleId, setCurrentModuleId] = useState<string | null>(null)
   const [currentSubModuleIndex, setCurrentSubModuleIndex] = useState<number | null>(null);
   const [modules, setModules] = useState<Module[]>(initialData?.modules || [])

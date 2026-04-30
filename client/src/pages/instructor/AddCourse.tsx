@@ -27,19 +27,7 @@ const AddCourse: React.FC = () => {
     setStatusMsg('');
 
     try {
-      let thumbnailKey = '';
-      if (state.image && typeof state.image !== 'string') {
-        const formData = new FormData();
-        formData.append('file', state.image);
-
-        const uploadRes = await api.post('/api/upload/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          withCredentials: true
-        });
-        thumbnailKey = uploadRes.data.fileKey;
-      } else if (typeof state.image === 'string' && state.image !== assets.defaultCourseThumbnail) {
-        thumbnailKey = state.image;
-      }
+      const thumbnailKey = state.image || null;
 
       const description = refs.quillRef.current ? refs.quillRef.current.getText() : '';
 
@@ -89,7 +77,8 @@ const AddCourse: React.FC = () => {
   }, [state.showPopup])
 
   return (
-    <div className='w-full h-screen overflow-scroll flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pt-8 pb-0'>
+    <div className='w-full flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pt-8 pb-10'>
+      <h1 className="text-3xl font-bold mb-6 text-blue-700">Create a New Course</h1>
       <form onSubmit={handleSubmit} className='flex flex-col gap-6 w-full text-gray-500 pb-20'>
 
         {/* COURSE TITLE */}
@@ -116,11 +105,12 @@ const AddCourse: React.FC = () => {
 
           <div className="w-full max-w-4xl aspect-video overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-white group relative">
             <MediaBlockEditor
-              key={Image ? 'preview' : 'input'} // This forces a full UI reset
+              //key={Image ? 'preview' : 'input'} // This forces a full UI reset
               type="image"
+              folder="course-thumbnails"
               url={typeof state.image === 'string' ? state.image : assets.defaultCourseThumbnail}
-              onUploadSuccess={(url) => {
-                setters.setImage(url);
+              onUploadSuccess={(fileKey) => {
+                setters.setImage(fileKey);
               }}
             />
           </div>

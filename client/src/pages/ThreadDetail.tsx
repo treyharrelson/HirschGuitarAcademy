@@ -4,19 +4,15 @@ import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { type Post, type Attachment } from '../types/post';
 import { type Thread } from '../types/thread'
-import FileUpload from '../components/FileUpload';
-import FileAttachment from '../components/FileAttachment';
 import PostCard from '../components/generic/PostCard';
 import SkeletonPostCard from '../components/generic/SkeletonPostCard';
+import PostComposer from '../components/generic/PostComposer';
 
 function ThreadDetail() {
   const { threadId } = useParams<{ threadId: string }>();
   const [posts, setPosts] = useState<Post[]>([]);
   const [postsLoaded, setPostsLoaded] = useState(false);
-  const [content, setContent] = useState('');
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [uploadKey, setUploadKey] = useState(0);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [thread, setThread] = useState<Thread | null>(null);
   const [error, setError] = useState('');
   const { user } = useAuth();
@@ -30,26 +26,26 @@ function ThreadDetail() {
     }
   }
 
-  const loadSubscriptionStatus = async () => {
+  const loadFollowStatus = async () => {
     try {
-      const response = await api.get(`/api/threads/${threadId}/subscribe`);
-      setIsSubscribed(response.data.subscribed);
+      const response = await api.get(`/api/threads/${threadId}/follow`);
+      setIsFollowing(response.data.followed);
     } catch (err) {
-      console.error('Error loading subscription status');
+      console.error('Error loading follow status');
     }
   };
 
-  const handleSubscribeToggle = async () => {
+  const handleFollowToggle = async () => {
     try {
-      if (isSubscribed) {
-        await api.delete(`/api/threads/${threadId}/subscribe`);
-        setIsSubscribed(false);
+      if (isFollowing) {
+        await api.delete(`/api/threads/${threadId}/follow`);
+        setIsFollowing(false);
       } else {
-        await api.post(`/api/threads/${threadId}/subscribe`);
-        setIsSubscribed(true);
+        await api.post(`/api/threads/${threadId}/follow`);
+        setIsFollowing(true);
       }
     } catch (err) {
-      setError('Error updating subscription');
+      setError('Error updating follow status');
     }
   };
 
@@ -77,7 +73,6 @@ function ThreadDetail() {
 
   useEffect(() => {
     markAsRead();
-    loadSubscriptionStatus();
     loadPosts();
     loadThread();
 
@@ -96,23 +91,12 @@ function ThreadDetail() {
     return () => es.close();
   }, [threadId]);
 
-  const handleSubmit = async (e: SubmitEvent) => {
-    e.preventDefault();
-    
-    try {
-      await api.post(
-        `/api/threads/${threadId}/posts`,
-        { content, attachments }
-      );
-      
-      setContent('');
-      setAttachments([]);
-      setUploadKey(k => k + 1);
-      loadPosts();
-    } catch (err) {
-      setError('Error creating post');
-    }
-  };
+  // load follow status only once thread is loaded and only if its not global
+  useEffect(() => {
+    if (!thread) return;
+    if (thread.visibility === 'global') return;
+    loadFollowStatus();
+  }, [thread]);
 
   return (
   <div>
@@ -125,31 +109,41 @@ function ThreadDetail() {
         ← Back to Forum
       </Link>
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-blue-700 tracking-tight">
-          {thread ? thread.title : 'Loading...'}
-        </h1>
-        <button
-          onClick={handleSubscribeToggle}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all border ${
-            isSubscribed
-              ? 'border-blue-600 text-blue-600 hover:bg-blue-50'
-              : 'bg-blue-600 text-white hover:bg-blue-700 border-transparent'
-          }`}
-        >
-          {isSubscribed ? '✓ Following' : '+ Follow'}
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-3xl font-bold text-blue-700 tracking-tight">
+            {thread ? thread.title : 'Loading...'}
+          </h1>
+          {thread?.visibility === 'global' && (
+            <span className="text-sm bg-green-100 text-green-700 font-semibold px-3 py-1 rounded-full">
+              Global
+            </span>
+          )}
+        </div>
+        {!thread || thread.visibility !== 'global' && (
+          <button
+            onClick={handleFollowToggle}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all border ${
+              isFollowing
+                ? 'border-blue-600 text-blue-600 hover:bg-blue-50'
+                : 'bg-blue-600 text-white hover:bg-blue-700 border-transparent'
+            }`}
+          >
+            {isFollowing? '✓ Following' : '+ Follow'}
+          </button>
+        )}
       </div>
     </div>
 
     {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
+    {/* Post list */}
     <div className="flex flex-col gap-4">
       {!postsLoaded
           ? Array.from({ length: 3 }).map((_, i) => <SkeletonPostCard key={i} />)
           : postsLoaded && posts.length === 0
               ? (
                   <div className="text-center py-12 text-gray-400">
-                      <p className="text-lg font-medium">No replies yet</p>
+                      <p className="text-lg font-medium">No posts yet</p>
                       <p className="text-sm mt-1">Be the first to respond!</p>
                   </div>
               )
@@ -157,48 +151,17 @@ function ThreadDetail() {
       }
     </div>
 
-    {user && (
-      <form onSubmit={handleSubmit} className="mt-6">
-        <textarea
-          placeholder="Write a reply..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          required
-          rows={4}
-          style={{ width: '100%' }}
-        />
-
-        <FileUpload key={uploadKey} onUploadComplete={(file) => setAttachments((prev) => [...prev, file])} />
-
-        {attachments.length > 0 && (
-          <div style={{ marginTop: '8px' }}>
-            <p style={{ fontSize: '0.85em', color: '#555' }}>Attached files:</p>
-            {attachments.map((att, i) => (
-              <div key={i} style={{ fontSize: '0.85em' }}>
-                📎{att.fileName}
-                <button
-                  onClick={() => {
-                    setAttachments((prev) => prev.filter((_, j) => j !== i));
-                    setUploadKey(k => k + 1);
-                  }}
-                  
-                  style={{ marginLeft: '8px', color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full text-sm font-semibold transition-all"
-        >
-          Post Reply
-        </button>
-      </form>
-    )}
+    {/* Composer */}
+    {user && threadId && (
+        <div className="mt-6">
+          <PostComposer
+            threadId={parseInt(threadId)}
+            onPosted={loadPosts}
+            placeholder="Write a reply..."
+            submitLabel="Post Reply"
+          />
+        </div>
+      )}
   </div>
 );
 }
