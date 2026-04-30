@@ -19,8 +19,7 @@ export default function Sidebar({ children, title = "Navigation" }: SidebarProps
             {/* Welcome Card */}
             <button 
                 onClick={() => navigate("/profile")}
-                className="w-full text-left cursor-pointer bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 hover:bg-gray-200 transition-colors duration-200 block"
-            >
+                className="w-full text-left cursor-pointer bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-2 hover:bg-gray-200 transition-colors duration-200 block">
                 <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-600 font-bold text-2xl shadow-inner">
                         {user.name.charAt(0).toUpperCase()}

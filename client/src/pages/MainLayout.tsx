@@ -5,6 +5,7 @@ import Sidebar, { SidebarLink } from '../components/generic/Sidebar';
 import { DashButton } from '../components/generic/Buttons';
 import { useAuth } from '../context/AuthContext';
 import { assets } from '../assets/assets';
+import { TimerProvider } from '../context/TimerProvider';
 
 type RoleLink = {
   label: string;
@@ -37,6 +38,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'My Enrollments', path: '/my-enrollments', icon: Icons.Enrollments },
     { label: 'Metronome', path: '/metronome', icon: Icons.Metronome },
     { label: 'Timer', path: '/timer', icon: Icons.Timer },
+    { label: 'Leaderboard', path: '/home', icon: assets.trophyIcon },
   ],
   instructor: [
     { label: 'Home', path: '/home', icon: assets.homeIcon },
@@ -44,6 +46,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'Followed Threads', path: '/follows', icon: Icons.Follows },
     { label: 'Metronome', path: '/metronome', icon: Icons.Metronome },
     { label: 'Timer', path: '/timer', icon: Icons.Timer },
+    { label: 'Leaderboard', path: '/home', icon: assets.trophyIcon },
     { label: 'Instructor Dashboard', path: '/instructor', icon: assets.newspaper_icon },
     { label: 'Add Course', path: '/instructor/add-course', icon: assets.duplicate_icon },
     { label: 'Manage Courses', path: '/instructor/my-courses', icon: assets.book_icon },
@@ -55,6 +58,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'Followed Threads', path: '/follows', icon: Icons.Follows },
     { label: 'Metronome', path: '/metronome', icon: Icons.Metronome },
     { label: 'Timer', path: '/timer', icon: Icons.Timer },
+    { label: 'Leaderboard', path: '/home', icon: assets.trophyIcon },
     { label: 'Instructor Dashboard', path: '/instructor', icon: assets.newspaper_icon },
     { label: 'Add Course', path: '/instructor/add-course', icon: assets.duplicate_icon },
     { label: 'Manage Courses', path: '/instructor/my-courses', icon: assets.book_icon },
@@ -65,6 +69,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'Followed Threads', path: '/follows', icon: Icons.Follows },
     { label: 'Metronome', path: '/metronome', icon: Icons.Metronome },
     { label: 'Timer', path: '/timer', icon: Icons.Timer },
+    { label: 'Leaderboard', path: '/home', icon: assets.trophyIcon },
     { label: 'Manage Threads', path: '/manage/threads', button: DashButton },
     { label: 'Instructor Dashboard', path: '/instructor', icon: assets.newspaper_icon },
     { label: 'Add Course', path: '/instructor/add-course', icon: assets.duplicate_icon },
@@ -99,6 +104,7 @@ const MainLayout = () => {
   return (
     <div className="h-screen overflow-hidden bg-gray-50 flex flex-col">
       {/* The Navbar stays pinned to the top */}
+      <TimerProvider>
       <Navbar />
       <div className='flex flex-1 overflow-hidden pt-2 pl-2'>
         <Sidebar>
@@ -149,6 +155,7 @@ const MainLayout = () => {
           )}
         </main>
       </div>
+      </TimerProvider>
     </div>
   );
 };
