@@ -6,6 +6,7 @@ import { type Thread } from '../types/thread';
 import ThreadCard from '../components/generic/ThreadCard';
 import SkeletonThreadCard from '../components/generic/SkeletonThreadCard';
 import NewThreadModal from '../components/generic/NewThreadModal';
+import Sidebar, { SidebarLink } from '../components/generic/Sidebar';
 
 interface BreadcrumbItem {
     id: number | null;
@@ -84,9 +85,8 @@ function Forum() {
             {/* Header */}
             <div className="mb-6">
                 <Link
-                    to="/student-dashboard"
-                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-4"
-                >
+                    to="/home"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-4">
                     ← Back to Dashboard
                 </Link>
                 <div className="flex items-center justify-between">

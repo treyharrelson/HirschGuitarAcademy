@@ -15,7 +15,7 @@ const CourseDetails: React.FC = () => {
   const [enrollMessage, setEnrollMessage] = useState<string>('')
   const { allCourses, isCoursesLoaded } = useAppContext();
 
-  
+
   const { user, isAuthenticated } = useAuth() // Need to check if auth in the future if guest views are allowed
 
   const fetchCourseData = async () => {
@@ -61,7 +61,7 @@ const CourseDetails: React.FC = () => {
         <div className='max-w-xl z-10 text-gray-500'>
           <h1 className='font-semibold text-gray-800 text-3xl'>{courseData.name}</h1>
           <p className='pt-4 md:text-base text-sm'>
-            Instructor: {courseData.instructorId ? `${courseData.instructorId} ${courseData.instructorId}` : "TBA"}
+            Instructor: {courseData.instructor?.name || "TBA"}
           </p>
           <p className='pt-2'>Enrolled: {courseData.enrolled}</p>
         </div>
@@ -80,7 +80,10 @@ const CourseDetails: React.FC = () => {
         </div>
       </div>
     </>
-  ) : <Loading />
+  ) : <div className="flex flex-col items-center justify-center min-h-screen w-full bg-white">
+    <Loading />
+    <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading...</p>
+  </div>
 }
 
 export default CourseDetails

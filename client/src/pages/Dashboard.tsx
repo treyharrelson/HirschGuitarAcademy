@@ -1,50 +1,20 @@
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { DashButton } from '../components/generic/Buttons';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import React from 'react';
 import api from '../api/axiosInstance';
-import {type Post } from '../types/post';
+import { type Post } from '../types/post';
 import PostCard from '../components/generic/PostCard';
 import SkeletonPostCard from '../components/generic/SkeletonPostCard';
 import PostComposer from '../components/generic/PostComposer';
-
-type RoleLink = {
-    label: string;
-    path: string;
-    button: React.ElementType;
-}
-
-const NAV_LINKS: Record<string, RoleLink[]> = {
-    // need to populate appropriately
-    guest: [
-        { label: 'Create Account', path: '/', button: DashButton }
-    ],
-    student: [
-        { label: 'Forum', path: '/forum', button: DashButton },
-        { label: 'Followed Threads', path: '/follows', button: DashButton },
-        { label: 'View Available Courses', path: '/all-courses', button: DashButton },
-        { label: 'My Enrollments', path: '/my-enrollments', button: DashButton },
-        { label: 'Metronome', path: '/metronome', button: DashButton },
-        { label: 'Timer', path: '/timer', button: DashButton },
-    ],
-    instructor: [
-        { label: 'Instructor View', path: '/instructor', button: DashButton },
-    ],
-    moderator: [
-        { label: 'Forum', path: '/forum', button: DashButton },
-        { label: 'Followed Threads', path: '/follows', button: DashButton },
-    ],
-    admin: [
-        { label: 'Forum', path: '/forum', button: DashButton },
-        { label: 'Manage Threads', path: '/manage/threads', button: DashButton },
-    ]
-};
-
+import Sidebar, { SidebarLink } from '../components/generic/Sidebar';
+import { DashButton } from '../components/generic/Buttons';
 
 function Dashboard() {
     const LIMIT = 20;
     const { user, loading } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [feedOffset, setFeedOffset] = useState(0);
     const [feedHasMore, setFeedHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -106,21 +76,13 @@ function Dashboard() {
         return () => es.close();
     }, []);
 
-    const links = user?.role ? NAV_LINKS[user.role] : NAV_LINKS['guest'];
-
-    const RenderLinks = () => (
-        <>
-            {links.map((link, index) => (
-                <link.button onClick={() => navigate(link.path)}>
-                    {link.label}
-                </link.button>
-            ))}
-        </>
-    );
-
     // show loading while checking auth
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+            <div className="flex h-[calc(100vh-80px)] items-center justify-center">
+                <div className="text-gray-400">Loading dashboard...</div>
+            </div>
+        );
     }
     // if not logged in after loading, redirect to login
     if (!user) {
@@ -129,73 +91,77 @@ function Dashboard() {
     }
 
     return (
-        <div>
-            <h1>Welcome, {user.name}!</h1>
-            <p>Email: {user.email}</p>
-            <p>Role: {user.role}</p>
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
+            <div className="flex flex-col lg:flex-row gap-8">
 
-            <div className='mt-10 flex gap-8'>
+                {/* Feed Column */}
+                <div className="flex-1">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+                        <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-50">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900">Activity Feed</h2>
+                                <p className="text-sm text-gray-500 mt-1">Updates from your threads and courses</p>
+                            </div>
+                            <span className="hidden sm:inline-flex items-center gap-1.5 bg-blue-50 text-blue-600 text-xs font-semibold px-3 py-1.5 rounded-full border border-blue-100">
+                                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                Live
+                            </span>
+                        </div>
 
-                {/* Sidebar */}
-                <div className='w-48 flex-shrink-0'>
-                    <h2 className="mb-4 text-xl font-semibold">Quick Links</h2>
-                    <ul className="flex flex-col gap-2">
-                        <RenderLinks />
-                    </ul>
-                </div>
+                        {/* Feed */}
+                        <div className='flex-1'>
+                            <h2 className="mb-4 text-xl font-semibold">My Feed</h2>
 
-                {/* Feed */}
-                <div className='flex-1'>
-                    <h2 className="mb-4 text-xl font-semibold">My Feed</h2>
+                            {/* Global post composer */}
+                            <div className="mb-6">
+                                <PostComposer
+                                    onPosted={() => loadFeed(0, false)}
+                                    placeholder="Share something with everyone..."
+                                    submitLabel="Post"
+                                />
+                            </div>
 
-                    {/* Global post composer */}
-                    <div className="mb-6">
-                        <PostComposer
-                            onPosted={() => loadFeed(0, false)}
-                            placeholder="Share something with everyone..."
-                            submitLabel="Post"
-                        />
+                            {feedLoading
+                                ? Array.from({ length: 3 }).map((_, i) => (
+                                    <SkeletonPostCard key={i} />
+                                ))
+                                : feedPosts.length === 0
+                                    ? <p>No posts yet. Follow some threads in the forum to see them here.</p>
+                                    : (
+                                        <div className="flex flex-col gap-4">
+                                            {(feedPosts || []).map(post => (
+                                                <PostCard
+                                                    key={post.id}
+                                                    post={post}
+                                                    showThread
+                                                    onFollowThread={
+                                                        post.announcedThread
+                                                            ? handleFollowFromPost
+                                                            : undefined
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
+                                    )} 
+                            {feedHasMore && !feedLoading && (
+                                <button
+                                    onClick={handleLoadMore}
+                                    disabled={loadingMore}
+                                    className="w-full mt-8 py-3 text-sm text-blue-600 font-semibold border-2 border-blue-100 rounded-xl hover:bg-blue-50 transition-all disabled:opacity-50 flex items-center justify-center gap-2 group"
+                                >
+                                    {loadingMore ? (
+                                        <>
+                                            <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            Loading...
+                                        </>
+                                    ) : 'Load Older Posts'}
+                                </button>
+                            )}
+                        </div>
                     </div>
-                    
-                    {feedLoading
-                        ? Array.from({ length: 3 }).map((_, i) => (
-                            <SkeletonPostCard key={i} />
-                        ))
-                        : feedPosts.length === 0
-                            ? <p>No posts yet. Follow some threads in the forum to see them here.</p>
-                            : (
-                                <div className="flex flex-col gap-4">
-                                    {(feedPosts || []).map(post => (
-                                        <PostCard
-                                            key={post.id}
-                                            post={post}
-                                            showThread
-                                            onFollowThread={
-                                                post.announcedThread
-                                                    ? handleFollowFromPost
-                                                    : undefined
-                                            }
-                                        />
-                                    ))}
-                                </div>
-                            )
-                    }
 
-                    {feedHasMore && !feedLoading && (
-                        <button
-                            onClick={handleLoadMore}
-                            disabled={loadingMore}
-                            className="w-full mt-4 py-2 text-sm text-blue-600 font-semibold border border-blue-200 rounded-full hover:bg-blue-50 transition-all disabled:opacity-50"
-                        >
-                            {loadingMore ? 'Loading...' : 'Load More'}
-                        </button>
-                    )}
                 </div>
-
             </div>
-
-        </div>
-    );
+        </div>);
 }
-
 export default Dashboard;

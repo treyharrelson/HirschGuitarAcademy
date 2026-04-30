@@ -1,16 +1,17 @@
-import React from 'react'
+import React, { Children } from 'react'
 
 type ButtonProps = {
 	children: React.ReactNode;
 	onClick?: () => void;
 	disabled?: boolean;
+	extra?: any;
 }
 
 export const BigBlueButton = ({ children, onClick, disabled }: ButtonProps) => (
 	<button
 		onClick={disabled ? undefined : onClick}
 		disabled={disabled}
-		className={`px-5 py-2 rounded-full transition-all text-white ${
+		className={`px-4 py-1 rounded-full transition-all text-white cursor-pointer ${
 			disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
 		}`}
 	>
@@ -34,4 +35,13 @@ export const DashButton = ({ children, onClick }: ButtonProps) => (
 	>
 		{children}
 	</button>
-)
+);
+
+export const InstructorCourseButton = ({children, onClick, extra}: ButtonProps) => (
+	<button
+		onClick={onClick}
+		className={`text-left p-3 rounded-lg border transition-all ${String(extra.selectedCourseId) === String(extra.courseid) ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-gray-200 hover:bg-gray-50'}`}
+		>
+			{children}
+		</button>
+);

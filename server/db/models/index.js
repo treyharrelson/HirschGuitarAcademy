@@ -22,6 +22,7 @@ const ThreadBan = require('./ThreadBan');
 const Progress = require('./Progress');
 const ThreadMember = require('./ThreadMember');
 const Reaction = require('./Reaction');
+const ProfileSettings = require('./ProfileSettings');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -160,6 +161,10 @@ Award.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasOne(PracticeTime, { foreignKey: 'userId', as: 'practice_time' });
 PracticeTime.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+// ProfileSettings to User
+User.hasOne(ProfileSettings, {foreignKey: 'userId', as: 'profile_settings'});
+ProfileSettings.belongsTo(User, {foreignKey: 'userId', as: 'user'});
+
 // Scoreboard not linked like others, just counts what they have, might be able to make with relations, for now does nothing
 
 
@@ -185,4 +190,5 @@ module.exports = {
     ThreadBan,
     ThreadMember,
     Reaction,
+    ProfileSettings,
 };

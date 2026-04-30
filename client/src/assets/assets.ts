@@ -10,6 +10,7 @@ import logoNoBackground from './HGA_Logo_No_Background.png'
 import defaultCourseThumbnail from './defaultCourseThumbnail.jpg'
 import userIcon from './userIcon.svg'
 import logoutIcon from './logout.svg'
+import homeIcon from './home-outline.svg'
 
 export const assets = {
     book_icon,
@@ -23,5 +24,6 @@ export const assets = {
     defaultCourseThumbnail,
     logoNoBackground,
     userIcon,
-    logoutIcon
+    logoutIcon,
+    homeIcon
 }

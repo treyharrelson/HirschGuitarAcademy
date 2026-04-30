@@ -50,7 +50,7 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
         formData.append('folder', folder);
 
         try {
-            const response = await api.post('/api/upload/upload', formData, { 
+            const response = await api.post('/api/upload/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             onUploadSuccess(response.data.fileKey);
@@ -68,16 +68,17 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
     };
 
     const renderVideoPlayer = (url: string) => {
-        const ytMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^& \n]+)/);
+        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)\??v?=?([^#&?]*)).*/;
+        const match = url.match(regExp);
+        const videoId = (match && match[7].length === 11) ? match[7] : null;
 
-        if (ytMatch && ytMatch[1]) {
-            const videoId = ytMatch[1];
+        if (videoId) {
             return (
                 <iframe
                     className="w-full aspect-video rounded-lg shadow-md"
                     src={"https://youtube.com" + "/embed/" + videoId}
                     title="YouTube video player"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
                 />
             );
@@ -127,15 +128,13 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
                         <button
                             type="button"
                             className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${inputMode === 'upload' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
-                            onClick={() => setInputMode('upload')}
-                        >
+                            onClick={() => setInputMode('upload')}>
                             FILE UPLOAD
                         </button>
                         <button
                             type="button"
                             className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${inputMode === 'link' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
-                            onClick={() => setInputMode('link')}
-                        >
+                            onClick={() => setInputMode('link')}>
                             EXTERNAL LINK
                         </button>
                     </div>
@@ -148,18 +147,16 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
                                 e.stopPropagation(); // Stop Dnd-kit from intercepting
                                 fileInputRef.current?.click(); // Manually trigger the window
                             }}
-                            className="flex flex-col items-center cursor-pointer p-4 hover:bg-gray-50 rounded-xl transition-all"
-                        >
+                            className="flex flex-col items-center cursor-pointer p-4 hover:bg-gray-50 rounded-xl transition-all">
                             <span className="text-3xl mb-2">{type === 'image' ? '🖼️' : '🎥'}</span>
                             <span className="text-sm font-semibold text-gray-700">Choose {type} file</span>
 
                             <input
-                                ref={fileInputRef} // Attach the ref here
+                                ref={fileInputRef}
                                 type="file"
                                 className="hidden"
                                 accept={type === 'video' ? "video/*" : "image/*"}
-                                onChange={handleFileUpload}
-                            />
+                                onChange={handleFileUpload}/>
                         </div>
                     ) : (
                         <div className="flex flex-col w-full max-w-md gap-2">
@@ -169,12 +166,16 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
                                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-blue-500 outline-none"
                                 value={linkValue}
                                 onChange={(e) => setLinkValue(e.target.value)}
-                            />
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleLinkSubmit();
+                                    }
+                                }}/>
                             <button
                                 type="button"
                                 onClick={handleLinkSubmit}
-                                className="bg-blue-600 text-white py-2 rounded-md font-bold text-sm hover:bg-blue-700"
-                            >
+                                className="bg-blue-600 text-white py-2 rounded-md font-bold text-sm hover:bg-blue-700">
                                 Embed {type === 'video' ? 'Video' : 'Image'}
                             </button>
                         </div>

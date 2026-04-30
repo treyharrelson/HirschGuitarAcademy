@@ -21,7 +21,7 @@ type Props = {
 };
 
 function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: Props) {
-    const initials = post.author?.userName?.slice(0, 2).toUpperCase() || '??';
+    const initials = post.author?.name?.slice(0, 2).toUpperCase() || '??';
     const [followed, setFollowed] = useState(false);
     const [following, setFollowing] = useState(false);
     const { user } = useAuth();
@@ -85,8 +85,8 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
     const handleDelete = async () => {
         if (!confirm('Are you sure you want to delete this post?')) return;
         try {
-            const threadId = post.threadId || post.announcedThread?.id || 'global';
-            await api.delete(`/api/threads/${threadId}/posts/${post.id}`);
+            const threadId = post.thread?.id || post.announcedThread?.id || 'global';
+            await api.delete(`/api/posts/${threadId}/posts/${post.id}`);
             if (onPostDeleted) onPostDeleted(post.id);
         } catch (error: any) {
             console.error('Error deleting post:', error);
@@ -95,14 +95,15 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
     };
 
     const handleBan = async () => {
-        if (!confirm(`Are you sure you want to ban ${post.author?.userName} (${post.userId}) from this thread?`)) return;
+        if (!confirm(`Are you sure you want to ban ${post.author?.name} (${post.author?.id}) from this thread?`)) return;
         try {
-            const threadId = post.threadId || post.announcedThread?.id;
+            const threadId = post.thread?.id || post.announcedThread?.id;
             await api.post(`/api/threads/${threadId}/ban`, { userId: post.author?.id });
             alert('User banned successfully.');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error banning user:', error);
-            alert('Failed to ban user.');
+            const msg = error.response?.data?.message || error.message || 'Failed to ban user.';
+            alert(msg);
         }
     };
 
@@ -135,24 +136,33 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
 
             {/* Thread label */}
             {showThread && post.thread && !post.announcedThread && (
-                <Link to={`/forum/thread/${post.threadId}`} className="text-xs font-semibold text-blue-600 uppercase tracking-wide hover:underline">
+                <Link
+                    to={`/forum/thread/${post.thread.id}`}
+                    className="text-xs font-semibold text-blue-600 uppercase tracking-wide hover:underline"
+                >
                     {post.thread.title}
                 </Link>
             )}
 
-            {/* Author */}
-            <div className="flex items-center gap-3 mt-2 mb-3">
-                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {initials}
-                </div>
-                <div>
-                    <p className="text-sm font-semibold text-gray-800">{post.author?.userName || 'Unknown'}</p>
-                    <p className="text-xs text-gray-400">{new Date(post.createdAt).toLocaleString()}</p>
+            <div className="flex justify-between items-start mt-2 mb-3">
+                <div className="flex items-center gap-3">
+                    {/* Avatar */}
+                    <Link to={`/profile/${post.author?.id}`} className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 hover:ring-2 hover:ring-blue-300 transition-all">
+                        {initials}
+                    </Link>
+                    <div>
+                        <Link to={`/profile/${post.author?.id}`} className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline">
+                            {post.author?.name || 'Unknown'}
+                        </Link>
+                        <p className="text-xs text-gray-400">
+                            {new Date(post.createdAt).toLocaleString()}
+                        </p>
+                    </div>
                 </div>
 
                 {isModerator && (
                     <div className="flex gap-2">
-                        {post.author?.id !== user?.id && (
+                        {post.author?.id !== user?.id && (post.thread?.id || post.announcedThread?.id) && (
                             <button onClick={handleBan} className="text-xs font-semibold text-red-600 hover:bg-red-50 px-2 py-1 flex items-center justify-center gap-1 rounded border border-red-200">
                                 <span>Ban User</span>
                             </button>
@@ -194,15 +204,15 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
                     )}
 
                     {comments.map(c => {
-                        const cInitials = c.author?.userName?.slice(0, 2).toUpperCase() || '??';
+                        const cInitials = c.author?.name?.slice(0, 2).toUpperCase() || '??';
                         return (
                             <div key={c.id} className="pl-3 border-l-2 border-blue-100">
                                 <div className="flex gap-2">
-                                    <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-bold flex-shrink-0">
+                                    <Link to={`/profile/${c.author?.id}`} className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-bold flex-shrink-0 hover:ring-2 hover:ring-blue-300 transition-all">
                                         {cInitials}
-                                    </div>
+                                    </Link>
                                     <div className="flex-1">
-                                        <p className="text-xs font-semibold text-gray-700">{c.author?.userName || 'Unknown'}</p>
+                                        <Link to={`/profile/${c.author?.id}`} className="text-xs font-semibold text-gray-700 hover:text-blue-600 hover:underline">{c.author?.name || 'Unknown'}</Link>
                                         <p className="text-xs text-gray-600 leading-relaxed">{c.content}</p>
                                         <p className="text-xs text-gray-400 mt-0.5">{new Date(c.createdAt).toLocaleString()}</p>
                                         <ReactionBar
