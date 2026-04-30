@@ -2,20 +2,28 @@ import { useState, useEffect } from 'react';
 import api from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
 import VisibilityToggle from './VisibilityToggle';
+import { type Thread } from '../../types/thread';
 
 interface NewThreadModalProps {
     isOpen: boolean;
     onClose: () => void;
     onCreated: () => void;
+    defaultParentId?: number | null;
 }
 
-function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
+function NewThreadModal({ isOpen, onClose, onCreated, defaultParentId = null }: NewThreadModalProps) {
     const { user } = useAuth();
     const [title, setTitle] = useState('');
     const [visibility, setVisibility] = useState<'public' | 'global' | 'private'>('public');
     const [makeAnnouncement, setMakeAnnouncement] = useState(true);
+    const [parentThreadId, setParentThreadId] = useState<number | null>(defaultParentId);
+    const [allThreads, setAllThreads] = useState<Thread[]>([]);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        setParentThreadId(defaultParentId);
+    }, [defaultParentId]);
 
     useEffect(() => {
         if (visibility === 'private') {
@@ -25,12 +33,21 @@ function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
         }
     }, [visibility]);
 
+    useEffect(() => {
+        if (isOpen) {
+            api.get('/api/threads', { params: {limit: 500, offset: 0 } })
+                .then(res => setAllThreads(res.data.threads))
+                .catch(() => {});
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleClose = () => {
         setTitle('');
         setVisibility('public');
         setMakeAnnouncement(true);
+        setParentThreadId(defaultParentId);
         setError('');
         onClose();
     };
@@ -43,7 +60,12 @@ function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
         setSubmitting(true);
         setError('');
         try {
-            await api.post('/api/threads', { title, visibility, makeAnnouncement });
+            await api.post('/api/threads', { 
+                title, 
+                visibility, 
+                makeAnnouncement,
+                parentThreadId: parentThreadId || null
+            });
             handleClose();
             onCreated();
         } catch (err: any) {
@@ -65,10 +87,7 @@ function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <h2 className="text-xl font-bold text-blue-700">New Thread</h2>
-                    <button
-                        onClick={handleClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
+                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -83,9 +102,7 @@ function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
 
                 {/* Title input */}
                 <div className="mb-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Thread Title
-                    </label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Thread Title</label>
                     <input
                         type="text"
                         placeholder="What's this thread about?"
@@ -97,27 +114,36 @@ function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
                     />
                 </div>
 
-                {/* Announcement toggle — visible to everyone */}
+                {/* Parent thread picker */}
                 <div className="flex items-center justify-between py-3.5 border-t border-gray-100 mt-4">
                     <div>
+                        <p className="text-sm font-semibold text-gray-700">Nested Under</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Place this thread inside another (optional)</p>
+                    </div>
+                    <select
+                        value={parentThreadId ?? ''}
+                        onChange={e => setParentThreadId(e.target.value ? Number(e.target.value) : null)}
+                        className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-400 max-w-[180px]"
+                    >
+                        <option value="">None (root)</option>
+                        {allThreads.map(t => (
+                            <option key={t.id} value={t.id}>{t.title}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Announcement toggle */}
+                <div className="flex items-center justify-between py-3.5 border-t border-gray-100">
+                    <div>
                         <p className="text-sm font-semibold text-gray-700">Announcement Post</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                            Broadcast a global announcement when this thread is created
-                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">Broadcast a global announcement on creation</p>
                     </div>
                     <button
                         type="button"
                         onClick={() => setMakeAnnouncement(prev => !prev)}
-                        aria-label="Toggle announcement post"
-                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                            makeAnnouncement ? 'bg-blue-500' : 'bg-gray-200'
-                        }`}
+                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${makeAnnouncement ? 'bg-blue-500' : 'bg-gray-200'}`}
                     >
-                        <span
-                            className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                                makeAnnouncement ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                        />
+                        <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${makeAnnouncement ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                 </div>
 
@@ -126,15 +152,9 @@ function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
                     <div className="flex items-center justify-between py-3.5 border-t border-gray-100">
                         <div>
                             <p className="text-sm font-semibold text-gray-700">Visibility</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                                Control who can see this thread
-                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">Control who can see this thread</p>
                         </div>
-                        <VisibilityToggle
-                            value={visibility}
-                            onChange={setVisibility}
-                            disabled={submitting}
-                        />
+                        <VisibilityToggle value={visibility} onChange={setVisibility} disabled={submitting} />
                     </div>
                 )}
 
@@ -161,6 +181,5 @@ function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
         </div>
     );
 }
-
 
 export default NewThreadModal;

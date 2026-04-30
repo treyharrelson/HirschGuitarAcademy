@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
 // Also auto-creates a global announcement post and broadcasts it via SSE
 router.post('/', async (req, res) => {
 	try {
-		const { title, visibility = 'public', makeAnnouncement = true } = req.body;
+		const { title, visibility = 'public', makeAnnouncement = true, parentThreadId = null } = req.body;
 		
 		// validate visibility
 		if (!['public', 'global', 'private'].includes(visibility)) {
@@ -59,6 +59,7 @@ router.post('/', async (req, res) => {
 			title,
 			authorId: req.session.user.id,
 			visibility,
+			parentThreadId: parentThreadId || null,
 		});
 
 		// if private, immediately add the creator as a member so they can see their own thread
