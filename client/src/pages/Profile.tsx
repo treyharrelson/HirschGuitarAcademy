@@ -4,14 +4,6 @@ import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import type { UserInfo } from '../types/user';
 
-type RoleLink = {
-    label: string;
-    path: string;
-    icon: React.ReactNode;
-}
-
-
-
 export const ProfilePage: React.FC = () => {
     const { userId } = useParams<{ userId?: string }>();
     const { user, loading: authLoading } = useAuth();
