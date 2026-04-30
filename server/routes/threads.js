@@ -497,7 +497,7 @@ router.delete('/:threadId/follow', async (req, res) => {
 // updates lastReadAt on the followed thread
 router.post('/:threadId/read', async (req, res) => {
     try {
-        const follow = await Models.follow.findOne({
+        const follow = await Models.Follow.findOne({
             where: { userId: req.session.user.id, threadId: req.params.threadId }
         });
 

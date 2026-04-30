@@ -26,7 +26,7 @@ function ThreadFollows() {
     // Submit event for unfollow buttons
     const handleUnfollow = async (threadId: number) => {
         try { 
-            await api.delete(`/api/threads/${threadId}/subscribe`);
+            await api.delete(`/api/threads/${threadId}/follow`);
             setFollows(prev => prev.filter(s => s.thread.id !== threadId));
         } catch {
             setError('Error unfollowing');
