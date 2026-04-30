@@ -25,6 +25,13 @@ const Thread = sequelize.define(
             allowNull: false,
             defaultValue: 'public',
         },
+        parentThreadId: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            field: 'parent_thread_id',
+            references: { model: 'Threads', key: 'id' },
+            onDelete: 'SET NULL'
+        }
     },
     {
         tableName: 'Threads',

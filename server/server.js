@@ -88,7 +88,8 @@ async function init() {
     await sequelize.authenticate();
     console.log('DB connected');
 
-    await sequelize.sync({ alter: true });
+    console.log('Starting sync...');
+    await sequelize.sync();
     await sequelize.query('SET session_replication_role = DEFAULT;');
     console.log("Tables synced successfully.");
 
