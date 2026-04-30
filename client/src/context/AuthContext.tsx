@@ -22,19 +22,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const response = await api.get('/api/me');
-
-                if (response.data.success) {
+                const response = await api.get('/api/me', {
+                    validateStatus: (status) => status === 200 || status === 401
+                });
+                if (response.status === 200 && response.data?.success) {
                     setUser(response.data.user);
+                } else {
+                    setUser(null);
                 }
-            } catch (err) {
-                // not logged in
-                console.log('Not authenticated');
+            } catch (err: any) {
+                setUser(null);
             } finally {
-                setLoading(false); // done checking
+                setLoading(false);
             }
         };
-
         checkAuth();
     }, []);
 

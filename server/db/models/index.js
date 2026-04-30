@@ -131,6 +131,10 @@ Thread.hasMany(Follow, { foreignKey: 'threadId', as: 'follows'})
 Follow.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Follow.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
 
+// Thread nesting (self-reference)
+Thread.hasMany(Thread, { foreignKey: 'parentThreadId', as: 'children' });
+Thread.belongsTo(Thread, { foreignKey: 'parentThreadId', as: 'parent' });
+
 // Thread Bans
 User.hasMany(ThreadBan, { foreignKey: 'userId', as: 'threadBans' });
 ThreadBan.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -183,8 +187,10 @@ module.exports = {
     PracticeTime,
     ScoreBoard,
     CourseRequirement,
+    CourseRequirement,
     ThreadBan,
     ThreadMember,
     Reaction,
     ProfileSettings,
+    Progress,
 };

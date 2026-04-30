@@ -47,19 +47,19 @@ router.get('/my-enrollments', requireAuth, requireRole('student'), async (req, r
             const moduleIds = courseModules.map(m => m.id);
 
             // Count lectures linked to those modules
-            const totalLectures = await Models.Lecture.count({
-                where: { moduleId: moduleIds }
-            });
+            const totalLectures = moduleIds.length > 0
+                ? await Models.Lecture.count({ where: { moduleId: moduleIds } })
+                : 0;
 
             const progress = totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0;
 
             return {
                 id: course.id,
-                enrollmentId: enrol.id,
+                enrollmentId: enroll.id,
                 courseId: course.id,
                 name: course.name,
                 thumbnail: course.thumbnail,
-                completed: enrol.completed || progress === 100,
+                completed: enroll.completed || progress === 100,
                 totalLectures: totalLectures || 0,
                 completedCount: completedCount || 0,
                 progress: progress
@@ -75,8 +75,13 @@ router.get('/my-enrollments', requireAuth, requireRole('student'), async (req, r
 // Enroll in a course (Maps to POST /api/courses/:courseId/enroll)
 router.post('/:courseId/enroll', requireRole('student'), async (req, res) => {
     try {
-        const userId = req.session.user.id;
+        const userId = req.session.user?.id;
         const { courseId } = req.params;
+
+        const existingEnrollment = await Models.Enrollment.findOne({ where: { userId, courseId } });
+        if (existingEnrollment) {
+            return res.status(400).json({ message: 'Already enrolled in this course' });
+        }
 
         const course = await Models.Course.findByPk(courseId, {
             include: [{ model: Models.Course, as: 'requirements' }]
@@ -88,7 +93,8 @@ router.post('/:courseId/enroll', requireRole('student'), async (req, res) => {
         // Check requirements
         if (course.requirements && course.requirements.length > 0) {
             const userEnrollments = await Models.Enrollment.findAll({
-                where: { userId }
+                where: { userId },
+                raw: true
             });
             const completedCourseIds = userEnrollments.filter(e => e.completed).map(e => e.courseId);
 
@@ -99,15 +105,6 @@ router.post('/:courseId/enroll', requireRole('student'), async (req, res) => {
                     missingRequirements: missingRequirements.map(r => r.name)
                 });
             }
-        }
-
-        // Check if already enrolled
-        const existingEnrollment = await Models.Enrollment.findOne({
-            where: { userId, courseId }
-        });
-
-        if (existingEnrollment) {
-            return res.status(400).json({ message: 'Already enrolled in this course' });
         }
 
         // Create enrollment and update course count
@@ -152,12 +149,10 @@ router.delete('/:courseId/enroll', requireRole('student'), async (req, res) => {
 router.get('/:courseId/progress', requireRole('student'), async (req, res) => {
     try {
         const { courseId } = req.params;
-        const userId = req.user.id;
+        const userId = req.session.user?.id || req.user?.id;
+        if (!userId) return res.status(401).json({ message: "Unauthorized" });
         const records = await Models.Progress.findAll({
-            where: {
-                userId: req.user.id,
-                courseId: req.params.courseId
-            }
+            where: { userId, courseId }
         });
         const completedLectures = records.map(r => r.lectureId.toString());
         res.json({ completedLectures });
@@ -165,6 +160,7 @@ router.get('/:courseId/progress', requireRole('student'), async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 // COMPLETION ROUTE
 router.post('/:courseId/lectures/:lectureId/complete', requireAuth, requireRole('student'), async (req, res) => {
     try {
@@ -175,7 +171,7 @@ router.post('/:courseId/lectures/:lectureId/complete', requireAuth, requireRole(
             where: {
                 userId: userId,
                 courseId: courseId,
-                lectureId: parseInt(lectureId.replace('lec-', ''))
+                lectureId: parseInt(String(lectureId).replace('lec-', ''))
             }
         });
 
@@ -420,7 +416,7 @@ router.get('/:courseId/students', requireRole('instructor', 'admin'), async (req
                 attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email']
             }]
         });
-        
+
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
