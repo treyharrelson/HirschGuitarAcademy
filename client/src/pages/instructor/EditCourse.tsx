@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 import { useCourseEditor } from '../../hooks/useCourseEditor';
@@ -272,7 +272,7 @@ const EditCourse: React.FC = () => {
 
     if (loading) return <div className="p-10">Loading Course Editor...</div>;
     return (
-        <div className='h-screen overflow-scroll flex flex-col items-start md:p-8 p-4 pt-8'>
+        <div className='w-full pb-10 flex flex-col items-start md:p-8 p-4 pt-8'>
             <form onSubmit={handleUpdate} className='flex flex-col gap-6 w-full max-w-4xl text-gray-500 pb-20'>
                 <h1 className='text-2xl font-bold text-black'>Editing: {state.courseTitle}</h1>
                 {/* COURSE TITLE */}
@@ -593,14 +593,14 @@ const EditCourse: React.FC = () => {
                     )}
                 </div>
                 { /* NAV BUTTONS */}
-                <div className="fixed bottom-8 right-8 flex flex-col items-end gap-3 z-[9999]">
+                <div className="fixed bottom-8 right-24 flex flex-row items-center gap-3 z-[9999]">
                     <button
                         type="button"
                         onClick={() => handlers.viewCourse(courseId || "")}
-                        className="flex items-center gap-2 px-5 py-3 bg-black text-white rounded-full shadow-2xl font-bold text-sm hover:bg-gray-800 transition-all hover:-translate-y-1 active:translate-y-0">
+                        className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full shadow-2xl font-bold text-sm hover:bg-gray-800 transition-all">
                         <span>View Course</span>
                     </button>
-                    <div className="flex bg-white rounded-full shadow-2xl border border-gray-100 p-1.5">
+                    <div className="flex bg-white rounded-full shadow-2xl border border-gray-100 p-1">
                         <div className="relative group flex items-center">
                             <span className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap uppercase tracking-tighter">
                                 Expand All

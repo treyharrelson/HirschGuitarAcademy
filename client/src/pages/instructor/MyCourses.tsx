@@ -52,7 +52,7 @@ const MyCourses: React.FC = () => {
         </div>
       )}
 
-      <h1 className='text-2xl font-semibold mb-6'>My Published Courses</h1>
+      <h1 className="text-3xl font-bold mb-6 text-blue-700">Course Management</h1>
       
       {myCourses.length === 0 ? (
         <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl py-12 px-4 text-center">

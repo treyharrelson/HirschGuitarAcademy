@@ -32,17 +32,7 @@ function Login() {
                     email: response.data.user.email,
                     role: response.data.user.role
                 });
-
-                // navigate based on role
-                if (response.data.user.role === 'student') {
-                    navigate('/home')
-                } else if (response.data.user.role === 'instructor') {
-                    navigate('/instructor')
-                } else if (response.data.user.role === 'admin') {
-                    navigate('/home')
-                } else if (response.data.user.role === 'moderator') {
-                    navigate('/home')
-                }
+                navigate('/home')
             }
         } catch (err) {
             setError('Invalid credentials');

@@ -76,9 +76,8 @@ function Forum() {
             {/* Header */}
             <div className="mb-6">
                 <Link
-                    to="/student-dashboard"
-                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-4"
-                >
+                    to="/home"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-4">
                     ← Back to Dashboard
                 </Link>
                 <div className="flex items-center justify-between">
@@ -113,31 +112,6 @@ function Forum() {
                         d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
                 </svg>
             </div>
-
-            <Sidebar title="Filter">
-
-                <SidebarLink
-                    node={<div className="relative mb-6">
-                        <input
-                            type="text"
-                            placeholder="Search threads..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full border border-gray-200 rounded-full px-4 py-2 pl-9 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50/50"
-                        />
-                        <svg
-                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                        </svg>
-                    </div>}
-                >
-                </SidebarLink>
-            </Sidebar>
 
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
