@@ -64,17 +64,32 @@ const AddCourse: React.FC = () => {
     }
   };
 
+  const [charCount, setCharCount] = useState(0);
+  const MAX_LENGTH = 2048;
   useEffect(() => {
     // Initiate Quill only ONCE
     if (!refs.quillRef.current && refs.editorRef.current) {
-      refs.quillRef.current = new Quill(refs.editorRef.current, {
+      const quill = new Quill(refs.editorRef.current, {
         theme: 'snow',
-      })
+      });
+      refs.quillRef.current = quill;
+
+      // Listen for text changes to enforce the limit
+      quill.on('text-change', () => {
+        const length = quill.getLength() - 1; // Subtract trailing newline
+        setCharCount(length);
+
+        if (length > MAX_LENGTH) {
+          quill.deleteText(MAX_LENGTH, length);
+          setCharCount(MAX_LENGTH);
+        }
+      });
     }
+
     if (state.showPopup) {
       refs.inputRef.current?.focus();
     }
-  }, [state.showPopup])
+  }, [state.showPopup]);
 
   return (
     <div className='w-full flex flex-col items-start justify-between md:p-8 md:pb-0 p-4 pt-8 pb-10'>
@@ -94,7 +109,12 @@ const AddCourse: React.FC = () => {
         </div>
         {/* MAIN DESCRIPTION */}
         <div className='flex flex-col gap-1'>
-          <p className='font-medium'>Course Description</p>
+          <div className='flex justify-between items-end'>
+            <p className='font-medium'>Course Description</p>
+            <p className={`text-[10px] font-bold ${charCount >= MAX_LENGTH ? 'text-red-500' : 'text-gray-400'}`}>
+              {charCount} / {MAX_LENGTH}
+            </p>
+          </div>
           <div className='w-full bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden'>
             <div ref={refs.editorRef} className="bg-white min-h-[200px]"></div>
           </div>
@@ -140,8 +160,8 @@ const AddCourse: React.FC = () => {
                   <label
                     key={course.id}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer text-sm font-medium ${isChecked
-                        ? 'bg-blue-50 border-blue-400 text-blue-700 shadow-sm'
-                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'bg-blue-50 border-blue-400 text-blue-700 shadow-sm'
+                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}
                   >
                     <input

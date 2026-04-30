@@ -102,7 +102,7 @@ const MyEnrollments: React.FC = () => {
         {enrollments.length === 0 && (
           <div className="p-20 text-center text-slate-400">
             <p className="text-lg mb-2">No active enrollments found.</p>
-            <button onClick={() => navigate('/course-list')} className="text-sky-600 font-bold hover:underline">
+            <button onClick={() => navigate('/all-courses')} className="text-sky-600 font-bold hover:underline">
               Browse Catalog
             </button>
           </div>

@@ -130,21 +130,6 @@ export const ProfilePage: React.FC = () => {
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
             <div className="flex flex-col lg:flex-row gap-8">
 
-                <Sidebar>
-                    {user?.role && (NAV_LINKS[user.role] || NAV_LINKS['guest']).map((link, index) => {
-                        const isActive = location.pathname === link.path;
-                        return (
-                            <SidebarLink
-                                key={index}
-                                icon={link.icon}
-                                label={link.label}
-                                isActive={isActive}
-                                onClick={() => navigate(link.path)}
-                            />
-                        );
-                    })}
-                </Sidebar>
-
                 <div className="flex-1">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
                         {loading ? (

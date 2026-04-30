@@ -194,11 +194,18 @@ const EditCourse: React.FC = () => {
             if (state.courseDescription) {
                 quill.root.innerHTML = state.courseDescription;
             }
+            const MAX_LENGTH = 2048;
             quill.on('text-change', () => {
-                setters.setCourseDescription(quill.root.innerHTML);
+                const currentLength = quill.getLength() - 1;
+                if (currentLength > MAX_LENGTH) {
+                    quill.deleteText(MAX_LENGTH, currentLength);
+                } else {
+                    setters.setCourseDescription(quill.root.innerHTML);
+                }
             });
         }
     }, [loading]);
+
 
     useEffect(() => {
         if (state.showPopup) {
