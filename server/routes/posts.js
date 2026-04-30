@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Models = require('../db/models');
+const roles = require('../rolesEnum');
+const requireRole = require('../middleware/requireRole');
 
 const VALID_TYPES = ['like', 'love', 'laugh', 'fire', 'celebrate'];
 
@@ -144,6 +146,35 @@ router.post('/:postId/comments/:commentId/reactions', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: `Error reacting: ${error}` });
     }
+});
+
+
+// delete post
+router.delete('/:threadId/posts/:postId', requireRole(roles.MODERATOR, roles.ADMIN), async (req, res) => {
+	try {
+		const { threadId, postId } = req.params;
+		const userId = req.session.user.id;
+		const userRole = req.session.user.role;
+
+		const post = await Models.Post.findByPk(postId);
+		if (!post) return res.status(404).json({ message: 'Post not found' });
+
+		// Authorization: only author or moderator/admin can delete
+		if (post.authorId !== userId && userRole !== 'moderator' && userRole !== 'admin') {
+			return res.status(403).json({ message: 'Unauthorized to delete this post' });
+		}
+
+		// Cleanup associations (Reactions, Comments, Attachments)
+		// Assuming cascading deletes or manual cleanup
+		await Models.Reaction.destroy({ where: { postId } });
+		await Models.Comment.destroy({ where: { postId } });
+		await Models.Attachment.destroy({ where: { postId } });
+
+		await post.destroy();
+		res.status(204).end();
+	} catch (error) {
+		res.status(500).json({ message: `Error deleting post: ${error}` });
+	}
 });
 
 module.exports = {router, getReactionSummary };

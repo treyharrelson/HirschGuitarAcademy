@@ -86,7 +86,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
         if (!confirm('Are you sure you want to delete this post?')) return;
         try {
             const threadId = post.thread?.id || post.announcedThread?.id || 'global';
-            await api.delete(`/api/threads/${threadId}/posts/${post.id}`);
+            await api.delete(`/api/posts/${threadId}/posts/${post.id}`);
             if (onPostDeleted) onPostDeleted(post.id);
         } catch (error: any) {
             console.error('Error deleting post:', error);
@@ -100,9 +100,10 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
             const threadId = post.thread?.id || post.announcedThread?.id;
             await api.post(`/api/threads/${threadId}/ban`, { userId: post.author?.id });
             alert('User banned successfully.');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error banning user:', error);
-            alert('Failed to ban user.');
+            const msg = error.response?.data?.message || error.message || 'Failed to ban user.';
+            alert(msg);
         }
     };
 
@@ -161,7 +162,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
 
                 {isModerator && (
                     <div className="flex gap-2">
-                        {post.author?.id !== user?.id && (
+                        {post.author?.id !== user?.id && (post.thread?.id || post.announcedThread?.id) && (
                             <button onClick={handleBan} className="text-xs font-semibold text-red-600 hover:bg-red-50 px-2 py-1 flex items-center justify-center gap-1 rounded border border-red-200">
                                 <span>Ban User</span>
                             </button>
