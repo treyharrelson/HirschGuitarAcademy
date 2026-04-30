@@ -1,8 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 import "./metronome.css";
-
-// example sound import (adjust filename if needed)
+import gongSound from "./sounds/gong.wav";
 import clickSound from "./sounds/metronome-click.wav";
+
+const playClick = () => {
+  const audio = new Audio(clickSound);
+  audio.currentTime = 0;
+  audio.play();
+};
+
+import successSound from "./sounds/success-chime.wav";
+
+useEffect(() => {
+  if (!isPlaying) return;
+
+  const interval = setInterval(() => {
+    playClick();
+  }, (60 / bpm) * 1000);
+
+  return () => clearInterval(interval);
+}, [bpm, isPlaying]);
 
 export default function Metronome() {
   const [bpm, setBpm] = useState(120);
