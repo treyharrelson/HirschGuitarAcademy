@@ -16,8 +16,9 @@ export default function Sidebar({ children, title = "Navigation" }: SidebarProps
 
     return (
         <div className="w-full lg:w-72 flex-shrink-0">
+
             {/* Navigation / Custom Content */}
-            <nav className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-34">
+            <nav className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky ">
                 <div className="p-4 border-b border-gray-50 bg-gray-50/50">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
                 </div>
