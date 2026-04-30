@@ -22,7 +22,7 @@ router.get('/:postId/comments', async (req, res) => {
         const comments = await Models.Comment.findAll({
             where: { postId: req.params.postId },
             include: [
-                { model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }
+                { model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }
             ],
             order: [['createdAt', 'ASC']]
         });
@@ -52,7 +52,7 @@ router.post('/:postId/comments', async (req, res) => {
 
         const commentWithAuthor = await Models.Comment.findByPk(comment.id, {
             include: [
-                { model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }
+                { model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }
             ]
         });
 

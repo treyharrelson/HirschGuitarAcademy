@@ -6,9 +6,11 @@ export interface Comment {
     content: string;
     createdAt: string;
     author?: {
+        id: number;
         userName: string;
         firstName: string;
         lastName: string;
+        name: string;
     };
     counts: Record<ReactionType, number>;
     userReaction: ReactionType | null;

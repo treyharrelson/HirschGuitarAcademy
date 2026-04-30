@@ -203,15 +203,15 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
                     )}
 
                     {comments.map(c => {
-                        const cInitials = c.author?.userName?.slice(0, 2).toUpperCase() || '??';
+                        const cInitials = c.author?.name?.slice(0, 2).toUpperCase() || '??';
                         return (
                             <div key={c.id} className="pl-3 border-l-2 border-blue-100">
                                 <div className="flex gap-2">
-                                    <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-bold flex-shrink-0">
+                                    <Link to={`/profile/${c.author?.id}`} className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-bold flex-shrink-0 hover:ring-2 hover:ring-blue-300 transition-all">
                                         {cInitials}
-                                    </div>
+                                    </Link>
                                     <div className="flex-1">
-                                        <p className="text-xs font-semibold text-gray-700">{c.author?.userName || 'Unknown'}</p>
+                                        <Link to={`/profile/${c.author?.id}`} className="text-xs font-semibold text-gray-700 hover:text-blue-600 hover:underline">{c.author?.name || 'Unknown'}</Link>
                                         <p className="text-xs text-gray-600 leading-relaxed">{c.content}</p>
                                         <p className="text-xs text-gray-400 mt-0.5">{new Date(c.createdAt).toLocaleString()}</p>
                                         <ReactionBar

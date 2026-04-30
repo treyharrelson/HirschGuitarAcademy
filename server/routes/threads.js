@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 					...(memberThreadIds.length > 0 ? [{ id: memberThreadIds}] : [])
 				]
 			},
-            include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }],
+            include: [{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }],
             order: [['createdAt', 'DESC']],
             limit,
             offset
@@ -84,7 +84,7 @@ router.post('/', async (req, res) => {
 
 			const postWithAuthor = await Models.Post.findByPk(announcementPost.id, {
 				include: [
-					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+					{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] },
 					{ model: Models.Attachment, as: 'attachments' },
 					{ model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title', 'visibility'] }
 				]
@@ -221,12 +221,12 @@ router.get('/feed/posts', async (req, res) => {
                 ]
             },
             include: [
-                { model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+                { model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] },
                 { model: Models.Attachment, as: 'attachments' },
                 { model: Models.Thread, as: 'thread', attributes: ['id', 'title'], required: false },
                 { model: Models.Thread, as: 'announcedThread', attributes: ['id', 'title', 'visibility'], required: false },
 				{ model: Models.Comment, as: 'comments', separate: true, order: [['createdAt', 'ASC']], include: [
-					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }
+					{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }
 				]}
             ],
             order: [['createdAt', 'DESC']],
@@ -258,7 +258,7 @@ router.get('/follows', async (req, res) => {
 			include: [{
 				model: Models.Thread,
 				as: 'thread',
-				include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName']}]
+				include: [{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name']}]
 			}],
 			order: [['createdAt', 'DESC']]
 		});
@@ -305,7 +305,7 @@ router.get('/:threadId/members', async (req, res) => {
 		const members = await Models.ThreadMember.findAll({
 			where: { threadId: req.params.threadId },
 			// join Users table
-			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName'] }]
+			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }]
 		});
 		// map the nested users from the query so that the response is only the users
 		res.json(members.map(m => m.user));
@@ -346,7 +346,7 @@ router.delete('/:threadId/members/:userId', async (req, res) => {
 router.get('/:threadId', async (req, res) => {
 	try {
 		const thread = await Models.Thread.findByPk(req.params.threadId, {
-			include: [{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName', 'name'] }]
+			include: [{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }]
 		});
 		if (!thread) return res.status(404).json({message: 'Thread not found' });
 		res.json(thread);
@@ -361,10 +361,10 @@ router.get('/:threadId/posts', async (req, res) => {
 		const posts = await Models.Post.findAll({
 			where: { threadId: req.params.threadId },
 			include: [
-				{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] },
+				{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] },
 				{ model: Models.Attachment, as: 'attachments' },
 				{ model: Models.Comment, as: 'comments', separate: true, order: [['createdAt', 'ASC']], include: [
-					{ model: Models.User, as: 'author', attributes: ['userName', 'firstName', 'lastName'] }
+					{ model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }
 				]}
 			],
 			order: [['createdAt', 'ASC']]
