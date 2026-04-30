@@ -6,8 +6,8 @@ export default function Timer() {
   const [mode, setMode] = useState<"countdown" | "countup">("countdown");
   const [isRunning, setIsRunning] = useState(false);
   const [minutesInput, setMinutesInput] = useState(60);
-
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const circumference = 2 * Math.PI * 100;
 
   const formatTime = () => {
@@ -16,31 +16,22 @@ export default function Timer() {
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   };
 
-  const progress =
-    mode === "countdown"
-      ? remainingSeconds / totalSeconds
-      : (remainingSeconds % totalSeconds) / totalSeconds;
-
+  const progress = mode === "countdown" ? remainingSeconds / totalSeconds : (remainingSeconds % totalSeconds) / totalSeconds;
   const strokeDashoffset = circumference - progress * circumference;
 
   const startTimer = () => {
     if (intervalRef.current) return;
-
     let newTotal = minutesInput * 60;
-
     if (mode === "countdown") {
       setTotalSeconds(newTotal);
       if (remainingSeconds === totalSeconds) {
         setRemainingSeconds(newTotal);
       }
     }
-
     if (mode === "countup" && remainingSeconds === 0) {
       setTotalSeconds(newTotal);
     }
-
     setIsRunning(true);
-
     intervalRef.current = setInterval(() => {
       setRemainingSeconds((prev) => {
         if (mode === "countdown") {
@@ -49,6 +40,7 @@ export default function Timer() {
             intervalRef.current = null;
             beep();
             alert("Session Complete 🎸");
+            setIsRunning(false);
             return 0;
           }
           return prev - 1;
@@ -60,8 +52,10 @@ export default function Timer() {
   };
 
   const pauseTimer = () => {
-    clearInterval(intervalRef.current!);
-    intervalRef.current = null;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     setIsRunning(false);
   };
 
@@ -78,7 +72,6 @@ export default function Timer() {
 
   const toggleMode = () => {
     pauseTimer();
-
     if (mode === "countdown") {
       setMode("countup");
       setRemainingSeconds(0);
@@ -100,97 +93,90 @@ export default function Timer() {
   }, []);
 
   return (
-    <div style={styles.body}>
-      <div style={styles.container}>
-        <h1>🎸 Practice Timer</h1>
+    <div className="min-h-screen bg-[#0f0f14] text-white flex justify-center items-center font-sans p-4">
+      <div className="bg-[#181820] p-10 rounded-[20px] text-center w-full max-w-[380px] shadow-2xl border border-white/5">
+        <h1 className="text-2xl font-bold mb-8 tracking-tight">🎸 Practice Timer</h1>
 
-        <div style={styles.timerWrapper}>
-          <svg width="220" height="220" style={{ transform: "rotate(-90deg)" }}>
-            <circle cx="110" cy="110" r="100" style={styles.bgCircle} />
+        {/* Circular Progress Display */}
+        <div className="relative w-[220px] h-[220px] mx-auto mb-10">
+          <svg width="220" height="220" className="rotate-[-90deg]">
+            {/* Background Circle */}
+            <circle
+              cx="110"
+              cy="110"
+              r="100"
+              className="fill-none stroke-[#2a2a35] stroke-[10px]"
+            />
+            {/* Progress Circle */}
             <circle
               cx="110"
               cy="110"
               r="100"
               style={{
-                ...styles.progressCircle,
                 strokeDasharray: circumference,
-                strokeDashoffset,
+                strokeDashoffset: isNaN(strokeDashoffset) ? circumference : strokeDashoffset,
               }}
+              className="fill-none stroke-[#ff9f1c] stroke-[10px] transition-all duration-1000 ease-linear rounded-full"
+              strokeLinecap="round"
             />
           </svg>
-
-          <div style={styles.timeDisplay}>{formatTime()}</div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-mono tracking-widest">
+            {formatTime()}
+          </div>
         </div>
 
-        <input
-          type="number"
-          value={minutesInput}
-          min={1}
-          onChange={(e) => setMinutesInput(Number(e.target.value))}
-          style={styles.input}
-        />
-
-        <div style={styles.buttons}>
-          <button onClick={startTimer}>Start</button>
-          <button onClick={pauseTimer}>Pause</button>
-          <button onClick={resetTimer}>Reset</button>
-          <button onClick={toggleMode}>
+        {/* Settings */}
+        <div className="flex flex-col items-center gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-white/50 uppercase font-bold tracking-tighter">Minutes</span>
+            <input
+              type="number"
+              value={minutesInput}
+              min={1}
+              onChange={(e) => setMinutesInput(Number(e.target.value))}
+              className="w-20 bg-[#2a2a35] border-none text-white p-2 rounded-lg text-center font-bold focus:ring-2 focus:ring-[#ff9f1c] outline-none"
+            />
+          </div>
+          
+          <button 
+            onClick={toggleMode}
+            className="text-[10px] uppercase tracking-[0.2em] font-black py-1.5 px-4 rounded-full border border-white/10 hover:bg-white/5 transition-colors"
+          >
             Mode: {mode === "countdown" ? "Countdown" : "Count Up"}
+          </button>
+        </div>
+
+        {/* Controls */}
+        <div className="grid grid-cols-2 gap-3">
+          {!isRunning ? (
+            <button
+              onClick={startTimer}
+              className="col-span-2 py-4 bg-[#ff9f1c] text-[#0f0f14] font-black rounded-xl hover:bg-[#ffb551] transition-all active:scale-95 uppercase tracking-widest"
+            >
+              Start Session
+            </button>
+          ) : (
+            <button
+              onClick={pauseTimer}
+              className="col-span-2 py-4 bg-white/10 text-white font-black rounded-xl hover:bg-white/20 transition-all active:scale-95 uppercase tracking-widest"
+            >
+              Pause
+            </button>
+          )}
+          <button
+            onClick={resetTimer}
+            className="py-3 bg-[#2a2a35] text-white/70 font-bold rounded-xl hover:bg-[#363644] transition-all text-xs uppercase"
+          >
+            Reset
+          </button>
+          <button
+            className="py-3 bg-[#2a2a35] text-white/70 font-bold rounded-xl hover:bg-[#363644] transition-all text-xs uppercase"
+            onClick={() => setRemainingSeconds(mode === "countdown" ? minutesInput * 60 : 0)}
+          >
+            Clear
           </button>
         </div>
       </div>
     </div>
   );
 }
-
-const styles: any = {
-  body: {
-    background: "#0f0f14",
-    color: "white",
-    height: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  container: {
-    background: "#181820",
-    padding: "40px",
-    borderRadius: "20px",
-    textAlign: "center",
-    width: "350px",
-  },
-  timerWrapper: {
-    position: "relative",
-    width: "220px",
-    height: "220px",
-    margin: "0 auto 30px",
-  },
-  timeDisplay: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    fontSize: "36px",
-  },
-  input: {
-    width: "80px",
-    padding: "8px",
-    marginBottom: "20px",
-  },
-  buttons: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "10px",
-  },
-  bgCircle: {
-    fill: "none",
-    stroke: "#2a2a35",
-    strokeWidth: 10,
-  },
-  progressCircle: {
-    fill: "none",
-    stroke: "#ff9f1c",
-    strokeWidth: 10,
-    strokeLinecap: "round",
-  },
-};

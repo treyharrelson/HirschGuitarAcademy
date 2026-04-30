@@ -11,6 +11,7 @@ import defaultCourseThumbnail from './defaultCourseThumbnail.jpg'
 import userIcon from './userIcon.svg'
 import logoutIcon from './logout.svg'
 import homeIcon from './home-outline.svg'
+import trophyIcon from './trophy-outline.svg'
 
 export const assets = {
     book_icon,
@@ -25,5 +26,6 @@ export const assets = {
     logoNoBackground,
     userIcon,
     logoutIcon,
-    homeIcon
+    homeIcon,
+    trophyIcon
 }
