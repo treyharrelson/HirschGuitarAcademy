@@ -5,6 +5,7 @@ import Sidebar, { SidebarLink } from '../components/generic/Sidebar';
 import { DashButton } from '../components/generic/Buttons';
 import { useAuth } from '../context/AuthContext';
 import { assets } from '../assets/assets';
+import { TimerProvider } from '../context/TimerProvider';
 
 type RoleLink = {
   label: string;
@@ -103,6 +104,7 @@ const MainLayout = () => {
   return (
     <div className="h-screen overflow-hidden bg-gray-50 flex flex-col">
       {/* The Navbar stays pinned to the top */}
+      <TimerProvider>
       <Navbar />
       <div className='flex flex-1 overflow-hidden pt-2 pl-2'>
         <Sidebar>
@@ -153,6 +155,7 @@ const MainLayout = () => {
           )}
         </main>
       </div>
+      </TimerProvider>
     </div>
   );
 };

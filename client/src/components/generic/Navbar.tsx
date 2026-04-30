@@ -1,10 +1,11 @@
-import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import logo from '../../assets/HGA_Logo_No_Background.png'
-import { useAuth } from '../../context/AuthContext'
-import { NavBarButton, BigBlueButton } from './Buttons'
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import logo from '../../assets/HGA_Logo_No_Background.png';
+import { useAuth } from '../../context/AuthContext';
+import { NavBarButton, BigBlueButton } from './Buttons';
 import api from '../../api/axiosInstance';
-import { assets } from '../../assets/assets'
+import { assets } from '../../assets/assets';
+import { useTimer } from '../../context/TimerProvider';
 
 type RoleLink = {
   label: string;
@@ -35,6 +36,8 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { isRunning, remainingSeconds, formatTime, startTimer, pauseTimer } = useTimer();
+
   const handleLogout = async () => {
     try {
       await api.post('/logout', {});
@@ -81,6 +84,45 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      {/* INTEGRATED TIMER */}
+      {remainingSeconds !== (60 * 60) && ( // Shows if timer has been touched or is running
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 bg-[#181820] px-4 py-1.5 rounded-full shadow-lg border border-white/10">
+
+          {/* Status Indicator */}
+          <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-[#ff9f1c] animate-pulse' : 'bg-gray-500'}`} />
+
+          {/* Time Display */}
+          <span className="font-mono font-bold text-white text-sm">
+            {formatTime(remainingSeconds)}
+          </span>
+
+          {/* Toggle Button */}
+          <button
+            onClick={isRunning ? pauseTimer : startTimer}
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-[#ff9f1c] hover:bg-[#ffb551] text-[#0f0f14] transition-all active:scale-90"
+          >
+            <button
+              onClick={isRunning ? pauseTimer : startTimer}
+              className="flex items-center justify-center w-7 h-7 rounded-full bg-[#ff9f1c] hover:bg-[#ffb551] text-[#0f0f14] transition-all active:scale-90"
+            >
+              {isRunning ? (
+                /* Pause Icon */
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
+                </svg>
+              ) : (
+                /* Play Icon */
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </button>
+          </button>
+        </div>
+      )}
+
       {/* For phone screens */}
       <div className='md:hidden flex items-center gap-2 sm:gap-5 text-gray-500'>
         <div className='flex items-center gap-4'>
