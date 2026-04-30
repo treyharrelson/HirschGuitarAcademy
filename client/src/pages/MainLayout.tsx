@@ -135,7 +135,7 @@ const MainLayout = () => {
         </Sidebar>
 
         {/* The Outlet is where your actual page content renders */}
-        <main className="flex-grow overflow-y-auto relative pl-8 pr-0 pb-20" ref={scrollRef}>
+        <main className="flex-grow overflow-y-auto relative pl-8 pr-2 pb-20" ref={scrollRef}>
           <Outlet />
           {showButton && (
             <button
