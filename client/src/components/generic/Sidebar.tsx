@@ -16,25 +16,6 @@ export default function Sidebar({ children, title = "Navigation" }: SidebarProps
 
     return (
         <div className="w-full lg:w-72 flex-shrink-0">
-            {/* Welcome Card */}
-            <button 
-                onClick={() => navigate("/profile")}
-                className="w-full text-left cursor-pointer bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 hover:bg-gray-200 transition-colors duration-200 block"
-            >
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-600 font-bold text-2xl shadow-inner">
-                        {user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-gray-400 mb-1">Welcome back,</p>
-                        <h2 className="text-xl font-bold text-gray-900 leading-tight mb-1 truncate">{user.name}</h2>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 capitalize border border-blue-100">
-                            {user.role}
-                        </span>
-                    </div>
-                </div>
-            </button>
-
             {/* Navigation / Custom Content */}
             <nav className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-34">
                 <div className="p-4 border-b border-gray-50 bg-gray-50/50">
