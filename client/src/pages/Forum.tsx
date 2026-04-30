@@ -200,7 +200,7 @@ function Forum() {
                                             </div>
                                             {thread.author && (
                                                 <p className="text-sm text-gray-400 mt-0.5">
-                                                    Started by {thread.author.userName} · {new Date(thread.createdAt).toLocaleDateString()}
+                                                    Started by {thread.author.name} · {new Date(thread.createdAt).toLocaleDateString()}
                                                 </p>
                                             )}
                                         </div>
