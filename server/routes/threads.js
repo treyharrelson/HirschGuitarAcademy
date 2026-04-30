@@ -7,6 +7,7 @@ const { Op } = require('sequelize');
 const { getReactionSummary } = require('./posts');
 const requireRole = require('../middleware/requireRole');
 const requireAuth = require('../middleware/requireAuth');
+const roles = require('../rolesEnum');
 
 // Get a # of threads at a time with offset pagination logic (Maps to /api/threads)
 router.get('/', async (req, res) => {
@@ -580,7 +581,7 @@ router.delete('/:threadId', async (req, res) => {
 		res.status(500).json({ message: `Error banning user: ${error}` });
 	}
 });
-/*
+
 // Unban user from thread
 router.delete('/:threadId/ban/:userId', requireRole(roles.MODERATOR, roles.ADMIN), async (req, res) => {
 	try {
@@ -606,5 +607,5 @@ router.get('/:threadId/ban', requireRole(roles.MODERATOR, roles.ADMIN), async (r
 		res.status(500).json({ message: `Error fetching bans: ${error}` });
 	}
 });
-*/
+
 module.exports = router;
