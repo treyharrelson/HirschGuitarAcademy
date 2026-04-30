@@ -187,8 +187,10 @@ module.exports = {
     PracticeTime,
     ScoreBoard,
     CourseRequirement,
+    CourseRequirement,
     ThreadBan,
     ThreadMember,
     Reaction,
     ProfileSettings,
+    Progress,
 };
