@@ -88,6 +88,7 @@ function NewThreadModal({ isOpen, onClose, onCreated }: NewThreadModalProps) {
                     </label>
                     <input
                         type="text"
+                        maxLength={64}
                         placeholder="What's this thread about?"
                         value={title}
                         onChange={e => setTitle(e.target.value)}

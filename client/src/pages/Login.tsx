@@ -53,6 +53,7 @@ function Login() {
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                             <input
                                 type="text"
+                                maxLength={64}
                                 placeholder="Email or Username"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)} // update state on every keystroke
@@ -65,6 +66,7 @@ function Login() {
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
                             <input
                                 type="password"
+                                maxLength={64}
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}

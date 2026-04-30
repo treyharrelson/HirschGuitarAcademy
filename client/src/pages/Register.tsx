@@ -64,6 +64,7 @@ function Register() {
                             <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">First Name:</label>
                             <input
                                 type="text"
+                                maxLength={64}
                                 placeholder="First Name"
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
@@ -77,6 +78,7 @@ function Register() {
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Last Name:</label>
                             <input
                                 type="text"
+                                maxLength={64}
                                 placeholder="Last Name"
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
@@ -90,6 +92,7 @@ function Register() {
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Username:</label>
                             <input
                                 type="text"
+                                maxLength={64}
                                 placeholder="Username"
                                 value={userName}
                                 onChange={(e) => setUserName(e.target.value)}
@@ -103,6 +106,7 @@ function Register() {
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email Address:</label>
                             <input
                                 type="email"
+                                maxLength={64}
                                 placeholder="Email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -116,6 +120,7 @@ function Register() {
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Password:</label>
                             <input
                                 type="password"
+                                maxLength={64}
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}

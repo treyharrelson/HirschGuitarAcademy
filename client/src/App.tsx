@@ -26,6 +26,7 @@ import EditCourse from './pages/instructor/EditCourse'
 import { ProfilePage } from './pages/Profile';
 
 import "quill/dist/quill.snow.css";
+import ProtectedRoute from './components/generic/ProtectedRoute';
 
 function App() {
   //const [count, setCount] = useState(0)
@@ -33,45 +34,47 @@ function App() {
   return (
     <AuthProvider>
       <AppContextProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          {/** THIS IS THE MAIN RENDERED PAGE */}
-          <Route element={<MainLayout />}>
-          <Route path="/student-dashboard" element={<Dashboard />} />
-          <Route path="/admin-dashboard" element={<Dashboard />} />
-          <Route path="/manage/threads" element={<ThreadManager />} />
+            {/** THIS IS THE MAIN RENDERED PAGE */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<MainLayout />}>
+                <Route path="/student-dashboard" element={<Dashboard />} />
+                <Route path="/admin-dashboard" element={<Dashboard />} />
+                <Route path="/manage/threads" element={<ThreadManager />} />
 
-          <Route path="/home" element={<Dashboard />} />
-          <Route path="/forum" element={<Forum />} />
-          <Route path="/forum/thread/:threadId" element={<ThreadDetail />} />
-          <Route path="/follows" element={<ThreadFollows />} />
-          <Route path="/all-courses" element={<AllCourses />} />
-          <Route path="/courses" element={<MyCourses />} />
-          {/* elements set to this so it won't crash */}
-          <Route path="/metronome" element={<MyCourses />} />
-          <Route path="/timer" element={<MyCourses />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/:userId" element={<ProfilePage />} />
+                <Route path="/home" element={<Dashboard />} />
+                <Route path="/forum" element={<Forum />} />
+                <Route path="/forum/thread/:threadId" element={<ThreadDetail />} />
+                <Route path="/follows" element={<ThreadFollows />} />
+                <Route path="/all-courses" element={<AllCourses />} />
+                <Route path="/courses" element={<MyCourses />} />
+                {/* elements set to this so it won't crash */}
+                <Route path="/metronome" element={<MyCourses />} />
+                <Route path="/timer" element={<MyCourses />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/profile/:userId" element={<ProfilePage />} />
 
-          {/**<Route path='/home' element={<Home />} /> */}
-          <Route path='/course-info/:id' element={<CourseDetails />} />
-          <Route path='/my-enrollments' element={<MyEnrollments />} />
-          <Route path='/course/:courseId' element={<CourseView />} />
-          <Route path='/loading/:path' element={<Loading />} />
-          
-          <Route path='/instructor' element={<Instructor />}>
-            <Route path='/instructor' element={<InstrcutorDashboard />} />
-            <Route path='add-course' element={<AddCourse />} />
-            <Route path='my-courses' element={<InstructorMyCourses />} />
-            <Route path='students-enrolled' element={<StudentsEnrolled />} />
-            <Route path='edit-course/:courseId' element={<EditCourse />}/>
-          </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
+                {/**<Route path='/home' element={<Home />} /> */}
+                <Route path='/course-info/:id' element={<CourseDetails />} />
+                <Route path='/my-enrollments' element={<MyEnrollments />} />
+                <Route path='/course/:courseId' element={<CourseView />} />
+                <Route path='/loading/:path' element={<Loading />} />
+
+                <Route path='/instructor' element={<Instructor />}>
+                  <Route path='/instructor' element={<InstrcutorDashboard />} />
+                  <Route path='add-course' element={<AddCourse />} />
+                  <Route path='my-courses' element={<InstructorMyCourses />} />
+                  <Route path='students-enrolled' element={<StudentsEnrolled />} />
+                  <Route path='edit-course/:courseId' element={<EditCourse />} />
+                </Route>
+              </Route>
+            </Route>
+          </Routes>
+        </BrowserRouter>
       </AppContextProvider>
     </AuthProvider>
   );

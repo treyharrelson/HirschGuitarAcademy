@@ -161,7 +161,8 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
                     ) : (
                         <div className="flex flex-col w-full max-w-md gap-2">
                             <input
-                                type="text"
+                                type="url"
+                                maxLength={2048}
                                 placeholder={`Paste ${type} URL here...`}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-blue-500 outline-none"
                                 value={linkValue}

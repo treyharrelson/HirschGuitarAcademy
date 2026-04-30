@@ -228,6 +228,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
                         <form onSubmit={handleSubmitReply} className="flex gap-2 mt-1">
                             <input
                                 value={replyContent}
+                                maxLength={2048}
                                 onChange={e => setReplyContent(e.target.value)}
                                 placeholder="Write a reply..."
                                 className="flex-1 border border-gray-200 rounded-full px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-300"

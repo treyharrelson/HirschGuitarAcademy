@@ -97,6 +97,7 @@ function Forum() {
             <div className="relative mb-4">
                 <input
                     type="text"
+                    maxLength={256}
                     placeholder="Search threads..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}

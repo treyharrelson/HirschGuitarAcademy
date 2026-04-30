@@ -140,6 +140,7 @@ export default function InstructorDashboard() {
                   <h3 className="font-bold mb-4 text-lg">Enroll a Student</h3>
                   <input
                     type="text"
+                    maxLength={256}
                     placeholder="Search students..."
                     className="w-full p-2 border border-gray-300 rounded mb-4"
                     value={studentSearch}
@@ -175,6 +176,7 @@ export default function InstructorDashboard() {
             <h2 className="text-xl font-bold mb-4">All Students</h2>
             <input
               type="text"
+              maxLength={256}
               placeholder="Search students..."
               className="w-full p-2 border border-gray-300 rounded mb-4"
               value={studentSearch}

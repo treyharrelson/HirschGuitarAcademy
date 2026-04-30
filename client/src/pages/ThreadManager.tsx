@@ -194,6 +194,7 @@ function ThreadManager() {
             <div className="relative mb-5">
                 <input
                     type="text"
+                    maxLength={256}
                     placeholder="Search threads..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -362,6 +363,7 @@ function ThreadManager() {
                                     <div className="relative">
                                         <input
                                             type="text"
+                                            maxLength={256}
                                             placeholder="Search users to add..."
                                             value={memberSearch}
                                             onChange={(e) => handleMemberSearchChange(e.target.value)}

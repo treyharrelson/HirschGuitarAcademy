@@ -282,6 +282,7 @@ const EditCourse: React.FC = () => {
                         onChange={e => setters.setCourseTitle(e.target.value)}
                         value={state.courseTitle}
                         type="text"
+                        maxLength={64}
                         className='outline-none py-2 px-3 rounded border border-gray-400 text-black'
                     />
                 </div>
@@ -389,6 +390,7 @@ const EditCourse: React.FC = () => {
                                                             <div className="flex-1 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
                                                                 <input
                                                                     type="text"
+                                                                    maxLength={64}
                                                                     value={module.title}
                                                                     onChange={(e) => handlers.updateTitle('module', module.id, e.target.value)}
                                                                     className="font-bold text-gray-800 bg-transparent outline-none w-full text-xl cursor-text" />
@@ -439,6 +441,7 @@ const EditCourse: React.FC = () => {
                                                                                                     <input
                                                                                                         className="font-bold text-gray-700 bg-transparent outline-none w-full text-sm cursor-text"
                                                                                                         value={item.title}
+                                                                                                        maxLength={64}
                                                                                                         onChange={(e) => handlers.updateTitle('submodule', item.id, e.target.value, { moduleId: module.id, subModuleIndex: lIdx })} />
                                                                                                 </div>
                                                                                             </div>
@@ -467,7 +470,7 @@ const EditCourse: React.FC = () => {
                                                                                                                 <div className="flex justify-between items-start mb-2">
                                                                                                                     <div className="flex flex-col flex-1">
                                                                                                                         <p className="text-[9px] text-gray-400 uppercase font-bold">Lecture</p>
-                                                                                                                        <input className="font-medium text-blue-600 bg-transparent outline-none w-full" value={subLec.title} onChange={(e) => handlers.updateTitle('lecture', subLec.id, e.target.value, { moduleId: module.id })} />
+                                                                                                                        <input className="font-medium text-blue-600 bg-transparent outline-none w-full" value={subLec.title} maxLength={64} onChange={(e) => handlers.updateTitle('lecture', subLec.id, e.target.value, { moduleId: module.id })} />
                                                                                                                     </div>
                                                                                                                     <img src={assets.cross_icon} className="w-4 h-4 cursor-pointer opacity-50 hover:opacity-100" onClick={() => handlers.handleLecture('remove', module.id, lIdx, item.content.indexOf(subLec))} />
                                                                                                                 </div>
@@ -496,7 +499,7 @@ const EditCourse: React.FC = () => {
                                                                                 <div className="flex justify-between items-start mb-2">
                                                                                     <div className="flex flex-col flex-1">
                                                                                         <p className="text-[9px] text-gray-400 uppercase font-bold">Lecture</p>
-                                                                                        <input className="font-medium text-blue-600 bg-transparent outline-none w-full" value={item.title} onChange={(e) => handlers.updateTitle('lecture', item.id, e.target.value, { moduleId: module.id })} />
+                                                                                        <input className="font-medium text-blue-600 bg-transparent outline-none w-full" value={item.title} maxLength={64} onChange={(e) => handlers.updateTitle('lecture', item.id, e.target.value, { moduleId: module.id })} />
                                                                                     </div>
                                                                                     <img src={assets.cross_icon} className="w-4 h-4 cursor-pointer opacity-50 hover:opacity-100" onClick={() => handlers.handleLecture('remove', module.id, lIdx)} />
                                                                                 </div>
@@ -540,6 +543,7 @@ const EditCourse: React.FC = () => {
                                         <input
                                             ref={refs.inputRef}
                                             type='text'
+                                            maxLength={64}
                                             className='mt-1 block w-full border rounded py-1 px-2'
                                             value={state.lectureDetails.lectureTitle}
                                             onChange={(e) => setters.setLectureDetails({ ...state.lectureDetails, lectureTitle: e.target.value })}

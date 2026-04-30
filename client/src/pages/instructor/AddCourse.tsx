@@ -88,6 +88,7 @@ const AddCourse: React.FC = () => {
             onChange={e => setters.setCourseTitle(e.target.value)}
             value={state.courseTitle}
             type="text"
+            maxLength={64}
             className='outline-none py-2 px-3 rounded border border-gray-400 text-black'
           />
         </div>
