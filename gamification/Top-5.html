@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>TOP 5 Leaderboard | HIRSCH GUITAR ACADEMY</title>
+      <style>
+         /*Import Whatever Font We Want*/
+         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+         body {
+         font-family: poppins, sans-serif;
+         background: #f0f2f5;
+         margin: 0;
+         padding: 0;
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         min-height: 100vh;
+         }
+         ::selection {
+         background: royalblue;
+         color: white;
+         }
+         .leaderboard {
+         width: 90%;
+         max-width: 700px;
+         background: white;
+         border-radius: 15px;
+         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+         overflow: hidden;
+         }
+         .leaderboard-header {
+         background: royalblue;
+         color: white;
+         text-align: center;
+         padding: 20px;
+         font-size: 1.5rem;
+         font-weight: 600;
+         }
+         table {
+         width: 100%;
+         border-collapse: collapse;
+         }
+         th,
+         td {
+         padding: 15px;
+         text-align: center;
+         font-size: 1rem;
+         }
+         th {
+         background: #f7f9fc;
+         color: #333;
+         }
+         tr:nth-child(even) {
+         background: #f9f9f9;
+         }
+         tr:hover {
+         background: #eaf4ff;
+         }
+         .rank {
+         font-weight: bold;
+         color: royalblue;
+         }
+      </style>
+   </head>
+   <body>
+      <div class="leaderboard">
+         <div class="leaderboard-header">🎸 TOP 5 Leaderboard 🎸</div>
+         <table>
+            <thead>
+               <tr>
+                  <th>Rank</th>
+                  <th>Team</th>
+                  <th>Current Streak</th>
+                  <th>Longest Streak</th>
+            </thead>
+            <tbody>
+               <tr>
+                  <td class="rank">1</td>
+                  <td>Kameron</td>
+                  <td>20</td>
+                  <td>20</td>
+               </tr>
+               <tr>
+                  <td class="rank">2</td>
+                  <td>Fidel</td>
+                  <td>14</td>
+                  <td>18</td>
+               </tr>
+               <tr>
+                  <td class="rank">3</td>
+                  <td>Adella</td>
+                  <td>8</td>
+                  <td>12</td>
+               </tr>
+               <tr>
+                  <td class="rank">4</td>
+                  <td>Shawn</td>
+                  <td>7</td>
+                  <td>7</td>
+               </tr>
+               <tr>
+                  <td class="rank">5</td>
+                  <td>Clair</td>
+                  <td>4</td>
+                  <td>5</td>
+               </tr>
+            </tbody>
+         </table>
+      </div>
+      </div>
+   </body>
+</html>

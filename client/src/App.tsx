@@ -29,6 +29,7 @@ import EmailValidation from './pages/EmailValidation';
 
 import "quill/dist/quill.snow.css";
 import EnrollmentGuard from './components/student/EnrollmentGuard';
+import Leaderboard from "./components/leaderboard";
 import BadgeManagement from './pages/instructor/BadgeManagement';
 
 function App() {
@@ -58,6 +59,7 @@ function App() {
               <Route path="/courses" element={<MyCourses />} />
               <Route path="/metronome" element={<Metronome />} />
               <Route path="/timer" element={<Timer />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/:userId" element={<ProfilePage />} />
               <Route path='/my-enrollments' element={<MyEnrollments />} />
