@@ -38,6 +38,17 @@ const TempUser = sequelize.define(
 			defaultValue: 'student',
 			allowNull: false,
 		},
+		name: {
+			type: DataTypes.VIRTUAL,
+			get() {
+				const first = this.getDataValue('firstName');
+				const last = this.getDataValue('lastName');
+				if (first || last) {
+					return `${first || ''} ${last || ''}`.trim();
+				}
+				return this.getDataValue('userName');
+			}
+		},
 		token: {
 			type: DataTypes.STRING,
 			allowNull: true,

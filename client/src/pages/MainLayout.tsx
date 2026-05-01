@@ -61,6 +61,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
   ],
   admin: [
     { label: 'Home', path: '/home', icon: assets.homeIcon },
+    { label: 'Confirm Users', path: '/confirmUsers', icon: assets.homeIcon },
     { label: 'Forum', path: '/forum', button: DashButton },
     { label: 'Followed Threads', path: '/follows', icon: Icons.Follows },
     { label: 'Metronome', path: '/metronome', icon: Icons.Metronome },

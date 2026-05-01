@@ -3,8 +3,11 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const Models = require('../db/models');
 const { Op } = require("sequelize");
-const { transporter, sendValidationEmail } = require('./email');
+const { transporter, sendValidationEmail, sendConfirmedEmail } = require('./email');
 const crypto = require('crypto');
+const roles = require('../rolesEnum');
+const requireRole = require('../middleware/requireRole');
+const requireAuth = require('../middleware/requireAuth');
 
 // Check if user is logged in (read from session)
 router.get('/api/me', (req, res) => {
@@ -65,20 +68,35 @@ router.post('/register', async (req, res) => {
 	}
 });
 
-// Confirm User
-router.post('/confirm/:userId', async (req, res) => {
-	const id = req.params;
+// Deny user
+router.delete('/confirm/:userId', requireAuth, requireRole(roles.ADMIN), async (req, res) => {
+	const { userId } = req.params;
 	try {
-		const user = await Models.TempUser.findByPk(id);
+		await Models.TempUser.destroy({ where: { id: userId } });
+		// email go here for denied
+		res.status(200).json({ success: true, message: 'User registration denied and removed.' });
+	} catch (error) {
+		console.error('Error denying user:', error);
+		res.status(500).send(`Error denying user: ${error}`);
+	}
+});
+
+// Confirm User
+router.post('/confirm/:userId', requireAuth, requireRole(roles.ADMIN), async (req, res) => {
+	const { userId } = req.params;
+	try {
+		const user = await Models.TempUser.findByPk(userId);
 		user.adminConfirmed = true;
-		user.save();
+		await user.save();
 		if (user.emailConfirmed) {
-			const user = await realUser(user);
+			await realUser(user);
+			sendConfirmedEmail(transporter, user);
 			return res.status(200).json({ confirmed: true, made: true });
 		} else {
 			return res.status(200).json({ confirmed: true, made: false });
 		}
 	} catch (error) {
+		console.log(error);
 		res.status(500).send(`Error confirming user: ${error}`);
 	}
 
@@ -86,18 +104,15 @@ router.post('/confirm/:userId', async (req, res) => {
 
 async function realUser(user) {
 	try {
-		const result = await sequelize.transaction(async (t) => {
-			const userData = user.get();
-			// Let the real Users table generate a new ID
-			delete userData.id;
-			delete userData.token;
+		const result = await Models.sequelize.transaction(async (t) => {
+			const { id, token, name, ...userData } = user.get({ plain: true });
 
-			const newUser = await Models.User.create(userData);
-
+			const newUser = await Models.User.create(userData, { transaction: t });
 			// Delete the temporary user
-			await user.destroy();
+			await Models.TempUser.destroy({ where: { id: user.id }, transaction: t });
 		});
 	} catch (error) {
+		console.log(error)
 		return error;
 	};
 };
@@ -127,6 +142,8 @@ router.post('/validate', async (req, res) => {
 				}
 			});
 		} else {
+			tempUser.emailConfirmed = true;
+			await tempUser.save();
 			return res.json({
 				success: true,
 				message: 'Email confirmed successfully! You\'ll get an email when an admin confirms you.',

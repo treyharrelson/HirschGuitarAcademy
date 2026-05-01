@@ -8,6 +8,11 @@ export interface User {
     
 }
 
+export interface TempUser extends User {
+    emailConfirmed: boolean;
+    adminConfirmed: boolean;
+}
+
 // probably not best practice, but works
 export interface UserInfo extends User {
     realName?: string;
