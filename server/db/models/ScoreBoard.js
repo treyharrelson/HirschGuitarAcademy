@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
-const { DatatypeModule } = require('@faker-js/faker');
+//const { DatatypeModule } = require('@faker-js/faker');
 
 const ScoreBoard = sequelize.define(
 	'Scoreboard',
