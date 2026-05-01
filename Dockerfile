@@ -2,16 +2,16 @@ FROM node:20
 
 WORKDIR /app
 
-# Copy package files from the root
+# 1. Copy package files from root
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# 2. Force npm to skip build-time scripts (avoids the Secret error)
+RUN npm install --ignore-scripts
 
-# Copy everything from the root into the container
+# 3. Copy everything else
 COPY . .
 
 EXPOSE 3000
 
-# FIX THE PATH: Since we are in the root, we point to the server folder
-CMD ["node", "server/server.js"]
+# 4. Entry point
+CMD ["npm", "start"]

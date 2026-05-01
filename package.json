@@ -8,6 +8,7 @@
     "server"
   ],
   "scripts": {
+    "start": "node server/server.js",
     "client": "npm run dev --prefix client",
     "server": "npm run dev --prefix server",
     "dev": "concurrently \"npm run server\" \"npm run client\""
