@@ -87,38 +87,33 @@ const Navbar = () => {
 
       {/* INTEGRATED TIMER */}
       {remainingSeconds !== (60 * 60) && ( // Shows if timer has been touched or is running
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 bg-[#181820] px-4 py-1.5 rounded-full shadow-lg border border-white/10">
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white px-4 py-1.5 rounded-full shadow-lg border border-gray-100">
 
           {/* Status Indicator */}
-          <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-[#ff9f1c] animate-pulse' : 'bg-gray-500'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${isRunning ? 'bg-[#22d3ee] animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'bg-slate-300'}`} />
 
           {/* Time Display */}
-          <span className="font-mono font-bold text-white text-sm">
+          <span className="font-mono font-bold text-slate-800 text-sm">
             {formatTime(remainingSeconds)}
           </span>
 
           {/* Toggle Button */}
           <button
             onClick={isRunning ? pauseTimer : startTimer}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-[#ff9f1c] hover:bg-[#ffb551] text-[#0f0f14] transition-all active:scale-90"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white transition-all active:scale-90 shadow-md shadow-green-100"
           >
-            <button
-              onClick={isRunning ? pauseTimer : startTimer}
-              className="flex items-center justify-center w-7 h-7 rounded-full bg-[#ff9f1c] hover:bg-[#ffb551] text-[#0f0f14] transition-all active:scale-90"
-            >
-              {isRunning ? (
-                /* Pause Icon */
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
-              ) : (
-                /* Play Icon */
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </button>
+            {isRunning ? (
+              /* Pause Icon */
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+            ) : (
+              /* Play Icon */
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
           </button>
         </div>
       )}

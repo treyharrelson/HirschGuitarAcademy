@@ -13,7 +13,7 @@ export default function Metronome() {
     score,
     start,
     stop
-  } = MetronomeUtils(120, 'four');
+  } = MetronomeUtils(40, 'four');
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full min-h-screen bg-[#1c3144] text-white font-sans gap-[40px] p-4">
@@ -58,7 +58,7 @@ export default function Metronome() {
         >
           -
         </button>
-        <div className="text-[32px] w-[120px] text-center font-bold leading-tight">
+        <div className="text-[32px] w-[40px] text-center font-bold leading-tight">
           {bpm} <span className="text-sm block font-normal opacity-60">BPM</span>
         </div>
         <button 
