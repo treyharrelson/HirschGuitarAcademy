@@ -3,7 +3,6 @@ node_modules
 .env
 server/.env
 server/.env.example
-package-lock.json
 .vs/
 
 ## Ignore Visual Studio temporary files, build results, and
