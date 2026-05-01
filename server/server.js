@@ -57,6 +57,10 @@ const sessionPool = process.env.DATABASE_URL
     port: process.env.DB_PORT
   });
 
+sessionPool.on('error', (err) => {
+  console.error('❌ Unexpected error on idle session pool client', err);
+});
+
 app.use(session({
   store: new pgSession({
     pool: sessionPool,
@@ -83,8 +87,6 @@ app.use('/api/badges', badgeRoutes);
 
 // -- START SERVER --
 async function init() {
-  // 3. BIND TO PORT BEFORE ANY DATABASE CALLS
-  // This satisfies Railway's healthcheck immediately
   const server = app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 STARTUP: Server listening on 0.0.0.0:${port}`);
   });
@@ -101,7 +103,7 @@ async function init() {
     }
   } catch (err) {
     // We log the error but the server stays running so we can read the logs
-    console.error("❌ DB connection failed during init:", err.message);
+    console.error("❌ Init Error: ", err.message);
   }
 }
 
