@@ -50,7 +50,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'Instructor Dashboard', path: '/instructor', icon: assets.newspaper_icon },
     { label: 'Add Course', path: '/instructor/add-course', icon: assets.duplicate_icon },
     { label: 'Manage Courses', path: '/instructor/my-courses', icon: assets.book_icon },
-    { label: 'Manage Badges', path: '/badges', icon: assets.book_icon },
+    { label: 'Manage Badges', path: '/badges', icon: assets.badgeIcon },
 
   ],
   moderator: [
@@ -76,6 +76,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'Instructor Dashboard', path: '/instructor', icon: assets.newspaper_icon },
     { label: 'Add Course', path: '/instructor/add-course', icon: assets.duplicate_icon },
     { label: 'Manage Courses', path: '/instructor/my-courses', icon: assets.book_icon },
+    { label: 'Manage Badges', path: '/badges', icon: assets.badgeIcon },
   ]
 };
 

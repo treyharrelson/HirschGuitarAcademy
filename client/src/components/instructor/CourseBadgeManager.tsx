@@ -6,6 +6,7 @@ interface Badge {
     id: number;
     name: string;
     imageUrl: string;
+    displayUrl?: string;
 }
 
 interface CourseBadgeManagerProps {

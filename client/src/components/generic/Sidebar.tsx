@@ -22,7 +22,7 @@ export default function Sidebar({ children, title = "Navigation" }: SidebarProps
                 <div className="p-4 border-b border-gray-50 bg-gray-50/50">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
                 </div>
-                <ul className="flex flex-col p-2 gap-1 bg-white">
+                <ul className="flex flex-col p-2 gap-1 bg-white overflow-y-auto max-h-[calc(100vh-320px)] custom-scrollbar">
                     {children}
                 </ul>
             </nav>
