@@ -13,14 +13,18 @@ if (dns.setDefaultResultOrder) {
 
 const transporter = nodemailer.createTransport({
 	host: 'smtp.gmail.com',
-	port: 465,
-	secure: true, // Use SSL/TLS
+	port: 587,
+	secure: false,
 	auth: {
 		user: process.env.EMAIL_USER,
-		pass: process.env.EMAIL_PASS?.replace(/\s/g, '') // Remove spaces if present
+		pass: process.env.EMAIL_PASS?.replace(/\s/g, '')
 	},
-	connectionTimeout: 10000, // 10 seconds
-	family: 4 // Force IPv4 to avoid ENETUNREACH on IPv6
+	tls: {
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
+    },
+	connectionTimeout: 10000, 
+	family: 4 
 });
 
 // Verify connection configuration on startup
