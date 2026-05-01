@@ -92,18 +92,16 @@ async function init() {
     console.log(`Server running on port ${port}`);
   });
   try {
+    console.log('Attempting DB connection...');
     await sequelize.authenticate();
-    console.log('DB connected');
-
+    console.log('✅ DB connected');
+   
     if (DEV) {
       await devusers.doit();
-      console.log("Dev users synced");
+      console.log("🎁 Dev users synced");
     }
-
-
-  } catch (err) {
-    console.error("Startup failed:", err);
-    process.exit(1);
+  } catch(err) {
+    console.error("❌ DB connection failed:", err);
   }
 }
 
