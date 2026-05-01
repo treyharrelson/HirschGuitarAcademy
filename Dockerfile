@@ -3,8 +3,9 @@ FROM node:20
 WORKDIR /app
 
 COPY package*.json ./
+COPY server/package*.json ./server/
 
-RUN npm install --omit=dev
+RUN npm install
 
 COPY . .
 
