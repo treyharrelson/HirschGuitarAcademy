@@ -1,11 +1,18 @@
 import "./Leaderboard.css";
 
-const leaderboardData = [
-  { rank: 1, name: "Kameron", current: 20, longest: 20 },
-  { rank: 2, name: "Fidel", current: 14, longest: 18 },
-  { rank: 3, name: "Adella", current: 8, longest: 12 },
-  { rank: 4, name: "Shawn", current: 7, longest: 7 },
-  { rank: 5, name: "Clair", current: 4, longest: 5 },
+type Player = {
+  rank: number;
+  name: string;
+  current: number;
+  longest: number;
+};
+
+const leaderboardData: Player[] = [
+  { rank: 1, name: "Kameron", current: 20, longest: 48 },
+  { rank: 2, name: "Fidel", current: 14, longest: 27 },
+  { rank: 3, name: "Adella", current: 8, longest: 22 },
+  { rank: 4, name: "Shawn", current: 7, longest: 13 },
+  { rank: 5, name: "Clair", current: 4, longest: 7 },
 ];
 
 export default function Leaderboard() {
@@ -21,8 +28,8 @@ export default function Leaderboard() {
             <tr>
               <th>Rank</th>
               <th>Team</th>
-              <th>Current Streak</th>
-              <th>Longest Streak</th>
+              <th>Login Streak</th>
+              <th>Lessons Completed</th>
             </tr>
           </thead>
 

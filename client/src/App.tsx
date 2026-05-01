@@ -23,10 +23,9 @@ import Instructor from './pages/instructor/Instructor'
 import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
 import EditCourse from './pages/instructor/EditCourse'
 import { ProfilePage } from './pages/Profile';
-
-
 import "quill/dist/quill.snow.css";
 import EnrollmentGuard from './components/student/EnrollmentGuard';
+import Leaderboard from "./components/leaderboard";
 
 function App() {
   //const [count, setCount] = useState(0)
@@ -53,6 +52,7 @@ function App() {
               <Route path="/courses" element={<MyCourses />} />
               <Route path="/metronome" element={<Metronome />} />
               <Route path="/timer" element={<Timer />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/:userId" element={<ProfilePage />} />
               <Route path='/my-enrollments' element={<MyEnrollments />} />
