@@ -15,10 +15,10 @@ export default function Sidebar({ children, title = "Navigation" }: SidebarProps
     if (!user) return null;
 
     return (
-        <div className="w-full lg:w-72 flex-shrink-0">
+        <div className="w-full lg:w-72 flex-shrink-0 h-full">
 
             {/* Navigation / Custom Content */}
-            <nav className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col flex-1 min-h-0">
+            <nav className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full sticky top-0">
                 <div className="p-4 border-b border-gray-50 bg-gray-50/50 flex-shrink-0">
                     <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
                 </div>
