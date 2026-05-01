@@ -2,8 +2,8 @@ const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-async function sendValidationEmail(client, user, origin) {
-	const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN || origin || 'http://localhost:5173';
+async function sendValidationEmail(client, user) {
+	const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN;
 	const confirmationUrl = `${baseUrl}/confirm-email/${user.token}`;
 
 	const { data, error } = await client.emails.send({
@@ -54,8 +54,8 @@ async function sendValidationEmail(client, user, origin) {
 	}
 };
 
-async function sendConfirmedEmail(client, user, origin) {
-	const baseUrl = process.env.BASE_URL || origin || 'http://localhost:5173';
+async function sendConfirmedEmail(client, user) {
+	const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN;
 	const confirmationUrl = `${baseUrl}/`;
 
 	const { data, error } = await client.emails.send({
