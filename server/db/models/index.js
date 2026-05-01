@@ -26,6 +26,7 @@ const ThreadMember = require('./ThreadMember');
 const Reaction = require('./Reaction');
 const ProfileSettings = require('./ProfileSettings');
 const UserBadge = require('./UserBadge');
+const TempUser = require('./tempUser');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -197,4 +198,5 @@ module.exports = {
     ProfileSettings,
     Progress,
     UserBadge,
+    TempUser,
 };

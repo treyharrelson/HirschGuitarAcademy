@@ -9,6 +9,11 @@ export interface User {
     earnedBadges?: Array<{ id: number; name: string; imageUrl: string }>;
 }
 
+export interface TempUser extends User {
+    emailConfirmed: boolean;
+    adminConfirmed: boolean;
+}
+
 // probably not best practice, but works
 export interface UserInfo extends User {
     realName?: string;

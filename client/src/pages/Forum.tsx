@@ -85,11 +85,7 @@ function Forum() {
         <div>
             {/* Header */}
             <div className="mb-6">
-                <Link
-                    to="/home"
-                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium mb-4">
-                    ← Back to Dashboard
-                </Link>
+
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold text-blue-700 tracking-tight">Forum</h1>
                     {user && (

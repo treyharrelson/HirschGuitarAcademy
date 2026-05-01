@@ -19,6 +19,7 @@ const sequelize = process.env.DATABASE_URL
         dialectOptions: {
             ssl: false
         },
+        logging: false,
         pool: {
             max: 5,
             min: 0,

@@ -7,31 +7,7 @@ import api from '../../api/axiosInstance';
 import { assets } from '../../assets/assets';
 import { useTimer } from '../../context/TimerProvider';
 
-type RoleLink = {
-  label: string;
-  path: string;
-  button: React.ElementType;
-}
 
-const NAV_LINKS: Record<string, RoleLink[]> = {
-  guest: [
-    { label: 'Create Account', path: '/', button: BigBlueButton }
-  ],
-  student: [
-    { label: 'Dashboard', path: '/home', button: NavBarButton },
-    { label: 'My Courses', path: '/courses', button: NavBarButton },
-  ],
-  instructor: [
-    { label: 'Instructor View', path: '/instructor', button: NavBarButton },
-    { label: 'Add Course', path: '/instructor/add-course', button: NavBarButton },
-  ],
-  admin: [
-    //dunno yet
-  ],
-  moderator: [
-    { label: 'Forum', path: '/forum', button: NavBarButton },
-  ],
-};
 
 
 const Navbar = () => {
@@ -54,20 +30,6 @@ const Navbar = () => {
   const isCourseListPage = location.pathname.includes('/course-list');
 
 
-  const links = user?.role ? NAV_LINKS[user.role] : NAV_LINKS['guest'];
-
-  const RenderLinks = () => (
-    <>
-      {links.map((link, index) => (
-        <link.button
-          key={`${link.path}-${index}`} // Unique key using path and index
-          onClick={() => navigate(link.path)}
-        >
-          {link.label}
-        </link.button>
-      ))}
-    </>
-  );
 
   return (
     <div className={'w-full flex items-center justify-between px-4 sm:px-10 md:px-14 lg:px-36 border-b border-gray-200 sticky top-0 left-0 z-40 py-4 bg-white'}>
@@ -76,11 +38,25 @@ const Navbar = () => {
       </Link>
       <div className='hidden md:flex items-center'>
         <div className='flex items-center gap-8'>
-          <RenderLinks />
           {user && (
-            <BigBlueButton onClick={handleLogout}>
-              Logout
-            </BigBlueButton>
+            <div className='flex items-center gap-4 sm:gap-6 border-l pl-4 sm:pl-8 border-gray-100'>
+              <BigBlueButton onClick={handleLogout}>
+                Logout
+              </BigBlueButton>
+              <button 
+                onClick={() => navigate(`/profile/${user.id}`)}
+                className='flex items-center gap-2 sm:gap-3 cursor-pointer group'
+              >
+                <div className='w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-base sm:text-lg border border-blue-100 group-hover:ring-2 group-hover:ring-blue-200 transition-all'>
+                  {user.name?.charAt(0).toUpperCase() || '?'}
+                </div>
+                <div className='hidden lg:block text-left'>
+                  <p className='text-[10px] font-bold text-blue-600 uppercase tracking-wider leading-none mb-1'>{user.role}</p>
+                  <p className='text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors leading-none'>{user.name}</p>
+                </div>
+              </button>
+              
+            </div>
           )}
         </div>
       </div>
@@ -126,9 +102,16 @@ const Navbar = () => {
       {/* For phone screens */}
       <div className='md:hidden flex items-center gap-2 sm:gap-5 text-gray-500'>
         <div className='flex items-center gap-4'>
-          <RenderLinks />
         </div>
-        <button onClick={handleLogout}><img src={assets.logoutIcon} alt='Logout Icon' className='w-6 h-6' /></button>
+        {user && (
+          <button 
+            onClick={() => navigate(`/profile/${user.id}`)}
+            className='w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm border border-blue-100'
+          >
+            {user.name?.charAt(0).toUpperCase() || '?'}
+          </button>
+        )}
+        <button onClick={handleLogout} className="cursor-pointer"><img src={assets.logoutIcon} alt='Logout Icon' className='w-6 h-6' /></button>
       </div>
     </div>
   )
