@@ -20,6 +20,7 @@ const transporter = nodemailer.createTransport({
 		pass: process.env.EMAIL_PASS?.replace(/\s/g, '') // Remove spaces if present
 	},
 	connectionTimeout: 10000, // 10 seconds
+	family: 4 // Force IPv4 to avoid ENETUNREACH on IPv6
 });
 
 // Verify connection configuration on startup
