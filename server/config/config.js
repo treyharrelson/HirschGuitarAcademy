@@ -1,7 +1,11 @@
 const path = require('path');
 
-// Go up one level from 'server/config' to 'server' to find the .env
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+try {
+    require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+} catch (e) {
+    // In production/Railway, dotenv isn't needed as variables are already in process.env
+    console.log("Note: .env file or dotenv module not found. Using system environment variables.");
+}
 
 module.exports = {
   development: {
