@@ -45,7 +45,11 @@ const Course = sequelize.define(
 			type: DataTypes.INTEGER,
 			allowNull: true,
 			defaultValue: null,
-			filed: 'completion_badge_id',
+			field: 'completion_badge_id',
+			references: {
+				model: 'Badges',
+				key: 'id'
+			}
 		}
 	},
 	{
