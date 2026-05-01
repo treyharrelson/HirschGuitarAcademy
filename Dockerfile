@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # 2. Force npm to skip build-time scripts (avoids the Secret error)
-RUN npm install --ignore-scripts
+RUN npm install --omit=dev
 
 # 3. Copy everything else
 COPY . .
