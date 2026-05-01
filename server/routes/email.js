@@ -3,6 +3,12 @@ const router = express.Router();
 const requireRole = require('../middleware/requireRole');
 const requireAuth = require('../middleware/requireAuth');
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Force Node.js to prefer IPv4 over IPv6 for railway
+if (dns.setDefaultResultOrder) {
+	dns.setDefaultResultOrder('ipv4first');
+}
 
 
 const transporter = nodemailer.createTransport({
@@ -13,6 +19,7 @@ const transporter = nodemailer.createTransport({
 		user: process.env.EMAIL_USER,
 		pass: process.env.EMAIL_PASS?.replace(/\s/g, '') // Remove spaces if present
 	},
+	connectionTimeout: 10000, // 10 seconds
 });
 
 // Verify connection configuration on startup
