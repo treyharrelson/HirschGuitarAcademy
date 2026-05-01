@@ -1,6 +1,6 @@
 const sequelize = require('../db')
 const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '../../config/config.js')[env];
+const config = require(__dirname + '/../../config/config.js')[env];
 
 // import modules
 const User = require('./User');
