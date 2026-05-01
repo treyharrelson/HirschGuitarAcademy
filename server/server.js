@@ -29,7 +29,7 @@ const badgeRoutes = require('./routes/badgeRoutes');
 
 // allows connection from frontend
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: process.env.CORS_ORIGIN || 'https://hirschguitaracademy.up.railway.app',
   credentials: true
 }));
 
