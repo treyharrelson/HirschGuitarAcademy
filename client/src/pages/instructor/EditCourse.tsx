@@ -13,6 +13,7 @@ import { SortableModuleWrapper } from '../../components/instructor/SortableModul
 import type { Module } from '../../types/course';
 import MediaBlockEditor from '../../components/instructor/MediaBlockEditor';
 import { EmptyDropZone } from '../../components/generic/EmptyDropZone';
+import CourseBadgeManager from '../../components/instructor/CourseBadgeManager';
 
 const EditCourse: React.FC = () => {
     const { courseId } = useParams<{ courseId: string }>();
@@ -26,6 +27,26 @@ const EditCourse: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
 
     const [activeId, setActiveId] = useState<string | null>(null);
+
+    const [searchCourses, setSearchCourses] = useState<any[]>([]);
+    useEffect(() => {
+        const fetchLibrary = async () => {
+            try {
+                const res = await api.get('/api/courses'); // Assuming this returns all courses
+                setSearchCourses(res.data);
+            } catch (err) {
+                console.error("Failed to load course library", err);
+            }
+        };
+        fetchLibrary();
+    }, []);
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const filteredCourses = searchCourses.filter(course => {
+        if (String(course.id) === String(courseId)) return false;
+        if (!searchQuery) return true;
+        return course.name.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(String(event.active.id));
@@ -174,7 +195,8 @@ const EditCourse: React.FC = () => {
                 setters.setModules(course.modules || []);
                 setters.setImage(course.thumbnail);
                 setters.setCourseDescription(course.description || "");
-                setters.setCourseRequirements(course.requirements ? course.requirements.map((r: any) => String(r.id)) : []);
+                setters.setCompletionBadgeId(res.data.completionBadgeId);
+                setters.setCourseRequirements(course.requirements ? course.requirements.map((r: any) => String(r.id || r)) : []);
             } catch (err) {
                 setStatusMsg("Error loading course data.");
             } finally {
@@ -216,7 +238,6 @@ const EditCourse: React.FC = () => {
     const handleUpdate = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
 
-        // Simple call to the hook's validator
         const error = handlers.validateCourse();
         if (error) {
             setStatusMsg(`Cannot Save: ${error}`);
@@ -234,13 +255,13 @@ const EditCourse: React.FC = () => {
             name: state.courseTitle,
             description: descriptionHtml,
             thumbnail: state.image,
+            completionBadgeId: state.completionBadgeId,
             modules: state.modules.map(mod => ({
                 ...mod,
                 id: typeof mod.id === 'string' ? parseInt(mod.id.replace('mod-', '')) : mod.id,
                 content: mod.content?.map((item: any) => ({
                     ...item,
                     id: typeof item.id === 'string' ? parseInt(item.id.replace('lec-', '').replace('sub-', '')) : item.id,
-                    // Ensure blocks are carried over exactly as defined in your types
                     blocks: item.blocks || [],
                     content: Array.isArray(item.content) ? item.content.map((subLec: any) => ({
                         ...subLec,
@@ -311,45 +332,108 @@ const EditCourse: React.FC = () => {
                         Recommended: 16:9 aspect ratio (800x450px)
                     </p>
                 </div>
-                {/* COURSE REQUIREMENTS */}
-                <div className='flex flex-col gap-2'>
-                    <p className='font-bold text-gray-700'>Course Prerequisites</p>
-                    {/* The Flex-Wrap container makes them sit side-by-side */}
-                    <div className='flex flex-wrap gap-2 w-full'>
-                        {allCourses
-                            .filter(course => String(course.id) !== String(courseId))
-                            .map(course => {
-                                const isChecked = state.courseRequirements.includes(String(course.id));
 
-                                return (
-                                    <label
-                                        key={course.id}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer text-sm font-medium ${isChecked
-                                            ? 'bg-blue-50 border-blue-400 text-blue-700 shadow-sm'
-                                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                                            }`}>
-                                        <input
-                                            type='checkbox'
-                                            className="hidden"
-                                            checked={isChecked}
-                                            onChange={(e) => {
-                                                if (e.target.checked) {
+                {/* COURSE PREREQUISITES */}
+                <div className="bg-white p-8 rounded-[30px] shadow-sm border border-gray-100 mb-6">
+                    <div className="mb-6">
+                        <h2 className="text-xl font-bold text-gray-800">Course Prerequisites</h2>
+                        <p className="text-sm text-gray-500">Select courses that must be completed before this one.</p>
+                    </div>
+
+                    {/* Search & Browse Input Area */}
+                    <div className="relative mb-4">
+                        <input
+                            type="text"
+                            placeholder="Search or browse all courses..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2563eb] outline-none font-medium transition-all" />
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                        </span>
+                    </div>
+
+                    {/* RESULTS DROPDOWN */}
+                    <div className="mb-8 flex flex-col">
+                        <div className="flex justify-between items-center px-1 mb-2">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                {searchQuery ? `Search Results (${filteredCourses.length})` : "Browse All Courses"}
+                            </span>
+                        </div>
+
+                        <div className="max-h-52 overflow-y-auto border border-gray-100 rounded-2xl bg-white shadow-inner p-2 custom-scrollbar">
+                            {filteredCourses.length > 0 ? (
+                                filteredCourses.map(course => {
+                                    const isChecked = state.courseRequirements.includes(String(course.id));
+                                    return (
+                                        <button
+                                            key={course.id}
+                                            type="button"
+                                            onClick={() => {
+                                                if (!isChecked) {
                                                     setters.setCourseRequirements([...state.courseRequirements, String(course.id)]);
                                                 } else {
                                                     setters.setCourseRequirements(state.courseRequirements.filter(id => id !== String(course.id)));
                                                 }
-                                            }} />
-                                        {isChecked && <span>✓</span>}
-                                        {course.name}
-                                    </label>
-                                );
-                            })
-                        }
-                        {/* Fallback if no OTHER courses exist */}
-                        {allCourses.filter(c => String(c.id) !== String(courseId)).length === 0 && (
-                            <p className='text-sm text-gray-400 italic'>No other courses available</p>
-                        )}
+                                            }}
+                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl mb-1 transition-all ${isChecked ? 'bg-blue-50 text-[#2563eb]' : 'hover:bg-gray-50 text-gray-700'
+                                                }`}>
+                                            <span className="font-bold">{course.name}</span>
+                                            {isChecked ? (
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] font-black uppercase tracking-tighter">Required</span>
+                                                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                                                </div>
+                                            ) : (
+                                                <span className="text-[10px] text-gray-300 font-black uppercase tracking-tighter">Add +</span>
+                                            )}
+                                        </button>
+                                    );
+                                })
+                            ) : (
+                                <div className="p-8 text-center text-gray-400 text-sm italic">
+                                    No courses match your search.
+                                </div>
+                            )}
+                        </div>
                     </div>
+
+                    {/* CURRENTLY SELECTED LIST (Tags) */}
+                    <div className="flex flex-col gap-3">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] px-1">Selected Prerequisites</span>
+                        <div className="flex flex-wrap gap-2 min-h-[50px] p-4 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                            {state.courseRequirements.length > 0 ? (
+                                state.courseRequirements.map(reqId => {
+                                    const course = allCourses.find(c => String(c.id) === String(reqId));
+                                    return (
+                                        <div key={reqId} className="flex items-center gap-2 bg-white border border-gray-200 pl-4 pr-2 py-1.5 rounded-full shadow-sm animate-in fade-in zoom-in duration-200">
+                                            <span className="text-xs font-bold text-gray-700">{course?.name || 'Unknown Course'}</span>
+                                            <button
+                                                onClick={() => setters.setCourseRequirements(state.courseRequirements.filter(id => id !== reqId))}
+                                                className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-500 transition-all">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                            </button>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex items-center text-gray-400 text-xs italic px-2">No prerequisites selected.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                { /* COMPLETION BADGE */}
+                <div className="bg-white p-8 rounded-[30px] shadow-sm border border-gray-100 mb-6">
+                    <h2 className="text-xl font-bold text-gray-800 mb-2">Achievement Reward</h2>
+                    <p className="text-sm text-gray-500 mb-6">
+                        Assign a badge for students to earn upon completing this course.
+                    </p>
+
+                    <CourseBadgeManager
+                        currentBadgeId={state.completionBadgeId}
+                        onBadgeSelect={(id) => setters.setCompletionBadgeId(id)}
+                    />
                 </div>
                 {/* MODULES & LECTURES */}
                 <DndContext

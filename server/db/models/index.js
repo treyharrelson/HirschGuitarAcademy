@@ -1,4 +1,6 @@
 const sequelize = require('../db')
+const env = process.env.NODE_ENV || 'development';
+const config = require(__dirname + '/../../config/config.js')[env];
 
 // import modules
 const User = require('./User');
@@ -13,7 +15,7 @@ const Follow = require('./Follow');
 const Module = require('./Module');
 const Lecture = require('./Lecture');
 const Attachment = require('./Attachment');
-const Belt = require('./Belt');
+const Badge = require('./Badge');
 const Award = require('./Award');
 const PracticeTime = require('./PracticeTime');
 const ScoreBoard = require('./ScoreBoard');
@@ -23,6 +25,7 @@ const Progress = require('./Progress');
 const ThreadMember = require('./ThreadMember');
 const Reaction = require('./Reaction');
 const ProfileSettings = require('./ProfileSettings');
+const UserBadge = require('./UserBadge');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -143,13 +146,13 @@ ThreadBan.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
 User.hasMany(ThreadBan, { foreignKey: 'bannedById', as: 'issuedBans' });
 ThreadBan.belongsTo(User, { foreignKey: 'bannedById', as: 'bannedBy' });
 
-// Belt to Course and User
-User.hasMany(Belt, { foreignKey: 'userId', as: 'belts' });
-Belt.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+// Badge to Course and User
+User.belongsToMany(Badge, { through: 'User_Badges', foreignKey: 'user_id', otherKey: 'badge_id', as: 'earnedBadges' });
+Badge.belongsToMany(User, { through: 'User_Badges', foreignKey: 'badge_id', otherKey: 'user_id', as: 'owners' });
+User.belongsTo(Badge, { foreignKey: 'activeBadgeId', as: 'activeBadge' });
 
-Course.hasMany(Belt, { foreignKey: 'courseId', as: 'belts' });
-Belt.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
-
+Course.belongsTo(Badge, { foreignKey: 'completionBadgeId', as: 'completionBadge' });
+Badge.hasMany(Course, { foreignKey: 'completionBadgeId' });
 
 // Award to User, should figure out what awards are
 User.hasMany(Award, { foreignKey: 'userId', as: 'awards' });
@@ -182,7 +185,7 @@ module.exports = {
     Module,
     Lecture,
     Attachment,
-    Belt,
+    Badge,
     Award,
     PracticeTime,
     ScoreBoard,
@@ -193,4 +196,5 @@ module.exports = {
     Reaction,
     ProfileSettings,
     Progress,
+    UserBadge,
 };

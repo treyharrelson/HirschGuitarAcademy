@@ -19,6 +19,7 @@ export const useCourseEditor = (initialData?: any) => {
   const [modules, setModules] = useState<Module[]>(initialData?.modules || [])
   const [lectureDetails, setLectureDetails] = useState({ lectureTitle: '' })
   const [courseDescription, setCourseDescription] = useState("");
+  const [completionBadgeId, setCompletionBadgeId] = useState<number | null>(null);
 
   const [courseRequirements, setCourseRequirements] = useState<string[]>(initialData?.requirements?.map((r: any) => String(r.id)) || [])
 
@@ -34,6 +35,11 @@ export const useCourseEditor = (initialData?: any) => {
   type ModuleAction = 'add' | 'remove' | 'toggle' | 'save';
 
   // Helper Functions
+
+  const handleBadgeChange = (id: number | null) => {
+    setCompletionBadgeId(id);
+  };
+
   const updateModuleById = (moduleId: string | null, callback: (module: Module) => Module) => {
     if (!moduleId) return;
     setModules((prev) =>
@@ -281,9 +287,9 @@ export const useCourseEditor = (initialData?: any) => {
   };
 
   return {
-    state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription, courseRequirements },
-    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription, setCourseRequirements },
+    state: { courseTitle, isPrivate, image, modules, showPopup, popupType, lectureDetails, courseDescription, courseRequirements, completionBadgeId },
+    setters: { setCourseTitle, setIsPrivate, setImage, setModules, setPopup, setLectureDetails, setPopupType, setCurrentModuleId, setCourseDescription, setCourseRequirements, setCompletionBadgeId },
     refs: { inputRef, quillRef, editorRef },
-    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateTitle, updateLectureBlocks, validateCourse, toggleAll, toggleItem, viewCourse },
+    handlers: { handleModule, handleSubModule, handleLecture, handleContent, updateTitle, updateLectureBlocks, validateCourse, toggleAll, toggleItem, viewCourse, handleBadgeChange },
   };
 };

@@ -24,13 +24,13 @@ router.get('/:postId/comments', async (req, res) => {
         const comments = await Models.Comment.findAll({
             where: { postId: req.params.postId },
             include: [
-                { model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }
+                { model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'], include: [{ model: Models.Badge, as: 'activeBadge', attributes: ['name', 'imageUrl'] }] }
             ],
             order: [['createdAt', 'ASC']]
         });
 
         // attach reactions to each comment
-        const userid = req.session.user.id;
+        const userId = req.session.user.id;
         const withReactions = await Promise.all(comments.map(async c => {
             const summary = await getReactionSummary({ commentId: c.id }, userId);
             return { ...c.toJSON(), ...summary };
@@ -54,11 +54,11 @@ router.post('/:postId/comments', async (req, res) => {
 
         const commentWithAuthor = await Models.Comment.findByPk(comment.id, {
             include: [
-                { model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'] }
+                { model: Models.User, as: 'author', attributes: ['id', 'userName', 'firstName', 'lastName', 'name'], include: [{ model: Models.Badge, as: 'activeBadge', attributes: ['name', 'imageUrl'] }] }
             ]
         });
-
-        res.status(201).json({ ...commentWithAuthor.toJSON(), counts: { like:0,love:0,laugh:0,fire:0,celebrate:0 }, userReaction: null });
+        const plainComment = commentWithAuthor.get({ plain: true });
+        res.status(201).json({ ...plainComment, content: plainComment.content, counts: { like:0,love:0,laugh:0,fire:0,celebrate:0 }, userReaction: null });
     } catch (error) {
         res.status(500).json({ message: `Error creating comment: ${error}` });
     }

@@ -7,6 +7,7 @@ import ThreadCard from '../components/generic/ThreadCard';
 import SkeletonThreadCard from '../components/generic/SkeletonThreadCard';
 import NewThreadModal from '../components/generic/NewThreadModal';
 import Sidebar, { SidebarLink } from '../components/generic/Sidebar';
+import UserBadge from '../components/UserBadge';
 
 interface BreadcrumbItem {
     id: number | null;
@@ -79,7 +80,7 @@ function Forum() {
 
     const currentFolder = threads.find(t => t.id === currentFolderId) ?? null;
 
-    
+
     return (
         <div>
             {/* Header */}
@@ -109,11 +110,10 @@ function Forum() {
                         {i > 0 && <span className="text-gray-400 text-sm">/</span>}
                         <button
                             onClick={() => navigateToBreadcrumb(i)}
-                            className={`text-sm font-medium px-2 py-0.5 rounded-lg transition-colors ${
-                                i === breadcrumb.length - 1
+                            className={`text-sm font-medium px-2 py-0.5 rounded-lg transition-colors ${i === breadcrumb.length - 1
                                     ? 'text-blue-700 bg-blue-50 cursor-default'
                                     : 'text-gray-500 hover:text-blue-600 hover:bg-gray-100'
-                            }`}
+                                }`}
                             disabled={i === breadcrumb.length - 1}
                         >
                             {i === 0 ? '📁 ' : '📂 '}{crumb.title}
@@ -160,75 +160,86 @@ function Forum() {
                 {loading
                     ? Array.from({ length: 3 }).map((_, i) => <SkeletonThreadCard key={i} />)
                     : currentThreads.length === 0
-                    ? <p className="text-center text-gray-400 py-12">No threads here.</p>
-                    : currentThreads.map(thread => {
-                        const isFolder = hasChildren(thread.id);
-                        const unread = unreadCounts[thread.id];
+                        ? <p className="text-center text-gray-400 py-12">No threads here.</p>
+                        : currentThreads.map(thread => {
+                            const isFolder = hasChildren(thread.id);
+                            const unread = unreadCounts[thread.id];
 
-                        return (
-                            <div
-                                key={thread.id}
-                                onClick={() => {
-                                    if (!isFolder) navigate(`/forum/thread/${thread.id}`);
-                                    if (isFolder) enterFolder(thread);
-                                }}
-                                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 transition-all cursor-pointer hover:shadow-md hover:border-blue-200"
-                            >
-                                <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <span className="text-xl shrink-0">{isFolder ? '📁' : '💬'}</span>
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="text-lg font-semibold text-blue-700 truncate">
-                                                    {thread.title}
-                                                </span>
-                                                {thread.visibility === 'global' && (
-                                                    <span className="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full shrink-0">
-                                                        Global
+                            return (
+                                <div
+                                    key={thread.id}
+                                    onClick={() => {
+                                        if (!isFolder) navigate(`/forum/thread/${thread.id}`);
+                                        if (isFolder) enterFolder(thread);
+                                    }}
+                                    className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 transition-all cursor-pointer hover:shadow-md hover:border-blue-200"
+                                >
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <span className="text-xl shrink-0">{isFolder ? '📁' : '💬'}</span>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="text-lg font-semibold text-blue-700 truncate">
+                                                        {thread.title}
                                                     </span>
-                                                )}
-                                                {thread.visibility === 'private' && (
-                                                    <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full shrink-0">
-                                                        🔒 Private
-                                                    </span>
-                                                )}
-                                                {unread !== undefined && unread > 0 && (
-                                                    <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full shrink-0">
-                                                        {unread} new
-                                                    </span>
+                                                    {thread.visibility === 'global' && (
+                                                        <span className="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full shrink-0">
+                                                            Global
+                                                        </span>
+                                                    )}
+                                                    {thread.visibility === 'private' && (
+                                                        <span className="text-xs bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full shrink-0">
+                                                            🔒 Private
+                                                        </span>
+                                                    )}
+                                                    {unread !== undefined && unread > 0 && (
+                                                        <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full shrink-0">
+                                                            {unread} new
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {thread.author && (
+                                                    <p className="text-sm text-gray-400 mt-0.5 flex items-center gap-1.5">
+                                                        <span>Started by {thread.author.name}</span>
+
+                                                        {/* NEW: THE BADGE DISPLAY */}
+                                                        {thread.author.activeBadge && (
+                                                            <UserBadge
+                                                                badgeKey={thread.author.activeBadge.imageUrl}
+                                                                badgeName={thread.author.activeBadge.name}
+                                                                size="sm"
+                                                            />
+                                                        )}
+
+                                                        <span>· {new Date(thread.createdAt).toLocaleDateString()}</span>
+                                                    </p>
                                                 )}
                                             </div>
-                                            {thread.author && (
-                                                <p className="text-sm text-gray-400 mt-0.5">
-                                                    Started by {thread.author.name} · {new Date(thread.createdAt).toLocaleDateString()}
-                                                </p>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {/* Always show link to the thread itself */}
+                                            <Link
+                                                to={`/forum/thread/${thread.id}`}
+                                                className="text-xs text-gray-400 hover:text-blue-600 font-medium border border-gray-200 hover:border-blue-300 px-2.5 py-1 rounded-lg transition-colors"
+                                                onClick={e => e.stopPropagation()}
+                                            >
+                                                Open
+                                            </Link>
+                                            {/* If has children, show Enter button */}
+                                            {isFolder && (
+                                                <button
+                                                    onClick={() => enterFolder(thread)}
+                                                    className="text-xs text-blue-600 hover:text-blue-800 font-semibold border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors"
+                                                >
+                                                    Browse →
+                                                </button>
                                             )}
                                         </div>
                                     </div>
-
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        {/* Always show link to the thread itself */}
-                                        <Link
-                                            to={`/forum/thread/${thread.id}`}
-                                            className="text-xs text-gray-400 hover:text-blue-600 font-medium border border-gray-200 hover:border-blue-300 px-2.5 py-1 rounded-lg transition-colors"
-                                            onClick={e => e.stopPropagation()}
-                                        >
-                                            Open
-                                        </Link>
-                                        {/* If has children, show Enter button */}
-                                        {isFolder && (
-                                            <button
-                                                onClick={() => enterFolder(thread)}
-                                                className="text-xs text-blue-600 hover:text-blue-800 font-semibold border border-blue-200 hover:border-blue-400 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors"
-                                            >
-                                                Browse →
-                                            </button>
-                                        )}
-                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })
+                            );
+                        })
                 }
             </div>
 

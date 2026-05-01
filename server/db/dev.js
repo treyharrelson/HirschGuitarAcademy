@@ -174,7 +174,7 @@ async function clearAll() {
 			'Module',
 			'CourseRequirement',
 			'Enrollment',
-			'Belt',
+			'Badge',
 			'Award',
 			'PracticeTime',
 			'ScoreBoard',

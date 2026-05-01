@@ -14,7 +14,18 @@ router.get('/:userId', requireAuth, async (req, res) => {
 		});
 
 		const user = await Models.User.findByPk(userId, {
-			attributes: ['id', 'name', 'userName', 'email', 'role', 'bio', 'createdAt']
+			attributes: ['id', 'name', 'userName', 'email', 'role', 'bio', 'createdAt', 'activeBadgeId'],
+			include: [
+				{
+					model: Models.Badge,
+					as: 'earnedBadges',
+					through: { attributes: [] }
+				},
+				{
+					model: Models.Badge,
+					as: 'activeBadge'
+				}
+			]
 		});
 
 		if (!user) {
@@ -39,6 +50,8 @@ router.get('/:userId', requireAuth, async (req, res) => {
 						role: user.role,
 						bio: user.bio,
 						createdAt: user.createdAt,
+						activeBadge: user.activeBadge,
+						earnedBadges: user.earnedBadges
 					},
 					profileSettings: {
 						private: profileSettings.private,
@@ -56,7 +69,7 @@ router.get('/:userId', requireAuth, async (req, res) => {
 router.put('/:userId', requireAuth, async (req, res) => {
 	try {
 		const { userId } = req.params;
-		const { bio, private: isPrivate, showName } = req.body;
+		const { bio, private: isPrivate, showName, activeBadgeId } = req.body;
 
 		// Ensure user is editing their own profile
 		if (parseInt(userId) !== req.session.user.id) {
@@ -70,6 +83,20 @@ router.put('/:userId', requireAuth, async (req, res) => {
 
 		// Update bio on user if provided
 		if (bio !== undefined) user.bio = bio;
+		if (activeBadgeId !== undefined) {
+			if (activeBadgeId === null) {
+				user.activeBadgeId = null;
+			} else {
+				const hasBadge = await Models.UserBadge.findOne({
+					where: { user_id: userId, badge_id: activeBadgeId }
+				});
+				if (hasBadge) {
+					user.activeBadgeId = activeBadgeId;
+				} else {
+					return res.status(403).json({ success: false, message: "Achievement not earned." });
+				}
+			}
+		}
 		await user.save();
 
 		// Update privacy settings on ProfileSettings
@@ -83,7 +110,7 @@ router.put('/:userId', requireAuth, async (req, res) => {
 
 		res.json({
 			success: true,
-			user: { id: user.id, bio: user.bio },
+			user: { id: user.id, bio: user.bio, activeBadgeId: user.activeBadgeId },
 			profileSettings: {
 				private: profileSettings.private,
 				showName: profileSettings.showName,
