@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axiosInstance';
 
-type AllowedFolder = 'course-thumbnails' | 'lecture-content';
+type AllowedFolder = 'course-thumbnails' | 'lecture-content' | 'forum';
 
 interface MediaBlockEditorProps {
-    type: 'image' | 'video';
+    type: 'image' | 'video' | 'any';
     url: string; // either an R2 fileKey, an external URL, or ''
     folder: AllowedFolder;
-    onUploadSuccess: (fileKey: string) => void;
+    onUploadSuccess: (fileKey: string, meta?: { fileType: string, fileName: string }) => void;
 }
 
 const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/'];
@@ -53,7 +53,7 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
             const response = await api.post('/api/upload/upload', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            onUploadSuccess(response.data.fileKey);
+            onUploadSuccess(response.data.fileKey, { fileType: file.type, fileName: file.name });
         } catch (err) {
             console.error("Upload failed", err);
         } finally {
@@ -87,21 +87,36 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
         return <video src={url} controls className="w-full rounded-lg shadow-md" />;
     };
 
+    const isVideo = (url: string) =>
+        url.match(/\.(mp4|webm|ogg)$/i) || url.includes('youtube') || url.includes('youtu.be');
+
+    const isPdf = (url: string) => url.match(/\.pdf$/i);
+
+    const renderPreview = () => {
+        if (type === 'image') return <img src={displayUrl} alt="Preview" className="max-w-full max-h-full w-auto h-auto rounded-lg shadow-md object-contain" />;
+        if (type === 'video') return renderVideoPlayer(displayUrl);
+        // type === 'any' — detect
+        if (isPdf(displayUrl)) return (
+            <div className="flex flex-col items-center justify-center gap-2 p-4">
+                <span className="text-4xl">📄</span>
+                <a href={displayUrl} target="_blank" rel="noreferrer" className="text-sm text-blue-600 underline font-medium">View PDF</a>
+            </div>
+        );
+        if (isVideo(displayUrl)) return renderVideoPlayer(displayUrl);
+        return <img src={displayUrl} alt="Preview" className="max-w-full max-h-full w-auto h-auto rounded-lg shadow-md object-contain" />;
+    };
+
+    const accept = type === 'video' ? 'video/*' : type === 'image' ? 'image/*' : 'image/*,video/*,application/pdf';
+    const icon = type === 'image' ? '🖼️' : type === 'video' ? '🎥' : '📎';
+    const label = type === 'any' ? 'file' : type;
+
     return (
         <div className="p-6 border-2 border-dashed border-gray-200 rounded-lg bg-white w-full h-full flex flex-col items-center justify-center">
             {displayUrl ? (
                 /* PREVIEW MODE */
                 <div className="w-full h-full flex items-center justify-center overflow-hidden">
                     <div className="relative group h-full w-full flex items-center justify-center">
-                        {type === 'image' ? (
-                            <img
-                                src={displayUrl}
-                                alt="Preview"
-                                className="max-w-full max-h-full w-auto h-auto rounded-lg shadow-md object-contain"
-                            />
-                        ) : (
-                            renderVideoPlayer(displayUrl)
-                        )}
+                        {renderPreview()}
 
                         {/* Overlay button container */}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg z-20">
@@ -148,8 +163,8 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
                                 fileInputRef.current?.click(); // Manually trigger the window
                             }}
                             className="flex flex-col items-center cursor-pointer p-4 hover:bg-gray-50 rounded-xl transition-all">
-                            <span className="text-3xl mb-2">{type === 'image' ? '🖼️' : '🎥'}</span>
-                            <span className="text-sm font-semibold text-gray-700">Choose {type} file</span>
+                            <span className="text-3xl mb-2">{icon}</span>
+                            <span className="text-sm font-semibold text-gray-700">Choose {label}</span>
 
                             <input
                                 ref={fileInputRef}
@@ -162,7 +177,7 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
                         <div className="flex flex-col w-full max-w-md gap-2">
                             <input
                                 type="text"
-                                placeholder={`Paste ${type} URL here...`}
+                                placeholder={`Paste URL here...`}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:border-blue-500 outline-none"
                                 value={linkValue}
                                 onChange={(e) => setLinkValue(e.target.value)}
@@ -176,7 +191,7 @@ const MediaBlockEditor: React.FC<MediaBlockEditorProps> = ({ type, url, folder, 
                                 type="button"
                                 onClick={handleLinkSubmit}
                                 className="bg-blue-600 text-white py-2 rounded-md font-bold text-sm hover:bg-blue-700">
-                                Embed {type === 'video' ? 'Video' : 'Image'}
+                                Embed {type === 'video' ? 'Video' : type === 'any' ? 'Link' :'Image'}
                             </button>
                         </div>
                     )}

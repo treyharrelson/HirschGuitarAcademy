@@ -7,6 +7,11 @@ interface FileAttachmentProps {
     fileName: string;
 }
 
+function getYoutubeId(url: string): string | null {
+    const match = url.match(/(?:youtu\.be\/|v\/|embed\/|watch\?v=)([^#&?]{11})/);
+    return match ? match[1] : null;
+}
+
 export default function FileAttachment({ fileKey, fileType, fileName }: FileAttachmentProps) {
     const { url, loading, error } = useFileUrl(fileKey);
     const [ expanded, setExpanded] = useState(false);
@@ -14,6 +19,29 @@ export default function FileAttachment({ fileKey, fileType, fileName }: FileAtta
 
     if (loading) return <p style={{ fontSize: '0.85em', color: '#888' }}>Loading attachment...</p>;
     if (error || !url) return <p style={{ color: 'red', fontSize: '0.85em' }}>Could not load attachment</p>;
+
+    // handle external link
+    if (fileType === 'link/external') {
+        const ytId = getYoutubeId(url);
+        if (ytId) {
+            return (
+                <div className="mt-3 w-full">
+                    <iframe
+                        className="w-full aspect-video rounded-lg shadow-md"
+                        src={`https://www.youtube.com/embed/${ytId}`}
+                        title="YouTube video"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                    />
+                </div>
+            );
+        }
+        return (
+            <a href={url} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: '8px' }}>
+                🔗 {url}
+            </a>
+        );
+    }
 
     if (fileType.startsWith('image/')) {
         return (
