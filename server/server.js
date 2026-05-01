@@ -22,7 +22,7 @@ const authRoutes = require('./routes/auth');
 const threadRoutes = require('./routes/threads');
 const courseRoutes = require('./routes/courses');
 const uploadRouter = require('./routes/upload');
-const {router: postRoutes} = require('./routes/posts');
+const { router: postRoutes } = require('./routes/posts');
 const userRoutes = require('./routes/users');
 const badgeRoutes = require('./routes/badgeRoutes');
 
@@ -43,16 +43,16 @@ app.use(express.json()); // get JSON data sent from React with axios
 // Railway restarts the server container
 const sessionPool = process.env.DATABASE_URL
   ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
-    })
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  })
   : new Pool({
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      database: process.env.POSTGRES_DB,
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT
-    });
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DB,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT
+  });
 
 // Create session data
 // look into express-mysql-session for dedicated session storing for persistent session data via the MYSQL database
@@ -64,16 +64,16 @@ app.use(session({
   secret: process.env.SESSION_SECRET || "fortestingpurposes", // used to sign the session id cookie
   resave: false, // prevents the session from being saved back to the session store
   saveUninitialized: false, // prevents a asession from being saved if it hasnt been modified
-  cookie: { 
+  cookie: {
     maxAge: 1000 * 60 * 60 * 24, //cookie expiration time
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     secure: process.env.NODE_ENV === 'production' // HTTPS only in production
-  } 
+  }
 }))
 
 // Health check for Railway
 app.get('/', (req, res) => {
-  res.status(200).json({status: 'ok' });
+  res.status(200).json({ status: 'ok' });
 })
 
 // -- ROUTES --
@@ -88,19 +88,20 @@ app.use('/api/badges', badgeRoutes);
 
 // -- START SERVER --
 async function init() {
-   try {
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on port ${port}`);
+  });
+  try {
     await sequelize.authenticate();
     console.log('DB connected');
-    
+
     if (DEV) {
       await devusers.doit();
       console.log("Dev users synced");
     }
 
-    app.listen(port, '0.0.0.0', () => {
-      console.log(`Server running on port ${port}`);
-    });
-  } catch(err) {
+
+  } catch (err) {
     console.error("Startup failed:", err);
     process.exit(1);
   }
