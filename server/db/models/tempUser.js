@@ -46,11 +46,13 @@ const TempUser = sequelize.define(
 			type: DataTypes.BOOLEAN,
 			defaultValue: false,
 			allowNull: false,
+			field: 'email_confirmed',
 		},
 		adminConfirmed: {
 			type: DataTypes.BOOLEAN,
 			defaultValue: false,
 			allowNull: false,
+			field: 'admin_confirmed',
 		}
 	},
 	{

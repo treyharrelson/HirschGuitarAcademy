@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const Models = require('../db/models');
 const { Op } = require("sequelize");
+const { transporter, sendValidationEmail } = require('./email');
+const crypto = require('crypto');
 
 // Check if user is logged in (read from session)
 router.get('/api/me', (req, res) => {
@@ -35,15 +37,104 @@ router.post('/register', async (req, res) => {
 				return res.status(400).json({ message: 'That username is already taken.' });
 			}
 		}
+		const existingUser = await Models.TempUser.findAll({ where: { email: req.body.email } });
+		if (existingUser.length > 0) {
+			return res.status(500).send("User is already registering.");
+		}
 		// Hash the password
 		const hashedPassword = await bcrypt.hash(req.body.password, 10);
 		req.body.password = hashedPassword;
 
-		// Insert the new user into the database
-		const newUser = await Models.User.create(req.body);
-		res.json({ success: true, message: 'User registered successfully' });
+		// Generate a unique token for email confirmation
+		const token = crypto.randomBytes(32).toString('hex');
+		req.body.token = token;
+		const newUser = await Models.TempUser.create(req.body);
+
+		try {
+			// like this because need to have one instance of transporter, not sure if necesarry but doing just in case
+			const email = await sendValidationEmail(transporter, newUser);
+			return res.status(200).json({ success: true, message: 'Registration successful. Please check your email to confirm.' });
+		} catch (error) {
+			await Models.TempUser.destroy({ where: { id: newUser.id } });
+			console.log(error);
+			res.status(500).send(`Error registering user: ${error}`);
+		}
 	} catch (error) {
+		console.log(error);
 		res.status(500).send(`Error registering user: ${error}`);
+	}
+});
+
+// Confirm User
+router.post('/confirm/:userId', async (req, res) => {
+	const id = req.params;
+	try {
+		const user = await Models.TempUser.findByPk(id);
+		user.adminConfirmed = true;
+		user.save();
+		if (user.emailConfirmed) {
+			const user = await realUser(user);
+			return res.status(200).json({ confirmed: true, made: true });
+		} else {
+			return res.status(200).json({ confirmed: true, made: false });
+		}
+	} catch (error) {
+		res.status(500).send(`Error confirming user: ${error}`);
+	}
+
+});
+
+async function realUser(user) {
+	try {
+		const result = await sequelize.transaction(async (t) => {
+			const userData = user.get();
+			// Let the real Users table generate a new ID
+			delete userData.id;
+			delete userData.token;
+
+			const newUser = await Models.User.create(userData);
+
+			// Delete the temporary user
+			await user.destroy();
+		});
+	} catch (error) {
+		return error;
+	};
+};
+
+// Validate Email
+router.post('/validate', async (req, res) => {
+	const { token } = req.body;
+	if (!token) {
+		return res.status(400).json({ success: false, message: 'Token is required' });
+	}
+	try {
+		// Find the temporary user by token
+		const tempUser = await Models.TempUser.findOne({ where: { token } });
+		if (!tempUser) {
+			return res.status(400).json({ success: false, message: 'Invalid or expired confirmation token' });
+		}
+
+		if (tempUser.adminConfirmed) {
+			const user = await realUser(tempUser);
+			return res.json({
+				success: true,
+				message: 'Email confirmed successfully! You can now log in.',
+				user: {
+					id: newUser.id,
+					userName: newUser.userName,
+					email: newUser.email
+				}
+			});
+		} else {
+			return res.json({
+				success: true,
+				message: 'Email confirmed successfully! You\'ll get an email when an admin confirms you.',
+			});
+		}
+	} catch (error) {
+		console.error('Error confirming email:', error);
+		res.status(500).json({ success: false, message: `Error confirming email: ${error.message}` });
 	}
 });
 
