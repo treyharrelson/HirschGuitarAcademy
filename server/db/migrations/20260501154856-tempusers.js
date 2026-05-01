@@ -37,17 +37,6 @@ module.exports = {
         defaultValue: 'student',
         allowNull: false,
       },
-      name: {
-        type: Sequelize.VIRTUAL,
-        get() {
-          const first = this.getDataValue('firstName');
-          const last = this.getDataValue('lastName');
-          if (first || last) {
-            return `${first || ''} ${last || ''}`.trim();
-          }
-          return this.getDataValue('userName');
-        }
-      },
       token: {
         type: Sequelize.STRING,
         allowNull: true,
@@ -63,6 +52,16 @@ module.exports = {
         defaultValue: false,
         allowNull: false,
         field: 'admin_confirmed',
+      },
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     });
 
@@ -70,6 +69,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Badges');
+    await queryInterface.dropTable('TempUsers');
   }
 };
