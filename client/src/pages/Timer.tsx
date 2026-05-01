@@ -37,8 +37,8 @@ export default function Timer() {
               cx="110"
               cy="110"
               r="100"
-            {/* Progress Circle */}
               className="fill-none stroke-slate-100 stroke-[10px]" />
+              {/* Progress Circle */}
             <circle
               cx="110"
               cy="110"
