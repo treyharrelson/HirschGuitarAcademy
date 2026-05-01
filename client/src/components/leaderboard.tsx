@@ -1,4 +1,4 @@
-import "./Leaderboard.css";
+import "./leaderboard.css";
 
 type Player = {
   rank: number;
