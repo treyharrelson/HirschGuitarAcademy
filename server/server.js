@@ -88,26 +88,21 @@ app.use('/api/badges', badgeRoutes);
 
 // -- START SERVER --
 async function init() {
-  try {
+   try {
     await sequelize.authenticate();
     console.log('DB connected');
-
-    console.log('Starting sync...');
-    //await sequelize.sync({ alter: false });
-    await sequelize.query('SET session_replication_role = DEFAULT;');
-    console.log("Tables synced successfully.");
-
+    
     if (DEV) {
       await devusers.doit();
       console.log("Dev users synced");
     }
 
     app.listen(port, '0.0.0.0', () => {
-      console.log(`Server running at http://localhost:${port}/`);
+      console.log(`Server running on port ${port}`);
     });
-
   } catch(err) {
     console.error("Startup failed:", err);
+    process.exit(1);
   }
 }
 
