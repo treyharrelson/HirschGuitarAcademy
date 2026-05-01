@@ -13,18 +13,21 @@ if (dns.setDefaultResultOrder) {
 
 const transporter = nodemailer.createTransport({
 	host: 'smtp.gmail.com',
-	port: 587,
-	secure: false,
+	port: 465,
+	secure: true,
 	auth: {
 		user: process.env.EMAIL_USER,
 		pass: process.env.EMAIL_PASS?.replace(/\s/g, '')
 	},
 	tls: {
-        rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
-    },
-	connectionTimeout: 10000, 
-	family: 4 
+		rejectUnauthorized: false,
+		minVersion: 'TLSv1.2'
+	},
+	connectionTimeout: 20000,
+	greetingTimeout: 20000,
+	socketTimeout: 20000,
+	dnsTimeout: 10000,
+	family: 4
 });
 
 // Verify connection configuration on startup
@@ -127,4 +130,4 @@ async function sendConfirmedEmail(transporter, user) {
 	await transporter.sendMail(mailOptions);
 };
 
-module.exports = {transporter, sendValidationEmail, sendConfirmedEmail};
+module.exports = { transporter, sendValidationEmail, sendConfirmedEmail };
