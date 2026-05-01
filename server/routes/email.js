@@ -2,8 +2,9 @@ const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-async function sendValidationEmail(client, user) {
-	const confirmationUrl = `${process.env.BASE_URL || 'http://localhost:5173'}/confirm-email/${user.token}`;
+async function sendValidationEmail(client, user, origin) {
+	const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN || origin || 'http://localhost:5173';
+	const confirmationUrl = `${baseUrl}/confirm-email/${user.token}`;
 
 	const { data, error } = await client.emails.send({
 		//from: process.env.EMAIL_FROM || 'Hirsch Guitar Academy <onboarding@resend.dev>',
@@ -53,8 +54,9 @@ async function sendValidationEmail(client, user) {
 	}
 };
 
-async function sendConfirmedEmail(client, user) {
-	const confirmationUrl = `${process.env.BASE_URL || 'http://localhost:5173'}/`;
+async function sendConfirmedEmail(client, user, origin) {
+	const baseUrl = process.env.BASE_URL || origin || 'http://localhost:5173';
+	const confirmationUrl = `${baseUrl}/`;
 
 	const { data, error } = await client.emails.send({
 		//from: process.env.EMAIL_FROM || 'Hirsch Guitar Academy <onboarding@resend.dev>',
