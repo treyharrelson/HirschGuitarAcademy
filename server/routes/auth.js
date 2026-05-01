@@ -54,8 +54,8 @@ router.post('/register', async (req, res) => {
 		const newUser = await Models.TempUser.create(req.body);
 
 		try {
-			// like this because need to have one instance of transporter, not sure if necesarry but doing just in case
-			const email = await sendValidationEmail(resend, newUser);
+			const origin = req.get('Origin') || `${req.protocol}://${req.get('host')}`;
+			const email = await sendValidationEmail(resend, newUser, origin);
 			return res.status(200).json({ success: true, message: 'Registration successful. Please check your email to confirm.' });
 		} catch (error) {
 			await Models.TempUser.destroy({ where: { id: newUser.id } });
@@ -90,7 +90,8 @@ router.post('/confirm/:userId', requireAuth, requireRole(roles.ADMIN), async (re
 		await user.save();
 		if (user.emailConfirmed) {
 			await realUser(user);
-			await sendConfirmedEmail(resend, user);
+			const origin = req.get('Origin') || `${req.protocol}://${req.get('host')}`;
+			await sendConfirmedEmail(resend, user, origin);
 			return res.status(200).json({ confirmed: true, made: true });
 		} else {
 			return res.status(200).json({ confirmed: true, made: false });
