@@ -7,8 +7,6 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 const { sequelize } = require('./db/models');
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
 
 // 1. SET TRUST PROXY IMMEDIATELY
 app.set('trust proxy', 1);
