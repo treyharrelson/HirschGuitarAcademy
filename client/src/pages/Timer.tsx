@@ -47,7 +47,7 @@ export default function Timer() {
                 strokeDasharray: circumference,
                 strokeDashoffset: strokeDashoffset,
               }}
-              className="fill-none stroke-[#ff9f1c] stroke-[10px] transition-all duration-1000 ease-linear rounded-full"
+              className="fill-none stroke-[#22d3ee] stroke-[10px] transition-all duration-1000 ease-linear rounded-full"
               strokeLinecap="round" />
           </svg>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-4xl font-mono tracking-widest">
@@ -81,7 +81,7 @@ export default function Timer() {
           {!isRunning ? (
             <button
               onClick={startTimer}
-              className="col-span-2 py-4 bg-[#ff9f1c] text-[#0f0f14] font-black rounded-xl hover:bg-[#ffb551] transition-all active:scale-95 uppercase tracking-widest">
+              className="col-span-2 py-4 bg-green-500 text-[#0f0f14] font-black rounded-xl hover:bg-green-400 transition-all active:scale-95 uppercase tracking-widest">
               {/* Logic to determine if we should say 'Resume' or 'Start Session' */}
               {mode === "countdown"
                 ? (remainingSeconds < totalSeconds ? "Resume" : "Start Session")
