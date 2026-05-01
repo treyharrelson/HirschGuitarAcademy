@@ -7,7 +7,7 @@ interface Block {
   url?: string;     // Cloudflare R2 URL or YouTube URL
 }
 
-const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/'];
+const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/', 'badges/'];
 const isFileKey = (val: string) => R2_FOLDERS.some(p => val.startsWith(p));
 
 // Resolves an R2 fileKey to a presigned URL, or passes external URLs through

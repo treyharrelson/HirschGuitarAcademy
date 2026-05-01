@@ -28,7 +28,7 @@ const ALLOWED_TYPES = [
     'application/pdf'
 ];
 
-const ALLOWED_FOLDERS = ['forum', 'course-thumbnails', 'profile-pictures', 'lecture-content'];
+const ALLOWED_FOLDERS = ['forum', 'course-thumbnails', 'profile-pictures', 'lecture-content', 'badges'];
 
 const MAX_FILE_SIZE_MB = 100;
 

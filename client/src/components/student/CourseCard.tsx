@@ -35,7 +35,7 @@ export const CourseCard = ({
   useEffect(() => {
     let isMounted = true;
     const loadThumbnail = async () => {
-      const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/'];
+      const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/', 'badges/'];
       if (course.thumbnail && typeof course.thumbnail === 'string' && R2_FOLDERS.some(p => course.thumbnail?.startsWith(p))) {
         try {
           const res = await api.get(`/api/upload/file-url`, { params: { fileKey: course.thumbnail } });

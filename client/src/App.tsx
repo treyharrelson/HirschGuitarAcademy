@@ -26,6 +26,7 @@ import { ProfilePage } from './pages/Profile';
 import "quill/dist/quill.snow.css";
 import EnrollmentGuard from './components/student/EnrollmentGuard';
 import Leaderboard from "./components/leaderboard";
+import BadgeManagement from './pages/instructor/BadgeManagement';
 
 function App() {
   //const [count, setCount] = useState(0)
@@ -44,7 +45,7 @@ function App() {
               <Route path="/home" element={<Dashboard />} />
               <Route path="/admin-dashboard" element={<Dashboard />} />
               <Route path="/manage/threads" element={<ThreadManager />} />
-              
+
               <Route path="/forum" element={<Forum />} />
               <Route path="/forum/thread/:threadId" element={<ThreadDetail />} />
               <Route path="/follows" element={<ThreadFollows />} />
@@ -60,6 +61,7 @@ function App() {
                 <Route path=':courseId' element={<CourseView />} />
               </Route>
               <Route path='/loading/:path' element={<Loading />} />
+
               <Route path='/instructor' element={<Instructor />}>
                 <Route path='/instructor' element={<InstrcutorDashboard />} />
                 <Route path='add-course' element={<AddCourse />} />
@@ -67,6 +69,7 @@ function App() {
                 <Route path='students-enrolled' element={<StudentsEnrolled />} />
                 <Route path='edit-course/:courseId' element={<EditCourse />} />
               </Route>
+              <Route path='/badges' element={<BadgeManagement />}/>
             </Route>
           </Routes >
         </BrowserRouter >

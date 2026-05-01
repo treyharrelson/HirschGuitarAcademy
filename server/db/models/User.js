@@ -54,6 +54,11 @@ const User = sequelize.define(
 			type: DataTypes.TEXT,
 			allowNull: true,
 		},
+		activeBadgeId: {
+			type: DataTypes.INTEGER,
+			allowNull: true,
+			field: 'active_badge_id',
+		}
 	},
 	{
 		tableName: 'Users',
