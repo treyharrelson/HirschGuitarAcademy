@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const Models = require('../db/models');
 const { Op } = require("sequelize");
-const { transporter, sendValidationEmail, sendConfirmedEmail } = require('./email');
+const { resend, sendValidationEmail, sendConfirmedEmail } = require('./email');
 const crypto = require('crypto');
 const roles = require('../rolesEnum');
 const requireRole = require('../middleware/requireRole');
@@ -55,7 +55,7 @@ router.post('/register', async (req, res) => {
 
 		try {
 			// like this because need to have one instance of transporter, not sure if necesarry but doing just in case
-			const email = await sendValidationEmail(transporter, newUser);
+			const email = await sendValidationEmail(resend, newUser);
 			return res.status(200).json({ success: true, message: 'Registration successful. Please check your email to confirm.' });
 		} catch (error) {
 			await Models.TempUser.destroy({ where: { id: newUser.id } });
@@ -90,7 +90,7 @@ router.post('/confirm/:userId', requireAuth, requireRole(roles.ADMIN), async (re
 		await user.save();
 		if (user.emailConfirmed) {
 			await realUser(user);
-			sendConfirmedEmail(transporter, user);
+			await sendConfirmedEmail(resend, user);
 			return res.status(200).json({ confirmed: true, made: true });
 		} else {
 			return res.status(200).json({ confirmed: true, made: false });
