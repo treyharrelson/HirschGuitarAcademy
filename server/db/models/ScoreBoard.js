@@ -11,7 +11,7 @@ const ScoreBoard = sequelize.define(
 			autoIncrement: true,
 			allowNull: false,
 		},
-		belts: {
+		badges: {
 			type: DataTypes.INTEGER,
 			defaultValue: 0,
 		},

@@ -24,6 +24,7 @@ const courseRoutes = require('./routes/courses');
 const uploadRouter = require('./routes/upload');
 const {router: postRoutes} = require('./routes/posts');
 const userRoutes = require('./routes/users');
+const badgeRoutes = require('./routes/badgeRoutes');
 
 // allows connection from frontend
 app.use(cors({
@@ -83,6 +84,7 @@ app.use('/api/courses', requireAuth, courseRoutes); // Protects and prefixes cou
 app.use('/api/upload', requireAuth, uploadRouter);
 app.use('/api/posts', requireAuth, postRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/badges', badgeRoutes);
 
 // -- START SERVER --
 async function init() {
@@ -91,7 +93,7 @@ async function init() {
     console.log('DB connected');
 
     console.log('Starting sync...');
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
     await sequelize.query('SET session_replication_role = DEFAULT;');
     console.log("Tables synced successfully.");
 

@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import type { UserInfo } from '../types/user';
+import UserBadge from '../components/UserBadge';
+
 
 export const ProfilePage: React.FC = () => {
     const { userId } = useParams<{ userId?: string }>();
     const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
-
     const targetUserId = userId || user?.id;
 
     const [profileUser, setProfileUser] = useState<UserInfo | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [activeBadgeId, setActiveBadgeId] = useState<number | null>(null);
 
     // Editing state
     const isSelf = user?.id === parseInt(targetUserId as string);
@@ -31,17 +32,22 @@ export const ProfilePage: React.FC = () => {
             try {
                 const response = await api.get(`/api/user/${targetUserId}`);
                 const u = response.data.user;
+
                 setProfileUser({
                     id: u.id,
-                    name: (u.name || 'Unknown'),
+                    name: (u.name || u.userName || 'Unknown'),
                     email: u.email,
                     role: u.role,
                     bio: u.bio,
-                    privacy: u.private,
-                    dateCreated: new Date(u.createdAt)
+                    privacy: response.data.profileSettings?.private || false,
+                    dateCreated: new Date(u.createdAt),
+                    activeBadge: u.activeBadge,
+                    earnedBadges: u.earnedBadges || []
                 });
+
                 setEditBio(u.bio || '');
-                setEditPrivate(u.private || false);
+                setEditPrivate(response.data.profileSettings?.private || false);
+                setActiveBadgeId(u.activeBadgeId || null);
             } catch (err: any) {
                 if (err.response && err.response.status === 403) {
                     setError('This profile is private.');
@@ -63,10 +69,20 @@ export const ProfilePage: React.FC = () => {
         try {
             await api.put(`/api/user/${targetUserId}`, {
                 bio: editBio,
-                private: editPrivate
+                private: editPrivate,
+                activeBadgeId: activeBadgeId
             });
+
+            // Find the full badge object to update the local UI instantly
+            const newActiveBadge = profileUser?.earnedBadges?.find(b => b.id === activeBadgeId) || null;
+
             if (profileUser) {
-                setProfileUser({ ...profileUser, bio: editBio, privacy: editPrivate });
+                setProfileUser({
+                    ...profileUser,
+                    bio: editBio,
+                    privacy: editPrivate,
+                    activeBadge: newActiveBadge
+                });
             }
             setIsEditing(false);
         } catch (err) {
@@ -85,8 +101,6 @@ export const ProfilePage: React.FC = () => {
     return (
         <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
             <div className="flex flex-col lg:flex-row gap-8">
-
-
                 <div className="flex-1">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
                         {loading ? (
@@ -106,12 +120,15 @@ export const ProfilePage: React.FC = () => {
                             <div className="max-w-3xl">
                                 <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
                                     <div className="flex items-center gap-6">
-                                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold text-4xl shadow-inner">
-                                            {(profileUser?.name?.[0] || '?').toUpperCase()}
+                                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-700 font-bold text-4xl shadow-inner uppercase">
+                                            {(profileUser?.name?.[0] || '?')}
                                         </div>
                                         <div>
-                                            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
                                                 {profileUser?.name || 'Unknown User'}
+                                                {profileUser?.activeBadge && (
+                                                    <UserBadge badgeKey={profileUser.activeBadge.imageUrl} badgeName={profileUser.activeBadge.name} size="md" />
+                                                )}
                                             </h1>
                                             <div className="flex items-center gap-3">
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100 capitalize">
@@ -121,10 +138,7 @@ export const ProfilePage: React.FC = () => {
                                         </div>
                                     </div>
                                     {isSelf && !isEditing && (
-                                        <button
-                                            onClick={() => setIsEditing(true)}
-                                            className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium shadow-sm flex items-center gap-2"
-                                        >
+                                        <button onClick={() => setIsEditing(true)} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors font-medium shadow-sm flex items-center gap-2">
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                             Edit Profile
                                         </button>
@@ -135,13 +149,25 @@ export const ProfilePage: React.FC = () => {
                                     <div className="space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-2">About Me</label>
-                                            <textarea
-                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow resize-y"
-                                                rows={5}
-                                                value={editBio}
-                                                onChange={(e) => setEditBio(e.target.value)}
-                                                placeholder="Tell us a little bit about yourself..."
-                                            />
+                                            <textarea className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow resize-y" rows={5} value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Tell us a little bit about yourself..." />
+                                        </div>
+
+                                        {/* BADGE SELECTION GRID */}
+                                        <div className="bg-white p-6 rounded-xl border border-gray-200 space-y-4">
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-gray-900">Display Badge</h4>
+                                                <p className="text-sm text-gray-500">Choose which achievement to show next to your name.</p>
+                                            </div>
+                                            <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+                                                <button type="button" onClick={() => setActiveBadgeId(null)} className={`h-16 flex flex-col items-center justify-center rounded-xl border-2 transition-all ${activeBadgeId === null ? 'border-blue-600 bg-blue-50' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'}`}>
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase">None</span>
+                                                </button>
+                                                {profileUser?.earnedBadges?.map((badge: any) => (
+                                                    <button key={badge.id} type="button" onClick={() => setActiveBadgeId(badge.id)} className={`h-16 flex flex-col items-center justify-center rounded-xl border-2 transition-all p-2 ${activeBadgeId === badge.id ? 'border-blue-600 bg-blue-50' : 'border-gray-100 bg-gray-50 hover:bg-gray-100'}`}>
+                                                        <UserBadge badgeKey={badge.imageUrl} badgeName={badge.name} size="md" />
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-200">
@@ -150,33 +176,16 @@ export const ProfilePage: React.FC = () => {
                                                 <p className="text-sm text-gray-500">Only you will be able to see your profile.</p>
                                             </div>
                                             <label className="relative inline-flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    className="sr-only peer"
-                                                    checked={editPrivate}
-                                                    onChange={(e) => setEditPrivate(e.target.checked)}
-                                                />
+                                                <input type="checkbox" className="sr-only peer" checked={editPrivate} onChange={(e) => setEditPrivate(e.target.checked)} />
                                                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                             </label>
                                         </div>
 
                                         <div className="flex gap-3 pt-4 border-t border-gray-200">
-                                            <button
-                                                onClick={handleSave}
-                                                disabled={saving}
-                                                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors shadow-sm disabled:opacity-50"
-                                            >
+                                            <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors shadow-sm disabled:opacity-50">
                                                 {saving ? 'Saving...' : 'Save Changes'}
                                             </button>
-                                            <button
-                                                onClick={() => {
-                                                    setIsEditing(false);
-                                                    setEditBio(profileUser?.bio || '');
-                                                    setEditPrivate(profileUser?.privacy || false);
-                                                }}
-                                                disabled={saving}
-                                                className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors shadow-sm disabled:opacity-50"
-                                            >
+                                            <button onClick={() => { setIsEditing(false); setEditBio(profileUser?.bio || ''); setEditPrivate(profileUser?.privacy || false); setActiveBadgeId(profileUser?.activeBadge?.id || null); }} disabled={saving} className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors shadow-sm disabled:opacity-50">
                                                 Cancel
                                             </button>
                                         </div>
@@ -195,16 +204,11 @@ export const ProfilePage: React.FC = () => {
                                                 <p className="text-gray-400 italic bg-gray-50 p-6 rounded-xl border border-gray-100 border-dashed">No biography provided yet.</p>
                                             )}
                                         </div>
-
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                                                 <p className="text-sm text-gray-500 mb-1">Member Since</p>
                                                 <p className="font-medium text-gray-900">
-                                                    {profileUser?.dateCreated ? new Date(profileUser.dateCreated).toLocaleDateString(undefined, {
-                                                        year: 'numeric',
-                                                        month: 'long',
-                                                        day: 'numeric'
-                                                    }) : 'Unknown'}
+                                                    {profileUser?.dateCreated ? new Date(profileUser.dateCreated).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'Unknown'}
                                                 </p>
                                             </div>
                                             {isSelf && (
@@ -221,6 +225,22 @@ export const ProfilePage: React.FC = () => {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* FULL ACHIEVEMENT GALLERY */}
+                                <div className="mt-12 pt-8 border-t border-gray-100">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-4 uppercase tracking-widest text-[11px] text-gray-400">
+                                        Badges Earned
+                                    </h3>
+                                    <div className="flex flex-wrap gap-4">
+                                        {profileUser?.earnedBadges && profileUser.earnedBadges.length > 0 ? (
+                                            profileUser.earnedBadges.map((badge: any) => (
+                                                <UserBadge key={badge.id} badgeKey={badge.imageUrl} badgeName={badge.name} size="lg" />
+                                            ))
+                                        ) : (
+                                            <p className="text-gray-400 italic text-sm">No badges earned yet.</p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         ) : null}
                     </div>

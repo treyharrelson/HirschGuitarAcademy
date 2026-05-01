@@ -7,6 +7,7 @@ import ReactionBar from './ReactionBar';
 import { useState } from 'react';
 import api from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
+import UserBadge from '../UserBadge';
 
 const EMPTY_REACTIONS: ReactionSummary = {
     counts: { like: 0, love: 0, laugh: 0, fire: 0, celebrate: 0 },
@@ -72,7 +73,7 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
         setSubmittingReply(true);
         setReplyError('');
         try {
-            const res = await api.post(`/api/posts/${post.id}/comments`, { content: replyContent});
+            const res = await api.post(`/api/posts/${post.id}/comments`, { content: replyContent });
             setComments(prev => [...prev, res.data]);
             setReplyContent('');
             if (!showReplies) setShowReplies(true);
@@ -154,6 +155,14 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
                         <Link to={`/profile/${post.author?.id}`} className="text-sm font-semibold text-gray-800 hover:text-blue-600 hover:underline">
                             {post.author?.name || 'Unknown'}
                         </Link>
+                        {/* THE BADGE DISPLAY */}
+                        {post.author?.activeBadge && (
+                            <UserBadge
+                                badgeKey={post.author.activeBadge.imageUrl}
+                                badgeName={post.author.activeBadge.name}
+                                size="sm"
+                            />
+                        )}
                         <p className="text-xs text-gray-400">
                             {new Date(post.createdAt).toLocaleString()}
                         </p>
@@ -211,15 +220,21 @@ function PostCard({ post, showThread = false, onFollowThread, onPostDeleted }: P
                                     <Link to={`/profile/${c.author?.id}`} className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-bold flex-shrink-0 hover:ring-2 hover:ring-blue-300 transition-all">
                                         {cInitials}
                                     </Link>
-                                    <div className="flex-1">
-                                        <Link to={`/profile/${c.author?.id}`} className="text-xs font-semibold text-gray-700 hover:text-blue-600 hover:underline">{c.author?.name || 'Unknown'}</Link>
-                                        <p className="text-xs text-gray-600 leading-relaxed">{c.content}</p>
-                                        <p className="text-xs text-gray-400 mt-0.5">{new Date(c.createdAt).toLocaleString()}</p>
-                                        <ReactionBar
-                                            commentId={c.id}
-                                            initial={{ counts: c.counts, userReaction: c.userReaction }}
-                                        />
+                                    <div className="flex items-center gap-2"> {/* Added flex container */}
+                                        <Link to={`/profile/${c.author?.id}`} className="text-xs font-semibold text-gray-700 hover:text-blue-600 hover:underline">
+                                            {c.author?.name || 'Unknown'}
+                                        </Link>
+
+                                        {/* THE BADGE DISPLAY FOR REPLIES */}
+                                        {c.author?.activeBadge && (
+                                            <UserBadge
+                                                badgeKey={c.author.activeBadge.imageUrl}
+                                                badgeName={c.author.activeBadge.name}
+                                                size="sm"
+                                            />
+                                        )}
                                     </div>
+                                    <p className="text-xs text-gray-600 leading-relaxed">{c.content}</p>
                                 </div>
                             </div>
                         );

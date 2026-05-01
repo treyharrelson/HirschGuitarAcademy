@@ -167,15 +167,44 @@ router.post('/:courseId/lectures/:lectureId/complete', requireAuth, requireRole(
         const userId = req.session.user.id;
         const { courseId, lectureId } = req.params;
 
+        const parsedLectureId = parseInt(String(lectureId).replace('lec-', ''));
         await Models.Progress.findOrCreate({
-            where: {
-                userId: userId,
-                courseId: courseId,
-                lectureId: parseInt(String(lectureId).replace('lec-', ''))
-            }
+            where: { userId, courseId, lectureId: parsedLectureId }
         });
 
-        res.json({ success: true });
+        const totalLecturesCount = await Models.Lecture.count({
+            include: [{
+                model: Models.Module,
+                as: 'module',
+                where: { courseId: courseId }
+            }]
+        });
+
+        const completedCount = await Models.Progress.count({
+            where: { userId, courseId }
+        });
+
+        let badgeAwarded = false;
+        if (completedCount >= totalLecturesCount) {
+            const course = await Models.Course.findByPk(courseId);
+
+            if (course && course.completionBadgeId) {
+                console.log(`Course ${courseId} complete! Attempting to award badge ${course.completionBadgeId} to user ${userId}`);
+                await Models.UserBadge.findOrCreate({
+                    where: {
+                        userId: userId,
+                        badgeId: course.completionBadgeId
+                    }
+                });
+                badgeAwarded = true;
+            }
+        }
+        res.json({
+            success: true,
+            courseCompleted: completedCount >= totalLecturesCount,
+            badgeAwarded
+        });
+
     } catch (err) {
         console.error("COMPLETION ERROR:", err);
         res.status(500).json({ message: err.message });
@@ -271,7 +300,7 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
 router.put('/:courseId', requireRole('admin', 'instructor'), async (req, res) => {
     try {
         const { courseId } = req.params;
-        const { name, modules, description, isPrivate, thumbnail, requirements } = req.body;
+        const { name, modules, description, isPrivate, thumbnail, requirements, completionBadgeId } = req.body;
 
         const course = await Models.Course.findByPk(courseId);
         if (!course) {
@@ -288,7 +317,8 @@ router.put('/:courseId', requireRole('admin', 'instructor'), async (req, res) =>
                 name,
                 description: description || null,
                 isPrivate: isPrivate || false,
-                thumbnail: thumbnail || null
+                thumbnail: thumbnail || null,
+                completionBadgeId: completionBadgeId || null
             }, { transaction: t });
 
             // Destroy existing lectures & modules
@@ -349,12 +379,10 @@ router.put('/:courseId', requireRole('admin', 'instructor'), async (req, res) =>
             }
 
             // Update requirements
-            if (requirements && Array.isArray(requirements) && requirements.length > 0) {
-                const reqIds = requirements.map((id) => parseInt(id, 10)).filter(id => !isNaN(id));
-                await course.setRequirements(reqIds, { transaction: t });
-            } else {
-                await course.setRequirements([], { transaction: t });
-            }
+            const reqIds = Array.isArray(requirements)
+                ? requirements.map((id) => parseInt(id, 10)).filter(id => !isNaN(id))
+                : [];
+            await course.setRequirements(reqIds, { transaction: t });
         });
 
         res.status(200).json({ message: 'Course updated successfully' });
@@ -522,6 +550,9 @@ router.get('/:courseId', async (req, res) => {
                     attributes: ['id', 'name']
                 },
                 {
+                    model: Models.Badge, as: 'completionBadge', attributes: ['id', 'name', 'imageUrl']
+                },
+                {
                     model: Models.User,
                     as: 'instructor',
                     attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role']
@@ -586,6 +617,7 @@ router.get('/:courseId', async (req, res) => {
             description: course.description,
             thumbnail: course.thumbnail,
             modules: mappedModules,
+            completionBadgeId: course.completionBadgeId,
             requirements: course.requirements ? course.requirements.map(reqCourse => ({ id: reqCourse.id, name: reqCourse.name })) : []
         };
 

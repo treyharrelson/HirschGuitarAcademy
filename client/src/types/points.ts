@@ -6,7 +6,7 @@ export interface Award {
 	user?: User,
 };
 
-export interface Belt {
+export interface Badge {
 	id: string,
 	user?: User,
 	course?: Course,

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "workspaces":[
+  "workspaces": [
     "client",
     "server"
   ],
@@ -39,8 +39,9 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "dotenv": "^17.3.1",
     "nodemon": "^3.1.11",
-    "concurrently": "^9.2.1"
+    "sequelize-cli": "^6.6.5"
   }
 }

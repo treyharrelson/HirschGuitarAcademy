@@ -10,7 +10,7 @@ interface MediaBlockEditorProps {
     onUploadSuccess: (fileKey: string) => void;
 }
 
-const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/'];
+const R2_FOLDERS = ['forum/', 'course-thumbnails/', 'lecture-content/', 'profile-pictures/', 'badges/'];
 
 // returns true when the value looks like an R2 storage key rather than a full URL
 const isFileKey = (value: string) =>
