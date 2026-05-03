@@ -330,6 +330,50 @@ router.get('/:threadId/members', async (req, res) => {
 	}
 });
 
+// Get followers of a public thread (GET /api/threads/:threadId/followers)
+router.get('/:threadId/followers', async (req, res) => {
+	try {
+		// find members of the thread given by the GET URL param,
+		const follows = await Models.Follow.findAll({
+			where: {threadId: req.params.threadId },
+			// join Users table
+			include: [{ model: Models.User, as: 'user', attributes: ['id', 'userName', 'firstName', 'lastName', 'name']}]
+		})
+		res.json(follows.map(f => f.user));
+	} catch (error) {
+		res.status(500).json({ message: `Error fetching followers: ${error}` });
+	}
+});
+
+// Remove a follower (DELETE /api/threads/:threadId/followers/:userid)
+router.delete('/:threadId/followers/:userId', async (req, res) => {
+	try {
+		// find userId that follows threadId
+		const follower = await Models.Follow.destroy({
+			where: {threadId: req.params.threadId, userId: req.params.userId }
+
+		})
+		res.status(204).end()
+	} catch (error) {
+		res.status(500).json({ message: `Error removing follower: ${error}` });
+	}
+});
+
+// Move a thread to a new parent (PATCH /api/threads/:threadId/parent)
+router.patch('/:threadId/parent', async (req, res) => {
+	try {
+		// get new parentThreadId from request
+		const { parentThreadId } = req.body;
+		// get thread that is being modified
+		const thread = await Models.Thread.findByPk(req.params.threadId);
+		if (!thread) return res.status(404).json({ message: 'Thread not found' });
+		await thread.update({ parentThreadId: parentThreadId ?? null });
+		res.json({ id: thread.id, parentThreadId: thread.parentThreadId });
+	} catch (error) {
+		res.status(500).json({ message: `Error moving thread: ${error}` });
+	}
+});
+
 // Add a member to a private thread (POST /api/threads/:threadId/members)
 router.post('/:threadId/members', async (req, res) => {
 	try {
