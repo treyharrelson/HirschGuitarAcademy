@@ -23,10 +23,13 @@ import Instructor from './pages/instructor/Instructor'
 import InstrcutorDashboard from './pages/instructor/InstructorDashboard'
 import EditCourse from './pages/instructor/EditCourse'
 import { ProfilePage } from './pages/Profile';
+import ToConfirmUsers from './pages/admin/toConfirmUsers';
+import EmailValidation from './pages/EmailValidation';
 
 
 import "quill/dist/quill.snow.css";
 import EnrollmentGuard from './components/student/EnrollmentGuard';
+import Leaderboard from "./components/leaderboard";
 import BadgeManagement from './pages/instructor/BadgeManagement';
 
 function App() {
@@ -39,12 +42,14 @@ function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/confirm-email/:token" element={<EmailValidation />} />
 
             {/** THIS IS THE MAIN RENDERED PAGE */}
             <Route element={<MainLayout />}>
 
               <Route path="/home" element={<Dashboard />} />
               <Route path="/admin-dashboard" element={<Dashboard />} />
+              <Route path="/confirmUsers" element={<ToConfirmUsers />} />
               <Route path="/manage/threads" element={<ThreadManager />} />
 
               <Route path="/forum" element={<Forum />} />
@@ -54,6 +59,7 @@ function App() {
               <Route path="/courses" element={<MyCourses />} />
               <Route path="/metronome" element={<Metronome />} />
               <Route path="/timer" element={<Timer />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile/:userId" element={<ProfilePage />} />
               <Route path='/my-enrollments' element={<MyEnrollments />} />

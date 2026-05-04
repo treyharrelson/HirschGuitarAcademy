@@ -2,7 +2,7 @@ const Models = require('./models')
 const bcrypt = require('bcrypt');
 
 async function getrecord(fname, lname, uname, email, password, role) {
-	const hashedPassword = await bcrypt.hash(password, 10);
+	const hashedPassword = await bcrypt.hash(password, 1);
 	const femail = `${email}@gmail.com`
 	const record = {
 		firstName: fname,

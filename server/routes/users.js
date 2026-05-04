@@ -3,6 +3,17 @@ const router = express.Router();
 const Models = require('../db/models');
 const requireRole = require('../middleware/requireRole');
 const requireAuth = require('../middleware/requireAuth');
+const roles = require('../rolesEnum');
+
+router.get('/tempUsers', requireAuth, requireRole(roles.ADMIN), async (req, res) => {
+	try {
+		const users = await Models.TempUser.findAll({attributes: ['id', 'name', 'firstName', 'lastName', 'email', 'role', 'emailConfirmed', 'adminConfirmed']});
+		res.status(200).json(users);
+	}catch(error) {
+		res.status(500).json(`Error: ${error}`)
+	}
+});
+
 
 router.get('/:userId', requireAuth, async (req, res) => {
 	try {

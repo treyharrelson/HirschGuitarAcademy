@@ -12,6 +12,7 @@ import userIcon from './userIcon.svg'
 import logoutIcon from './logout.svg'
 import homeIcon from './home-outline.svg'
 import trophyIcon from './trophy-outline.svg'
+import badgeIcon from './ribbon-outline.svg'
 
 export const assets = {
     book_icon,
@@ -27,5 +28,6 @@ export const assets = {
     userIcon,
     logoutIcon,
     homeIcon,
-    trophyIcon
+    trophyIcon,
+    badgeIcon
 }

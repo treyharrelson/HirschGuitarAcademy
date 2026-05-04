@@ -7,31 +7,7 @@ import api from '../../api/axiosInstance';
 import { assets } from '../../assets/assets';
 import { useTimer } from '../../context/TimerProvider';
 
-type RoleLink = {
-  label: string;
-  path: string;
-  button: React.ElementType;
-}
 
-const NAV_LINKS: Record<string, RoleLink[]> = {
-  guest: [
-    { label: 'Create Account', path: '/', button: BigBlueButton }
-  ],
-  student: [
-    { label: 'Dashboard', path: '/home', button: NavBarButton },
-    { label: 'My Courses', path: '/courses', button: NavBarButton },
-  ],
-  instructor: [
-    { label: 'Instructor View', path: '/instructor', button: NavBarButton },
-    { label: 'Add Course', path: '/instructor/add-course', button: NavBarButton },
-  ],
-  admin: [
-    //dunno yet
-  ],
-  moderator: [
-    { label: 'Forum', path: '/forum', button: NavBarButton },
-  ],
-};
 
 
 const Navbar = () => {
@@ -54,20 +30,6 @@ const Navbar = () => {
   const isCourseListPage = location.pathname.includes('/course-list');
 
 
-  const links = user?.role ? NAV_LINKS[user.role] : NAV_LINKS['guest'];
-
-  const RenderLinks = () => (
-    <>
-      {links.map((link, index) => (
-        <link.button
-          key={`${link.path}-${index}`} // Unique key using path and index
-          onClick={() => navigate(link.path)}
-        >
-          {link.label}
-        </link.button>
-      ))}
-    </>
-  );
 
   return (
     <div className={'w-full flex items-center justify-between px-4 sm:px-10 md:px-14 lg:px-36 border-b border-gray-200 sticky top-0 left-0 z-40 py-4 bg-white'}>
@@ -76,49 +38,58 @@ const Navbar = () => {
       </Link>
       <div className='hidden md:flex items-center'>
         <div className='flex items-center gap-8'>
-          <RenderLinks />
           {user && (
-            <BigBlueButton onClick={handleLogout}>
-              Logout
-            </BigBlueButton>
+            <div className='flex items-center gap-4 sm:gap-6 border-l pl-4 sm:pl-8 border-gray-100'>
+              <BigBlueButton onClick={handleLogout}>
+                Logout
+              </BigBlueButton>
+              <button 
+                onClick={() => navigate(`/profile/${user.id}`)}
+                className='flex items-center gap-2 sm:gap-3 cursor-pointer group'
+              >
+                <div className='w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-base sm:text-lg border border-blue-100 group-hover:ring-2 group-hover:ring-blue-200 transition-all'>
+                  {user.name?.charAt(0).toUpperCase() || '?'}
+                </div>
+                <div className='hidden lg:block text-left'>
+                  <p className='text-[10px] font-bold text-blue-600 uppercase tracking-wider leading-none mb-1'>{user.role}</p>
+                  <p className='text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors leading-none'>{user.name}</p>
+                </div>
+              </button>
+              
+            </div>
           )}
         </div>
       </div>
 
       {/* INTEGRATED TIMER */}
       {remainingSeconds !== (60 * 60) && ( // Shows if timer has been touched or is running
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 bg-[#181820] px-4 py-1.5 rounded-full shadow-lg border border-white/10">
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white px-4 py-1.5 rounded-full shadow-lg border border-gray-100">
 
           {/* Status Indicator */}
-          <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-[#ff9f1c] animate-pulse' : 'bg-gray-500'}`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${isRunning ? 'bg-[#22d3ee] animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]' : 'bg-slate-300'}`} />
 
           {/* Time Display */}
-          <span className="font-mono font-bold text-white text-sm">
+          <span className="font-mono font-bold text-slate-800 text-sm">
             {formatTime(remainingSeconds)}
           </span>
 
           {/* Toggle Button */}
           <button
             onClick={isRunning ? pauseTimer : startTimer}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-[#ff9f1c] hover:bg-[#ffb551] text-[#0f0f14] transition-all active:scale-90"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white transition-all active:scale-90 shadow-md shadow-green-100"
           >
-            <button
-              onClick={isRunning ? pauseTimer : startTimer}
-              className="flex items-center justify-center w-7 h-7 rounded-full bg-[#ff9f1c] hover:bg-[#ffb551] text-[#0f0f14] transition-all active:scale-90"
-            >
-              {isRunning ? (
-                /* Pause Icon */
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
-              ) : (
-                /* Play Icon */
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </button>
+            {isRunning ? (
+              /* Pause Icon */
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+            ) : (
+              /* Play Icon */
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
           </button>
         </div>
       )}
@@ -126,9 +97,16 @@ const Navbar = () => {
       {/* For phone screens */}
       <div className='md:hidden flex items-center gap-2 sm:gap-5 text-gray-500'>
         <div className='flex items-center gap-4'>
-          <RenderLinks />
         </div>
-        <button onClick={handleLogout}><img src={assets.logoutIcon} alt='Logout Icon' className='w-6 h-6' /></button>
+        {user && (
+          <button 
+            onClick={() => navigate(`/profile/${user.id}`)}
+            className='w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-sm border border-blue-100'
+          >
+            {user.name?.charAt(0).toUpperCase() || '?'}
+          </button>
+        )}
+        <button onClick={handleLogout} className="cursor-pointer"><img src={assets.logoutIcon} alt='Logout Icon' className='w-6 h-6' /></button>
       </div>
     </div>
   )

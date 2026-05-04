@@ -62,6 +62,27 @@ router.post('/', requireAuth, requireRole('admin', 'instructor'), async (req, re
     }
 });
 
+// Delete a badge
+router.delete('/:id', requireAuth, requireRole('admin', 'instructor'), async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const badge = await Badge.findByPk(id);
+
+        if (!badge) {
+            return res.status(404).json({ error: "Badge not found" });
+        }
+
+        await badge.destroy();
+        res.json({ message: "Badge deleted successfully" });
+    } catch (err) {
+        console.error("Delete Error:", err);
+        // This usually triggers if a foreign key constraint is violated (badge is in use)
+        res.status(500).json({ error: "Cannot delete badge while it is assigned to users or courses." });
+    }
+});
+
+
 // PATCH link a badge to a course (Instructor only)
 router.patch('/link-course/:courseId', requireAuth, requireRole('instructor', 'admin'), async (req, res) => {
     const { badgeId } = req.body;

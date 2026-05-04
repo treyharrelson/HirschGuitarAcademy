@@ -107,7 +107,7 @@ const AllCourses = () => {
 
     return (
         <div className='p-4'>
-            <Link to='/home' className="text-blue-600 hover:underline">← Back to Dashboard</Link>
+
             <h1 className="text-2xl font-bold my-4">Available Courses</h1>
             {actionMsg && <p className="mb-4 text-green-600 font-medium">{actionMsg}</p>}
             <ul className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 list-none p-0'>

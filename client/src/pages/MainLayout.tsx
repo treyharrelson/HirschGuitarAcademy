@@ -38,7 +38,7 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'My Enrollments', path: '/my-enrollments', icon: Icons.Enrollments },
     { label: 'Metronome', path: '/metronome', icon: Icons.Metronome },
     { label: 'Timer', path: '/timer', icon: Icons.Timer },
-    { label: 'Leaderboard', path: '/home', icon: assets.trophyIcon },
+    { label: 'Leaderboard', path: '/leaderboard', icon: assets.trophyIcon },
   ],
   instructor: [
     { label: 'Home', path: '/home', icon: assets.homeIcon },
@@ -46,11 +46,11 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'Followed Threads', path: '/follows', icon: Icons.Follows },
     { label: 'Metronome', path: '/metronome', icon: Icons.Metronome },
     { label: 'Timer', path: '/timer', icon: Icons.Timer },
-    { label: 'Leaderboard', path: '/home', icon: assets.trophyIcon },
+    { label: 'Leaderboard', path: '/leaderboard', icon: assets.trophyIcon },
     { label: 'Instructor Dashboard', path: '/instructor', icon: assets.newspaper_icon },
     { label: 'Add Course', path: '/instructor/add-course', icon: assets.duplicate_icon },
     { label: 'Manage Courses', path: '/instructor/my-courses', icon: assets.book_icon },
-    { label: 'Manage Badges', path: '/badges', icon: assets.book_icon },
+    { label: 'Manage Badges', path: '/badges', icon: assets.badgeIcon },
 
   ],
   moderator: [
@@ -59,22 +59,24 @@ const NAV_LINKS: Record<string, RoleLink[]> = {
     { label: 'Followed Threads', path: '/follows', icon: Icons.Follows },
     { label: 'Metronome', path: '/metronome', icon: Icons.Metronome },
     { label: 'Timer', path: '/timer', icon: Icons.Timer },
-    { label: 'Leaderboard', path: '/home', icon: assets.trophyIcon },
+    { label: 'Leaderboard', path: '/leaderboard', icon: assets.trophyIcon },
     { label: 'Instructor Dashboard', path: '/instructor', icon: assets.newspaper_icon },
     { label: 'Add Course', path: '/instructor/add-course', icon: assets.duplicate_icon },
     { label: 'Manage Courses', path: '/instructor/my-courses', icon: assets.book_icon },
   ],
   admin: [
     { label: 'Home', path: '/home', icon: assets.homeIcon },
+    { label: 'Confirm Users', path: '/confirmUsers', icon: assets.homeIcon },
     { label: 'Forum', path: '/forum', button: DashButton },
     { label: 'Followed Threads', path: '/follows', icon: Icons.Follows },
     { label: 'Metronome', path: '/metronome', icon: Icons.Metronome },
     { label: 'Timer', path: '/timer', icon: Icons.Timer },
-    { label: 'Leaderboard', path: '/home', icon: assets.trophyIcon },
+    { label: 'Leaderboard', path: '/leaderboard', icon: assets.trophyIcon },
     { label: 'Manage Threads', path: '/manage/threads', button: DashButton },
     { label: 'Instructor Dashboard', path: '/instructor', icon: assets.newspaper_icon },
     { label: 'Add Course', path: '/instructor/add-course', icon: assets.duplicate_icon },
     { label: 'Manage Courses', path: '/instructor/my-courses', icon: assets.book_icon },
+    { label: 'Manage Badges', path: '/badges', icon: assets.badgeIcon },
   ]
 };
 
