@@ -29,6 +29,22 @@ function getThreadPath(thread: Thread, allThreads: Thread[]): string {
     return path.length > 0 ? path.join(' › ') : 'Root';
 }
 
+// gets the thread path, segmented by each subthread from root to leaf
+// given the thread who's path we want to find, and the list of all threads
+// returns an array of type {id: number; title: string} that gives the path from root to the thread
+function getThreadPathSegments(thread: Thread, allThreads: Thread[]): { id: number | null; title: string}[] {
+    const segments: { id: number | null; title: string }[] = [];
+    let current: Thread | undefined = thread;
+    while (current?.parentThreadId != null) {
+        const parent = allThreads.find(t => t.id === current!.parentThreadId);
+        if (!parent) break;
+        segments.unshift({ id: parent.id, title: parent.title });
+        current = parent;
+    }
+    segments.unshift({ id: null, title: 'Root' });
+    return segments;
+}
+
 // returns all descendant ids of a thread, basically does a BFS
 function getDescendantIds(threadId: number, allThreads: Thread[]): Set<number> {
     // stores discovered descendants
@@ -344,7 +360,7 @@ function ThreadManager() {
                     </div>
 
                     {filtered.map(thread => {
-                        const path = getThreadPath(thread, threads);
+                        const pathSegments = getThreadPathSegments(thread, threads);
                         const descendants = movingThreadId === thread.id ? getDescendantIds(thread.id, threads) : new Set<number>();
                         const isExpanded = expandedMembersId === thread.id || expandedFollowersId === thread.id || movingThreadId === thread.id;
 
@@ -377,9 +393,23 @@ function ThreadManager() {
                                             )}
                                         </div>
                                         {/* Path breadcrumb */}
-                                        <p className="text-xs text-purple-400 mt-0.5 font-medium">
-                                            📍 {path}
-                                        </p>
+                                        <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                                            <span className="text-xs text-purple-400">📍</span>
+                                            {pathSegments.map((seg, i) => (
+                                                <span key={i} className="flex items-center gap-1">
+                                                    {i > 0 && <span className="text-xs text-purple-300">›</span>}
+                                                    {seg.id === null ? (
+                                                        <Link to="/forum" className="text-xs text-purple-400 hover:text-purple-600 font-medium transition-colors">
+                                                            {seg.title}
+                                                        </Link>
+                                                    ) : (
+                                                        <Link to={`/forum/thread/${seg.id}`} className="text-xs text-purple-400 hover:text-purple-600 font-medium transition-colors">
+                                                            {seg.title}
+                                                        </Link>
+                                                    )}
+                                                </span>
+                                            ))}
+                                        </div>
                                         <p className="text-xs text-gray-400 mt-0.5">
                                             by {thread.author?.name ?? 'unknown'} &middot; {new Date(thread.createdAt).toLocaleDateString()}
                                         </p>
@@ -548,7 +578,7 @@ function ThreadManager() {
                                 {movingThreadId === thread.id && (
                                     <div className="border border-t-0 border-indigo-200 bg-indigo-50/60 rounded-b-xl px-4 py-4">
                                         <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-1">Move Thread</p>
-                                        <p className="text-xs text-indigo-500 mb-3">Current location: <span className="font-medium">{path}</span></p>
+                                        <p className="text-xs text-indigo-500 mb-3">Current location: <span className="font-medium">{pathSegments.map(s => s.title).join(' › ')}</span></p>
                                         <div className="flex items-center gap-3">
                                             <select
                                                 value={selectedParentId === null ? 'root' : selectedParentId}
