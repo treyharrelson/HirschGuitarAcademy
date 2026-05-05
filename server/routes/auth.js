@@ -51,6 +51,7 @@ router.post('/register', async (req, res) => {
 		// Generate a unique token for email confirmation
 		const token = crypto.randomBytes(32).toString('hex');
 		req.body.token = token;
+		req.body.role = 'student';
 		const newUser = await Models.TempUser.create(req.body);
 
 		try {
@@ -84,16 +85,18 @@ router.delete('/confirm/:userId', requireAuth, requireRole(roles.ADMIN), async (
 // Confirm User
 router.post('/confirm/:userId', requireAuth, requireRole(roles.ADMIN), async (req, res) => {
 	const { userId } = req.params;
+	const { role } = req.body;
 	try {
 		const user = await Models.TempUser.findByPk(userId);
-		user.adminConfirmed = true;
-		await user.save();
 		if (user.emailConfirmed) {
 			await realUser(user);
 			const origin = req.get('Origin') || `${req.protocol}://${req.get('host')}`;
 			await sendConfirmedEmail(resend, user, origin);
 			return res.status(200).json({ confirmed: true, made: true });
 		} else {
+			user.adminConfirmed = true;
+			user.role = role;
+			await user.save();
 			return res.status(200).json({ confirmed: true, made: false });
 		}
 	} catch (error) {
