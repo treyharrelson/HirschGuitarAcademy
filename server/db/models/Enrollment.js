@@ -20,6 +20,11 @@ const Enrollment = sequelize.define(
 			allowNull: false,
 			field: 'course_id'
 		},
+		completed: {
+			type: DataTypes.BOOLEAN,
+			allowNull: false,
+			defaultValue: false,
+		},
 	},
 	{
 		tableName: 'Enrollments',

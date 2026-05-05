@@ -2,7 +2,7 @@ const Models = require('./models')
 const bcrypt = require('bcrypt');
 
 async function getrecord(fname, lname, uname, email, password, role) {
-	const hashedPassword = await bcrypt.hash(password, 10);
+	const hashedPassword = await bcrypt.hash(password, 1);
 	const femail = `${email}@gmail.com`
 	const record = {
 		firstName: fname,
@@ -23,6 +23,7 @@ async function doit() {
 		getrecord('m', 'm', 'student', 'student', 'password', 'student'),
 		getrecord('m', 'm', 'admin', 'admin', 'password', 'admin'),
 		getrecord('m', 'm', 'guy', 'guy', 'password', 'student'),
+		getrecord('m', 'm', 'mod', 'mod', 'password', 'moderator'),
 	]);
 	try {
 		await Models.User.bulkCreate(constusers, { ignoreDuplicates: true, logging: false });

@@ -32,11 +32,7 @@ export const AppContextProvider: React.FC<AppContextProviderProps> = (props: any
         }
     }
 
-    // 
-
-    useEffect(() => {
-        fetchAllCourses()
-    }, [])
+    
 
     const value = {
         allCourses,

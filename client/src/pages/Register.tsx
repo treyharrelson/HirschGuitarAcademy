@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import { assets } from '../assets/assets'
+import api from '../api/axiosInstance';
 
 function Register() {
     const [firstName, setFirstName] = useState('');
@@ -20,13 +20,12 @@ function Register() {
         e.preventDefault(); // prevents page reload
 
         try {
-            const response = await axios.post('http://localhost:3000/register', {
+            const response = await api.post('/register', {
                 firstName,
                 lastName,
                 userName,
                 email,
-                password,
-                role
+                password
             }, {
                 withCredentials: true
             });
@@ -124,15 +123,6 @@ function Register() {
                             />
                         </div>
 
-                        {/** Role */}
-                        <div className='flex space-x-2'>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Role:</label>
-                            <select className='border rounded-md' value={role} onChange={(e) => setRole(e.target.value)}>
-                                <option value="student">Student</option>
-                                <option value="instructor">Instructor</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
 
                         <button className='w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded' type="submit">Register</button>
                         {error && <p style={{ color: 'red' }}>{error}</p>}

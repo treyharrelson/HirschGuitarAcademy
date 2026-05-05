@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
-const { DatatypeModule } = require('@faker-js/faker');
+//const { DatatypeModule } = require('@faker-js/faker');
 
 const ScoreBoard = sequelize.define(
 	'Scoreboard',
@@ -11,7 +11,7 @@ const ScoreBoard = sequelize.define(
 			autoIncrement: true,
 			allowNull: false,
 		},
-		belts: {
+		badges: {
 			type: DataTypes.INTEGER,
 			defaultValue: 0,
 		},

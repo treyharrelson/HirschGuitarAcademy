@@ -19,6 +19,7 @@ const sequelize = process.env.DATABASE_URL
         dialectOptions: {
             ssl: false
         },
+        logging: false,
         pool: {
             max: 5,
             min: 0,
@@ -28,14 +29,16 @@ const sequelize = process.env.DATABASE_URL
     }
 );
 
-sequelize.authenticate().then(() => {
-    console.log('Connection has been established successfully.');
-    // make sure tables exist
-    sequelize.sync({ alter: true, logging: false }).then(() => {
-        console.log('Tables synced successfully.');
-    });
-}).catch(err => {
-    console.error('Unable to connect to the database:', err);
-});
+// This was causing problems because of trying to do sequelize.sync() here and in server.js
+// We should just have one place that syncs.
+// sequelize.authenticate().then(() => {
+//     console.log('Connection has been established successfully.');
+//     // make sure tables exist
+//     sequelize.sync({ alter: true, logging: false }).then(() => {
+//         console.log('Tables synced successfully.');
+//     });
+// }).catch(err => {
+//     console.error('Unable to connect to the database:', err);
+// });
 
 module.exports = sequelize;

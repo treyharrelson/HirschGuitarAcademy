@@ -1,4 +1,6 @@
 const sequelize = require('../db')
+const env = process.env.NODE_ENV || 'development';
+const config = require(__dirname + '/../../config/config.js')[env];
 
 // import modules
 const User = require('./User');
@@ -8,15 +10,23 @@ const Comment = require('./Comment')
 const Course = require('./Course');
 const Enrollment = require('./Enrollment');
 const Message = require('./Message');
-const Notification = require('./Notification')
-const Subscription = require('./Subscription')
+const Notification = require('./Notification');
+const Follow = require('./Follow');
 const Module = require('./Module');
 const Lecture = require('./Lecture');
 const Attachment = require('./Attachment');
-const Belt = require('./Belt');
+const Badge = require('./Badge');
 const Award = require('./Award');
 const PracticeTime = require('./PracticeTime');
 const ScoreBoard = require('./ScoreBoard');
+const CourseRequirement = require('./CourseRequirement');
+const ThreadBan = require('./ThreadBan');
+const Progress = require('./Progress');
+const ThreadMember = require('./ThreadMember');
+const Reaction = require('./Reaction');
+const ProfileSettings = require('./ProfileSettings');
+const UserBadge = require('./UserBadge');
+const TempUser = require('./tempUser');
 
 // Associations work like this:
 // Table_to_give_foreign_key.hasMany(table_to_take_foreign_key, {
@@ -39,6 +49,12 @@ Course.belongsTo(User, { foreignKey: 'instructorId', as: 'instructor' });
 // Students to courses
 User.belongsToMany(Course, { through: Enrollment, foreignKey: 'userId', otherKey: 'courseId', as: 'enrolledCourses' });
 Course.belongsToMany(User, { through: Enrollment, foreignKey: 'courseId', otherKey: 'userId', as: 'students' });
+
+// Course prerequisites
+Course.belongsToMany(Course, { through: CourseRequirement, as: 'requirements', foreignKey: 'courseId', otherKey: 'requiredCourseId' });
+
+// Required By (The courses that this course unlocks)
+Course.belongsToMany(Course, { through: CourseRequirement, as: 'requiredBy', foreignKey: 'requiredCourseId', otherKey: 'courseId' });
 
 // Enrollment table direct setup, just helps with magic functions
 User.hasMany(Enrollment, { foreignKey: 'userId' });
@@ -70,6 +86,12 @@ Post.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
 Thread.hasMany(Post, { foreignKey: 'threadId', as: 'posts' });
 Post.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
 
+// Thread to ThreadMembers
+Thread.hasMany(ThreadMember, { foreignKey: 'threadId', as: 'members' });
+ThreadMember.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
+User.hasMany(ThreadMember, { foreignKey: 'userId', as: 'threadAccess' });
+ThreadMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 // Post to the thread it announces (for global announcement posts)
 Post.belongsTo(Thread, { foreignKey: 'announcedThreadId', as: 'announcedThread' });
 Thread.hasMany(Post, { foreignKey: 'announcedThreadId', as: 'announcements' });
@@ -86,6 +108,16 @@ Attachment.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
 User.hasMany(Comment, { foreignKey: 'authorId', as: 'comments' });
 Comment.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
 
+// Reactions on posts
+Post.hasMany(Reaction, { foreignKey: 'postId', as: 'reactions' });
+Reaction.belongsTo(Post, { foreignKey: 'postId', as: 'post' });
+User.hasMany(Reaction, { foreignKey: 'userId', as: 'reactions' });
+Reaction.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Reactions on comments
+Comment.hasMany(Reaction, { foreignKey: 'commentId', as: 'reactions' });
+Reaction.belongsTo(Comment, { foreignKey: 'commentId', as: 'comment' });
+
 // User to messages
 User.hasMany(Message, { foreignKey: 'senderId', as: 'sentMessages' });
 Message.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
@@ -97,19 +129,31 @@ Message.belongsTo(User, { foreignKey: 'recipientId', as: 'recipient' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
-// User to thread subscriptions
-User.hasMany(Subscription, { foreignKey: 'userId', as: 'subscriptions' });
-Thread.hasMany(Subscription, { foreignKey: 'threadId', as: 'subscriptions'})
-Subscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-Subscription.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
+// User to thread follows
+User.hasMany(Follow, { foreignKey: 'userId', as: 'follows' });
+Thread.hasMany(Follow, { foreignKey: 'threadId', as: 'follows'})
+Follow.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Follow.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
 
-// Belt to Course and User
-User.hasMany(Belt, { foreignKey: 'userId', as: 'belts' });
-Belt.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+// Thread nesting (self-reference)
+Thread.hasMany(Thread, { foreignKey: 'parentThreadId', as: 'children' });
+Thread.belongsTo(Thread, { foreignKey: 'parentThreadId', as: 'parent' });
 
-Course.hasMany(Belt, { foreignKey: 'courseId', as: 'belts' });
-Belt.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
+// Thread Bans
+User.hasMany(ThreadBan, { foreignKey: 'userId', as: 'threadBans' });
+ThreadBan.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Thread.hasMany(ThreadBan, { foreignKey: 'threadId', as: 'bans' });
+ThreadBan.belongsTo(Thread, { foreignKey: 'threadId', as: 'thread' });
+User.hasMany(ThreadBan, { foreignKey: 'bannedById', as: 'issuedBans' });
+ThreadBan.belongsTo(User, { foreignKey: 'bannedById', as: 'bannedBy' });
 
+// Badge to Course and User
+User.belongsToMany(Badge, { through: 'User_Badges', foreignKey: 'user_id', otherKey: 'badge_id', as: 'earnedBadges' });
+Badge.belongsToMany(User, { through: 'User_Badges', foreignKey: 'badge_id', otherKey: 'user_id', as: 'owners' });
+User.belongsTo(Badge, { foreignKey: 'activeBadgeId', as: 'activeBadge' });
+
+Course.belongsTo(Badge, { foreignKey: 'completionBadgeId', as: 'completionBadge' });
+Badge.hasMany(Course, { foreignKey: 'completionBadgeId' });
 
 // Award to User, should figure out what awards are
 User.hasMany(Award, { foreignKey: 'userId', as: 'awards' });
@@ -120,6 +164,10 @@ Award.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 // Fine for now, just might want to change
 User.hasOne(PracticeTime, { foreignKey: 'userId', as: 'practice_time' });
 PracticeTime.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// ProfileSettings to User
+User.hasOne(ProfileSettings, {foreignKey: 'userId', as: 'profile_settings'});
+ProfileSettings.belongsTo(User, {foreignKey: 'userId', as: 'user'});
 
 // Scoreboard not linked like others, just counts what they have, might be able to make with relations, for now does nothing
 
@@ -134,12 +182,21 @@ module.exports = {
     Post,
     Comment,
     Notification,
-    Subscription,
+    Follow,
     Module,
     Lecture,
     Attachment,
-    Belt,
+    Badge,
     Award,
     PracticeTime,
     ScoreBoard,
+    CourseRequirement,
+    CourseRequirement,
+    ThreadBan,
+    ThreadMember,
+    Reaction,
+    ProfileSettings,
+    Progress,
+    UserBadge,
+    TempUser,
 };

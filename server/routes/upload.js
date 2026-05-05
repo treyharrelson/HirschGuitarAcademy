@@ -28,6 +28,8 @@ const ALLOWED_TYPES = [
     'application/pdf'
 ];
 
+const ALLOWED_FOLDERS = ['forum', 'course-thumbnails', 'profile-pictures', 'lecture-content', 'badges'];
+
 const MAX_FILE_SIZE_MB = 100;
 
 // Store file in memory temporarily before sending to R2
@@ -38,10 +40,11 @@ const upload = multer({
 
 // Upload a file to R2
 router.post('/upload', upload.single('file'), async (req, res) => {
+    const { folder } = req.body;
     const file = req.file;
 
-    if (!file) {
-        return res.status(400).json({ error: 'No file provided' });
+    if (!folder || !ALLOWED_FOLDERS.includes(folder)) {
+        return res.status(400).json({ error: 'Invalid or missing folder' });
     }
 
     if (!ALLOWED_TYPES.includes(file.mimetype)) {
@@ -49,7 +52,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     }
 
     const fileExtension = file.originalname.split('.').pop();
-    const fileKey = `uploads/${uuidv4()}.${fileExtension}`;
+    const fileKey = `${folder}/${uuidv4()}.${fileExtension}`;
 
     try {
         await r2.send(new PutObjectCommand({
@@ -74,7 +77,9 @@ router.get('/file-url', async (req, res) => {
         return res.status(400).json({ error: 'fileKey is required' });
     }
 
-    if (!fileKey.startsWith('uploads/')) {
+    // validate folder
+    const isValidKey = ALLOWED_FOLDERS.some(folder => fileKey.startsWith(`${folder}/`));
+    if (!isValidKey) {
         return res.status(403).json({ error: 'Invalid file key' });
     }
 

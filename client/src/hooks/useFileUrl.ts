@@ -10,6 +10,13 @@ export function useFileUrl(fileKey: string | null) {
         if (!fileKey) 
             return;
 
+        // external URL - use as is, no presigned URL
+        if (fileKey.startsWith('http://') || fileKey.startsWith('https://')) {
+            setUrl(fileKey);
+            setLoading(false);
+            return;
+        }
+        
         const fetchUrl = async () => {
             setLoading(true);
             try {

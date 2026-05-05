@@ -13,7 +13,7 @@ const tableChoices = [
 	'Post',
 	'Comment',
 	'Notification',
-	'Subscription',
+	'Follow',
 	'Message',
 	'Clear',
 	'Exit'
@@ -101,7 +101,7 @@ async function generateFakeData(table, amount) {
 				};
 				break;
 
-			case 'Subscription':
+			case 'Follow':
 				record = {
 					userId: await getRandomId(Models.User) || 1,
 					threadId: await getRandomId(Models.Thread) || 1,
@@ -155,7 +155,7 @@ async function fakeAll() {
 	await generateFakeData('Post', 100);
 	await generateFakeData('Comment', 200);
 	await generateFakeData('Notification', 50);
-	await generateFakeData('Subscription', 30);
+	await generateFakeData('Follow', 30);
 	await generateFakeData('Message', 150);
 
 	console.log('done\n');
@@ -166,13 +166,20 @@ async function clearAll() {
 		// Clearing in reverse dependency order to avoid foreign constraint errors
 		const tablesToClear = [
 			'Comment',
+			'Attachment',
 			'Post',
+			'Subscription',
 			'Thread',
 			'Lecture',
 			'Module',
+			'CourseRequirement',
 			'Enrollment',
+			'Badge',
+			'Award',
+			'PracticeTime',
+			'ScoreBoard',
 			'Course',
-			'Subscription',
+			'Follow',
 			'Notification',
 			'Message',
 			'User' // User cleared last

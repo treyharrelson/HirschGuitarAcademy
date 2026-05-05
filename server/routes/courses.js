@@ -2,77 +2,109 @@ const express = require('express');
 const router = express.Router();
 const Models = require('../db/models');
 const requireRole = require('../middleware/requireRole');
-
+const requireAuth = require('../middleware/requireAuth');
 
 
 // === STUDENT ONLY ===
 
 // Get enrollments for the current user (Maps to GET /api/courses/my-enrollments)
-router.get('/my-enrollments', requireRole('student'), async (req, res) => {
+router.get('/my-enrollments', requireAuth, requireRole('student'), async (req, res) => {
     try {
-        const userId = req.session.user.id;
-        const enrolledcourses = await Models.Enrollment.findAll({
-            // don't include enrollment table data
-            attributes: [],
-            // get all rows with userId
+        const userId = req.session.user?.id;
+        if (!userId) return res.status(401).json({ message: "No session ID" });
+
+        // Fetch RAW enrollments ONLY - No associations here to avoid crashes
+        const enrolledCourses = await Models.Enrollment.findAll({
             where: { userId: userId },
-            // get Courses that are in rolls
-            include: [
-                {
-                    // didn't add "as" in relations for some reason, so don't add "as" here, just returns as "Course" in object
-                    model: Models.Course,
-                    attributes: ['id', 'name', 'instructorId', 'enrolled', 'isPrivate', 'thumbnail', 'description'],
-                    include: [
-                        {
-                            // added "as" in relations, so returns as "instructor" in object
-                            model: Models.User,
-                            as: 'instructor',
-                            attributes: ['id', 'userName', 'firstName', 'lastName', 'email'],
-                        }
-                    ],
-                },
-            ],
+            raw: true
         });
 
-        const enrollments = enrolledcourses.map(enrollment => {
-            const course = enrollment.Course;
-            const instructor = course.instructor;
+        if (!enrolledCourses || enrolledCourses.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        // Fetch data for each enrollment independently
+        const enrollments = await Promise.all(enrolledCourses.map(async (enroll) => {
+            // Find the course manually
+            const course = await Models.Course.findByPk(enroll.courseId, {
+                attributes: ['id', 'name', 'thumbnail'],
+                raw: true
+            });
+            if (!course) return null;
+
+            // Count completed lectures for this user in this course
+            const completedCount = await Models.Progress.count({
+                where: { userId, courseId: course.id }
+            });
+
+            // Find all module IDs for this course
+            const courseModules = await Models.Module.findAll({
+                where: { courseId: course.id },
+                attributes: ['id'],
+                raw: true
+            });
+
+            const moduleIds = courseModules.map(m => m.id);
+
+            // Count lectures linked to those modules
+            const totalLectures = moduleIds.length > 0
+                ? await Models.Lecture.count({ where: { moduleId: moduleIds } })
+                : 0;
+
+            const progress = totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0;
+
             return {
                 id: course.id,
+                enrollmentId: enroll.id,
+                courseId: course.id,
                 name: course.name,
-                instructorId: instructor.id,
-                instructor: instructor,
-                enrolled: course.enrolled,
-                isPrivate: course.isPrivate,
                 thumbnail: course.thumbnail,
-                description: course.description
-            }
-        });
+                completed: enroll.completed || progress === 100,
+                totalLectures: totalLectures || 0,
+                completedCount: completedCount || 0,
+                progress: progress
+            };
+        }));
 
-        res.status(200).json(enrollments);
+        res.status(200).json(enrollments.filter(e => e !== null));
     } catch (error) {
-        res.status(500).json({ message: `Error fetching enrollments: ${error.message}` });
+        res.status(500).json({ message: error.message });
     }
 });
 
 // Enroll in a course (Maps to POST /api/courses/:courseId/enroll)
 router.post('/:courseId/enroll', requireRole('student'), async (req, res) => {
     try {
-        const userId = req.session.user.id;
+        const userId = req.session.user?.id;
         const { courseId } = req.params;
 
-        const course = await Models.Course.findByPk(courseId);
+        const existingEnrollment = await Models.Enrollment.findOne({ where: { userId, courseId } });
+        if (existingEnrollment) {
+            return res.status(400).json({ message: 'Already enrolled in this course' });
+        }
+
+        const course = await Models.Course.findByPk(courseId, {
+            include: [{ model: Models.Course, as: 'requirements' }]
+        });
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        // Check if already enrolled
-        const existingEnrollment = await Models.Enrollment.findOne({
-            where: { userId, courseId }
-        });
+        // Check requirements
+        if (course.requirements && course.requirements.length > 0) {
+            const userEnrollments = await Models.Enrollment.findAll({
+                where: { userId },
+                raw: true
+            });
+            const completedCourseIds = userEnrollments.filter(e => e.completed).map(e => e.courseId);
 
-        if (existingEnrollment) {
-            return res.status(400).json({ message: 'Already enrolled in this course' });
+            const missingRequirements = course.requirements.filter(reqCourse => !completedCourseIds.includes(reqCourse.id));
+            if (missingRequirements.length > 0) {
+                return res.status(403).json({
+                    message: 'Missing required courses',
+                    missingRequirements: missingRequirements.map(r => r.name)
+                });
+            }
         }
 
         // Create enrollment and update course count
@@ -113,12 +145,78 @@ router.delete('/:courseId/enroll', requireRole('student'), async (req, res) => {
     }
 });
 
+// STUDENT COURSE PROGRESS
+router.get('/:courseId/progress', requireRole('student'), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const userId = req.session.user?.id || req.user?.id;
+        if (!userId) return res.status(401).json({ message: "Unauthorized" });
+        const records = await Models.Progress.findAll({
+            where: { userId, courseId }
+        });
+        const completedLectures = records.map(r => r.lectureId.toString());
+        res.json({ completedLectures });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// COMPLETION ROUTE
+router.post('/:courseId/lectures/:lectureId/complete', requireAuth, requireRole('student'), async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const { courseId, lectureId } = req.params;
+
+        const parsedLectureId = parseInt(String(lectureId).replace('lec-', ''));
+        await Models.Progress.findOrCreate({
+            where: { userId, courseId, lectureId: parsedLectureId }
+        });
+
+        const totalLecturesCount = await Models.Lecture.count({
+            include: [{
+                model: Models.Module,
+                as: 'module',
+                where: { courseId: courseId }
+            }]
+        });
+
+        const completedCount = await Models.Progress.count({
+            where: { userId, courseId }
+        });
+
+        let badgeAwarded = false;
+        if (completedCount >= totalLecturesCount) {
+            const course = await Models.Course.findByPk(courseId);
+
+            if (course && course.completionBadgeId) {
+                console.log(`Course ${courseId} complete! Attempting to award badge ${course.completionBadgeId} to user ${userId}`);
+                await Models.UserBadge.findOrCreate({
+                    where: {
+                        userId: userId,
+                        badgeId: course.completionBadgeId
+                    }
+                });
+                badgeAwarded = true;
+            }
+        }
+        res.json({
+            success: true,
+            courseCompleted: completedCount >= totalLecturesCount,
+            badgeAwarded
+        });
+
+    } catch (err) {
+        console.error("COMPLETION ERROR:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // === INSTRUCTOR OR ADMIN ===
 
 // Create a new course (Maps to POST /api/courses)
 router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
     try {
-        const { name, modules, description, isPrivate, thumbnail } = req.body;
+        const { name, modules, description, isPrivate, thumbnail, requirements } = req.body;
 
         if (!name) {
             return res.status(400).json({ message: 'Course name is required' });
@@ -134,7 +232,7 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
             }, { transaction: t });
 
             // If modules exist, process them
-            if (modules) {
+            if (modules && Array.isArray(modules)) {
                 for (let i = 0; i < modules.length; i++) {
                     const modData = modules[i];
                     const newModule = await Models.Module.create({
@@ -147,7 +245,7 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
                     if (modData.content && Array.isArray(modData.content)) {
                         for (let j = 0; j < modData.content.length; j++) {
                             const item = modData.content[j];
-                            
+
                             if (Array.isArray(item.content)) {
                                 const newSubModule = await Models.Module.create({
                                     title: item.title || 'Untitled Submodule',
@@ -160,7 +258,7 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
                                     const subLec = item.content[k];
                                     await Models.Lecture.create({
                                         title: subLec.title || 'Untitled Lecture',
-                                        order: subLec.order || k + 1, 
+                                        order: subLec.order || k + 1,
                                         content: subLec.content || '',
                                         moduleId: newSubModule.id
                                     }, { transaction: t });
@@ -170,13 +268,21 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
                                     title: item.title || 'Untitled Lecture',
                                     order: item.order || j + 1,
                                     content: item.content || '',
-                                    moduleId: newModule.id
+                                    moduleId: newModule.id,
+                                    //blocks: item.blocks ? [...item.blocks] : []
                                 }, { transaction: t });
                             }
                         }
                     }
                 }
             }
+
+            // Parse requirement IDs as integers (frontend sends strings)
+            if (requirements && Array.isArray(requirements) && requirements.length > 0) {
+                const reqIds = requirements.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+                await course.setRequirements(reqIds, { transaction: t });
+            }
+
             return course;
         });
 
@@ -190,9 +296,108 @@ router.post('/', requireRole('instructor', 'admin'), async (req, res) => {
     }
 });
 
+// Edit an existing course (Maps to PUT /api/courses/:courseId)
+router.put('/:courseId', requireRole('admin', 'instructor'), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const { name, modules, description, isPrivate, thumbnail, requirements, completionBadgeId } = req.body;
+
+        const course = await Models.Course.findByPk(courseId);
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        if (!name) {
+            return res.status(400).json({ message: 'Course name is required' });
+        }
+
+        await Models.Course.sequelize.transaction(async (t) => {
+            // Update course basic info
+            await course.update({
+                name,
+                description: description || null,
+                isPrivate: isPrivate || false,
+                thumbnail: thumbnail || null,
+                completionBadgeId: completionBadgeId || null
+            }, { transaction: t });
+
+            // Destroy existing lectures & modules
+            const oldModules = await Models.Module.findAll({ where: { courseId: course.id }, transaction: t });
+            const oldModuleIds = oldModules.map(m => m.id);
+            if (oldModuleIds.length > 0) {
+                await Models.Lecture.destroy({ where: { moduleId: oldModuleIds }, transaction: t });
+                await Models.Module.destroy({ where: { courseId: course.id }, transaction: t });
+            }
+
+            // Re-create modules
+            // should probably be in a function for this and add course, maybe just use edit course for both and add course just takes directly to edit course after naming?
+            if (modules) {
+                for (let i = 0; i < modules.length; i++) {
+                    const modData = modules[i];
+                    const newModule = await Models.Module.create({
+                        title: modData.title || 'Untitled Module',
+                        order: modData.order || i + 1,
+                        courseId: course.id,
+                        parentModuleId: null
+                    }, { transaction: t });
+
+                    if (modData.content && Array.isArray(modData.content)) {
+                        for (let j = 0; j < modData.content.length; j++) {
+                            const item = modData.content[j];
+
+                            if (Array.isArray(item.content)) {
+                                const newSubModule = await Models.Module.create({
+                                    // REMOVE 'id: item.id'
+                                    title: item.title || 'Untitled Submodule',
+                                    order: j + 1,
+                                    courseId: course.id,
+                                    parentModuleId: newModule.id
+                                }, { transaction: t });
+
+                                for (let k = 0; k < item.content.length; k++) {
+                                    const subLec = item.content[k];
+                                    await Models.Lecture.create({
+                                        // REMOVE 'id: subLec.id'
+                                        title: subLec.title || 'Untitled Lecture',
+                                        order: k + 1,
+                                        moduleId: newSubModule.id,
+                                        blocks: subLec.blocks || []
+                                    }, { transaction: t });
+                                }
+                            } else {
+                                await Models.Lecture.create({
+                                    // REMOVE 'id: item.id' from here
+                                    title: item.title || 'Untitled Lecture',
+                                    order: j + 1,
+                                    moduleId: newModule.id,
+                                    blocks: item.blocks ? [...item.blocks] : []
+                                }, { transaction: t });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Update requirements
+            const reqIds = Array.isArray(requirements)
+                ? requirements.map((id) => parseInt(id, 10)).filter(id => !isNaN(id))
+                : [];
+            await course.setRequirements(reqIds, { transaction: t });
+        });
+
+        res.status(200).json({ message: 'Course updated successfully' });
+    } catch (error) {
+        if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+            const messages = error.errors.map(e => e.message).join(', ');
+            return res.status(400).json({ message: `Validation error: ${messages}` });
+        }
+        res.status(500).json({ message: `Error updating course: ${error.message}` });
+    }
+});
+
 // Delete a course (Maps to DELETE /api/courses/:courseId)
-// Instructors can only delete their own; admins can delete any
-router.delete('/:courseId', requireRole('instructor', 'admin'), async (req, res) => {
+// Admins can delete any
+router.delete('/:courseId', requireRole('admin', 'instructor'), async (req, res) => {
     try {
         const { courseId } = req.params;
         const course = await Models.Course.findByPk(courseId);
@@ -201,15 +406,93 @@ router.delete('/:courseId', requireRole('instructor', 'admin'), async (req, res)
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        // Instructors can only delete courses they own
-        if (req.session.user.role === 'instructor' && course.instructorId !== req.session.user.id) {
-            return res.status(403).json({ message: 'You can only delete your own courses' });
-        }
-
         await course.destroy();
         res.status(200).json({ message: 'Course deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: `Error deleting course: ${error.message}` });
+    }
+});
+
+// === INSTRUCTOR ENROLLMENT MANAGEMENT ===
+
+// Get all students and their enrolled courses
+router.get('/instructor/students', requireRole('instructor', 'admin'), async (req, res) => {
+    try {
+        const students = await Models.User.findAll({
+            where: { role: 'student' },
+            attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email'],
+            include: [{
+                model: Models.Course,
+                as: 'enrolledCourses',
+                attributes: ['id', 'name']
+            }]
+        });
+        res.status(200).json(students);
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching students: ${error.message}` });
+    }
+});
+
+// Get all students for a specific course
+router.get('/:courseId/students', requireRole('instructor', 'admin'), async (req, res) => {
+    try {
+        const { courseId } = req.params;
+        const course = await Models.Course.findByPk(courseId, {
+            include: [{
+                model: Models.User,
+                as: 'students',
+                attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email']
+            }]
+        });
+
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+        res.status(200).json(course.students);
+    } catch (error) {
+        res.status(500).json({ message: `Error fetching course students: ${error.message}` });
+    }
+});
+
+// Instructor manually enrolls student
+router.post('/:courseId/enroll/:studentId', requireRole('instructor', 'admin'), async (req, res) => {
+    try {
+        const { courseId, studentId } = req.params;
+
+        const course = await Models.Course.findByPk(courseId);
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+
+        const student = await Models.User.findByPk(studentId);
+        if (!student || student.role !== 'student') return res.status(404).json({ message: 'Student not found' });
+
+        const existingEnrollment = await Models.Enrollment.findOne({ where: { userId: studentId, courseId } });
+        if (existingEnrollment) return res.status(400).json({ message: 'Student already enrolled' });
+
+        await Models.Enrollment.create({ userId: studentId, courseId });
+        await course.increment('enrolled');
+
+        res.status(201).json({ message: 'Student successfully enrolled' });
+    } catch (error) {
+        res.status(500).json({ message: `Error enrolling student: ${error.message}` });
+    }
+});
+
+// Instructor manually removes student
+router.delete('/:courseId/enroll/:studentId', requireRole('instructor', 'admin'), async (req, res) => {
+    try {
+        const { courseId, studentId } = req.params;
+
+        const enrollment = await Models.Enrollment.findOne({ where: { userId: studentId, courseId } });
+        if (!enrollment) return res.status(404).json({ message: 'Student not enrolled' });
+
+        await enrollment.destroy();
+
+        const course = await Models.Course.findByPk(courseId);
+        if (course) await course.decrement('enrolled');
+
+        res.status(200).json({ message: 'Student successfully completely removed' });
+    } catch (error) {
+        res.status(500).json({ message: `Error removing student: ${error.message}` });
     }
 });
 
@@ -222,6 +505,10 @@ router.get('/', async (req, res) => {
     try {
         const courses = await Models.Course.findAll({
             order: [['createdAt', 'DESC']],
+            include: [
+                { model: Models.Course, as: 'requirements', attributes: ['id', 'name'] },
+                { model: Models.User, as: 'instructor', attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role'] }
+            ]
         });
         res.status(200).json(courses);
     } catch (error) {
@@ -256,6 +543,19 @@ router.get('/:courseId', async (req, res) => {
                             ]
                         }
                     ]
+                },
+                {
+                    model: Models.Course,
+                    as: 'requirements',
+                    attributes: ['id', 'name']
+                },
+                {
+                    model: Models.Badge, as: 'completionBadge', attributes: ['id', 'name', 'imageUrl']
+                },
+                {
+                    model: Models.User,
+                    as: 'instructor',
+                    attributes: ['id', 'userName', 'firstName', 'lastName', 'name', 'email', 'role']
                 }
             ],
             order: [
@@ -291,17 +591,19 @@ router.get('/:courseId', async (req, res) => {
                                 title: lec.title,
                                 order: lec.order,
                                 content: lec.content,
+                                blocks: lec.blocks || [],
                                 moduleId: lec.moduleId.toString()
-                            })).sort((a,b)=>a.order - b.order) : []
+                            })).sort((a, b) => a.order - b.order) : []
                         })) : []),
                         ...(mod.lectures ? mod.lectures.map(lec => ({
                             id: lec.id.toString(),
                             title: lec.title,
                             order: lec.order,
                             content: lec.content,
+                            blocks: lec.blocks || [],
                             moduleId: lec.moduleId.toString()
                         })) : [])
-                    ].sort((a,b)=>a.order - b.order)
+                    ].sort((a, b) => a.order - b.order)
                 };
             });
         }
@@ -309,12 +611,14 @@ router.get('/:courseId', async (req, res) => {
         const courseData = {
             id: course.id.toString(),
             name: course.name,
-            instructorId: course.instructorId,
+            instructor: course.instructor,
             enrolled: course.enrolled,
             isPrivate: course.isPrivate,
             description: course.description,
             thumbnail: course.thumbnail,
-            modules: mappedModules
+            modules: mappedModules,
+            completionBadgeId: course.completionBadgeId,
+            requirements: course.requirements ? course.requirements.map(reqCourse => ({ id: reqCourse.id, name: reqCourse.name })) : []
         };
 
         res.status(200).json(courseData);
