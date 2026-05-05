@@ -26,10 +26,10 @@ const ToConfirmUsers: React.FC = () => {
         getTempUsers();
     }, []);
 
-    const handleConfirmUser = async (user: TempUser) => {
+    const handleConfirmUser = async (user: TempUser, selectedRole: 'student' | 'instructor' | 'moderator') => {
         setProcessingId(user.id);
         try {
-            await api.post(`/confirm/${user.id}`);
+            await api.post(`/confirm/${user.id}`, { role: selectedRole });
             setUsers(prev => prev.filter(u => u.emailConfirmed ? u.id !== user.id : false));
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to confirm user.');
@@ -116,9 +116,10 @@ const ToConfirmUsers: React.FC = () => {
             ) : (
                 <div className="flex flex-col gap-3">
                     {/* Headers */}
-                    <div className="grid grid-cols-[1fr_auto] gap-4 px-6 py-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                    <div className="grid grid-cols-[1fr_auto_1fr] gap-4 px-6 py-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
                         <span>User Information</span>
-                        <span className="w-40 text-center">Review Action</span>
+                        <span className="text-center">Assign Role</span>
+                        <span className="text-right">Review Action</span>
                     </div>
                     {filteredUsers.map(user => (
                         <UserConfirmCard
