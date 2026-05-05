@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const Models = require('../db/models');
 const { Op } = require("sequelize");
-const { resend, sendValidationEmail, sendConfirmedEmail } = require('./email');
+const { sendValidationEmail, sendConfirmedEmail } = require('./email');
 const crypto = require('crypto');
 const roles = require('../rolesEnum');
 const requireRole = require('../middleware/requireRole');
@@ -56,7 +56,7 @@ router.post('/register', async (req, res) => {
 
 		try {
 			const origin = req.get('Origin') || `${req.protocol}://${req.get('host')}`;
-			const email = await sendValidationEmail(resend, newUser, origin);
+			await sendValidationEmail(newUser, origin);
 			return res.status(200).json({ success: true, message: 'Registration successful. Please check your email to confirm.' });
 		} catch (error) {
 			await Models.TempUser.destroy({ where: { id: newUser.id } });
@@ -88,14 +88,14 @@ router.post('/confirm/:userId', requireAuth, requireRole(roles.ADMIN), async (re
 	const { role } = req.body;
 	try {
 		const user = await Models.TempUser.findByPk(userId);
+		user.role = role;
 		if (user.emailConfirmed) {
 			await realUser(user);
 			const origin = req.get('Origin') || `${req.protocol}://${req.get('host')}`;
-			await sendConfirmedEmail(resend, user, origin);
+			await sendConfirmedEmail(user, origin);
 			return res.status(200).json({ confirmed: true, made: true });
 		} else {
 			user.adminConfirmed = true;
-			user.role = role;
 			await user.save();
 			return res.status(200).json({ confirmed: true, made: false });
 		}
