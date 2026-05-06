@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import api from '../../api/axiosInstance';
 import { REACTION_EMOJIS, type ReactionType, type ReactionSummary } from '../../types/reaction';
-import {useAuth } from '../../context/useAuth';
+import {useAuth } from '../../context/AuthContext';
 
 type Props = {
     postId?: number;

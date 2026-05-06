@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../assets/HGA_Logo_No_Background.png';
-import { useAuth } from '../../context/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import { NavBarButton, BigBlueButton } from './Buttons';
 import api from '../../api/axiosInstance';
 import { assets } from '../../assets/assets';

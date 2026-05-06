@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { useAuth } from '../../context/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axiosInstance';
 import Loading from '../../components/student/Loading';
 import { CourseCard } from '../../components/student/CourseCard';
@@ -42,11 +42,7 @@ const MyCourses: React.FC = () => {
     );
   }
 
-  const myCourses = allCourses ? allCourses.filter(c => {
-    if (user?.role === 'admin') return true;
-    return String(c.instructor?.id) === String(user?.id);
-  }) : [];
-
+  const myCourses = allCourses ? allCourses.filter(c => String(c.instructor?.id) === String(user?.id)) : [];
 
   return (
     <div className='p-8 relative'>
@@ -57,7 +53,7 @@ const MyCourses: React.FC = () => {
       )}
 
       <h1 className="text-3xl font-bold mb-6 text-blue-700">Course Management</h1>
-
+      
       {myCourses.length === 0 ? (
         <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl py-12 px-4 text-center">
           <p className='text-gray-500 font-medium'>You have not published any courses yet.</p>
@@ -65,11 +61,11 @@ const MyCourses: React.FC = () => {
       ) : (
         <ul className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 list-none p-0'>
           {myCourses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              enrolled={isDeleting ? "..." : "Delete"}
-              buttonclick={() => handleDelete(course.id)}
+            <CourseCard 
+              key={course.id} 
+              course={course} 
+              enrolled={isDeleting ? "..." : "Delete"} 
+              buttonclick={() => handleDelete(course.id)} 
             />
           ))}
         </ul>

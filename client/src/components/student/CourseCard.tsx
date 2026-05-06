@@ -4,7 +4,7 @@ import { type Course } from '../../types/course'
 import { assets } from '../../assets/assets'
 import { BigBlueButton } from '../generic/Buttons'
 import api from '../../api/axiosInstance'
-import { useAuth } from '../../context/useAuth'
+import { useAuth } from '../../context/AuthContext'
 import "quill/dist/quill.snow.css";
 
 type CourseCardProps = {
@@ -28,7 +28,7 @@ export const CourseCard = ({
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const isInstructor = user?.role === 'instructor' || user?.role === 'admin';
+  const isInstructor = user?.role === 'instructor';
   const isEnrolled = enrolled?.toLowerCase() !== "enroll";
   const isFinished = isCompleted || progressValue === 100;
 

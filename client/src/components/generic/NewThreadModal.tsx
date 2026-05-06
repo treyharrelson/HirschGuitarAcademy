@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axiosInstance';
-import { useAuth } from '../../context/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import VisibilityToggle from './VisibilityToggle';
 import { type Thread } from '../../types/thread';
 

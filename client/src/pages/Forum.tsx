@@ -1,7 +1,7 @@
 import { useState, useEffect, type SubmitEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { type Thread } from '../types/thread';
 import ThreadCard from '../components/generic/ThreadCard';
 import SkeletonThreadCard from '../components/generic/SkeletonThreadCard';
