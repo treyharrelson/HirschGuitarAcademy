@@ -11,6 +11,7 @@ import "quill/dist/quill.snow.css";
 interface ExtendedCourse extends Course {
     modules: Module[];
     description: string;
+    badge?: { id: number; name: string; imageUrl: string; displayUrl?: string };
 }
 
 const CourseView: React.FC = () => {
@@ -24,8 +25,10 @@ const CourseView: React.FC = () => {
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [selectedLecture, setSelectedLecture] = useState<Lecture | null>(null);
     const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
+    const [showBadgePopup, setShowBadgePopup] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    const isInstructor = user?.role === 'instructor' || course?.instructor?.id === user?.id;
+    const isInstructor = user?.role === 'instructor' || user?.role === 'admin';
 
     const flattenedLectures = useMemo(() => {
         if (!course?.modules) return [];
@@ -44,6 +47,17 @@ const CourseView: React.FC = () => {
         const fetchCourseData = async () => {
             try {
                 const response = await api.get(`/api/courses/${courseId}`);
+                let courseData = response.data;
+                if (courseData.badge?.imageUrl) {
+                    try {
+                        const urlRes = await api.get('/api/upload/file-url', {
+                            params: { fileKey: courseData.badge.imageUrl }
+                        });
+                        courseData.badge.displayUrl = urlRes.data.presignedUrl;
+                    } catch (e) {
+                        console.error("Could not resolve badge image", e);
+                    }
+                }
                 setCourse(response.data);
                 const initialExpanded: Record<string, boolean> = {};
                 const expandAll = (items: any[]) => {
@@ -93,6 +107,10 @@ const CourseView: React.FC = () => {
         }
     }, [selectedLecture, course?.modules]);
 
+    const isCourseFullyComplete = useMemo(() => {
+        return flattenedLectures.length > 0 && completedIds.length === flattenedLectures.length;
+    }, [completedIds, flattenedLectures]);
+
     const currentIndex = flattenedLectures.findIndex(l => l.id === selectedLecture?.id);
     const isCurrentComplete = selectedLecture ? completedIds.map(String).includes(String(selectedLecture.id)) : false;
     const showNextButtonDisabled = !isInstructor && !!selectedLecture && !isCurrentComplete;
@@ -110,25 +128,43 @@ const CourseView: React.FC = () => {
     const handleNext = () => {
         if (isProcessing) return;
         setIsProcessing(true);
-        try {
-            if (!selectedLecture) {
-                if (flattenedLectures.length > 0) setSelectedLecture(flattenedLectures[0]);
-                setIsProcessing(false);
-                return;
-            }
-            if (currentIndex < flattenedLectures.length - 1) {
-                setSelectedLecture(flattenedLectures[currentIndex + 1]);
-                setIsProcessing(false);
+        if (!selectedLecture) {
+            if (flattenedLectures.length > 0) setSelectedLecture(flattenedLectures[0]);
+            setIsProcessing(false);
+            return;
+        }
+
+        if (currentIndex < flattenedLectures.length - 1) {
+            // Standard navigation
+            setSelectedLecture(flattenedLectures[currentIndex + 1]);
+            setIsProcessing(false);
+        } else {
+            // User is on the last lecture and clicked the finish button
+            handleFinishCourse();
+        }
+    };
+
+    const handleFinishCourse = () => {
+        // Check if every single lecture has been marked complete
+        const allComplete = flattenedLectures.every(l => completedIds.includes(String(l.id)));
+
+        if (isInstructor) {
+            navigate('/instructor/my-courses');
+            return;
+        }
+
+        if (allComplete) {
+            // First time finishing or revisiting after 100% completion
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+
+            if (course?.badge) {
+                setShowBadgePopup(true);
             } else {
-                if (isInstructor) {
-                    navigate('/instructor/my-courses');
-                } else {
-                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0ea5e9', '#22c55e', '#ffffff'] });
-                    setTimeout(() => { navigate(`/my-enrollments`); }, 2000);
-                }
+                setTimeout(() => navigate(`/my-enrollments`), 2000);
             }
-        } catch (error) {
-            console.error(error);
+        } else {
+            // Block the 'Finish' action specifically because they want the badge/completion
+            alert("You haven't marked all lectures as complete yet! Please go back and check off any missing lessons to earn your badge.");
             setIsProcessing(false);
         }
     };
@@ -177,13 +213,29 @@ const CourseView: React.FC = () => {
     }
 
     return (
-        <div className="flex flex-row w-full h-screen bg-white overflow-y-hidden">
+        <div className="flex flex-row pr-80 h-screen bg-white overflow-y-hidden">
             <div className="flex-1 flex flex-col min-h-screen">
                 <div className="flex-1 overflow-y-auto">
+                    <button
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className={`fixed top-30 right-4 z-50 p-2 bg-slate-900 text-white rounded-lg shadow-xl transition-all duration-300 ${sidebarOpen ? 'translate-x-[-320px]' : 'translate-x-0'}`}>
+                        {sidebarOpen ? '→ Close Sidebar' : '← Open Sidebar'}
+                    </button>
                     {!selectedLecture ? (
                         <div className="max-w-3xl mx-auto pt-12 pb-12 px-6">
                             <h1 className="text-4xl font-bold mb-6">{course?.name}</h1>
                             <div className="ql-editor prose max-w-none text-lg text-slate-700" dangerouslySetInnerHTML={{ __html: course?.description || '' }} />
+                            {course?.badge && (
+                                <div className="mt-10 p-6 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-6">
+                                    <div className="w-20 h-20 bg-white rounded-full p-2 shadow-sm flex-shrink-0">
+                                        <img src={course.badge.displayUrl} alt="Badge" className="w-full h-full object-contain" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-amber-900 font-bold">Earn a Badge!</h3>
+                                        <p className="text-amber-800 text-sm">Complete all lectures in this course to earn the <span className="font-bold">"{course.badge.name}"</span> achievement for your profile.</p>
+                                    </div>
+                                </div>
+                            )}
                             <button onClick={() => handleNext()} className="mt-8 bg-sky-600 text-white px-8 py-3 rounded-full font-bold hover:bg-sky-700 transition-all shadow-lg"> Start Learning → </button>
                         </div>
                     ) : (
@@ -203,24 +255,53 @@ const CourseView: React.FC = () => {
                         )}
                     </div>
                     <div className="flex gap-4">
-                        {!isInstructor && selectedLecture && !isCurrentComplete && (
-                            <button onClick={handleMarkComplete} className="px-8 py-2 bg-green-600 text-white rounded-full font-bold hover:bg-green-700 shadow-md"> Mark as Complete </button>
+                        {!isInstructor && selectedLecture && !isCurrentComplete && !isCourseFullyComplete && (
+                            <button
+                                onClick={handleMarkComplete}
+                                className="px-8 py-2 bg-green-600 text-white rounded-full font-bold hover:bg-green-700 shadow-md">
+                                Mark as Complete
+                            </button>
                         )}
-                        <button disabled={showNextButtonDisabled || isProcessing} onClick={handleNext} className={`px-8 py-2 rounded-full font-bold transition-all ${(showNextButtonDisabled || isProcessing) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white shadow-lg hover:bg-sky-700'}`}>
+                        <button disabled={isProcessing} onClick={handleNext} className={`px-8 py-2 rounded-full font-bold transition-all ${(isProcessing) ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white shadow-lg hover:bg-sky-700'}`}>
                             {isProcessing ? 'Processing...' : (!selectedLecture ? 'Start Course' : (currentIndex === flattenedLectures.length - 1 ? 'Finish Course' : 'Next Lecture →'))}
                         </button>
                     </div>
                 </div>
             </div>
-            <div className="w-80 border-l flex flex-col bg-slate-50">
+            {/* SIDEBAR CONTAINER */}
+            <div className={`fixed top-25 right-0 w-80 border-l bg-slate-50 transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="p-6 pr-0 bg-slate-900 text-white">
                     <h2 className="font-bold truncate">Course: {course?.name}</h2>
                 </div>
-                <div className="overflow-y-auto flex-1 py-4">
-                    <button onClick={() => setSelectedLecture(null)} className={`w-full text-left py-3 px-6 font-bold text-sm border-b transition-colors ${!selectedLecture ? 'bg-sky-600 text-white' : 'hover:bg-slate-200'}`}> 🏠 Course Description </button>
-                    {course?.modules.map(mod => renderSidebarItem(mod))}
+                <div className="overflow-y-auto h-[calc(100vh-80px)] py-4">
+                    <button
+                        onClick={() => setSelectedLecture(null)}
+                        className={`w-full text-left py-3 px-6 font-bold text-sm border-b transition-colors ${!selectedLecture ? 'bg-sky-600 text-white' : 'hover:bg-slate-200'}`}
+                    >
+                        🏠 Course Description
+                    </button>{
+                        course?.modules.map(mod => renderSidebarItem(mod))}
                 </div>
             </div>
+            {showBadgePopup && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[40px] p-10 max-w-sm w-full text-center shadow-2xl animate-in fade-in zoom-in duration-300">
+                        <div className="w-32 h-32 bg-gradient-to-tr from-amber-100 to-yellow-50 rounded-full mx-auto mb-6 flex items-center justify-center shadow-inner">
+                            <img src={course?.badge?.displayUrl} className="w-24 h-24 object-contain animate-bounce" alt="Earned Badge" />
+                        </div>
+                        <h2 className="text-2xl font-black text-slate-900 mb-2">Achievement Unlocked!</h2>
+                        <p className="text-slate-600 mb-8">
+                            Congratulations! You've earned the <span className="font-bold text-slate-900">{course?.badge?.name}</span> badge.
+                            This has been added to your profile library.
+                        </p>
+                        <button
+                            onClick={() => navigate('/my-enrollments')}
+                            className="w-full py-4 bg-sky-600 text-white rounded-2xl font-black hover:bg-sky-700 transition-all shadow-lg">
+                            Sweet! Take me back
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

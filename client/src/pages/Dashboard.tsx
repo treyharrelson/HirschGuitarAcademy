@@ -19,6 +19,7 @@ function Dashboard() {
     const [feedLoading, setFeedLoading] = useState(true);
 
     const loadFeed = async (currentOffset = 0, append = false) => {
+        if (!user) return;
         try {
             const response = await api.get('/api/threads/feed/posts', {
                 params: { limit: LIMIT, offset: currentOffset }
@@ -50,6 +51,7 @@ function Dashboard() {
     }
 
     useEffect(() => {
+        if (loading || !user) return;
         loadFeed(0, false);
 
         const es = new EventSource(`${api.defaults.baseURL}/api/threads/stream`, { withCredentials: true });
@@ -71,7 +73,7 @@ function Dashboard() {
         es.onerror = () => console.warn('SSE connection lost, browser will retry...');
 
         return () => es.close();
-    }, []);
+    }, [user, loading]);
 
     // show loading while checking auth
     if (loading) {
