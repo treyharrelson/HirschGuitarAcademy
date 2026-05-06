@@ -72,7 +72,7 @@ app.use(session({
   cookie: {
     maxAge: 1000 * 60 * 60 * 24,
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    secure: process.env.NODE_ENV === 'production'
+    secure: process.env.NODE_ENV === 'production' ? 'none' : false
   }
 }));
 
@@ -87,8 +87,8 @@ app.use('/api/badges', badgeRoutes);
 
 // -- START SERVER --
 async function init() {
-  const server = app.listen(port, '0.0.0.0', () => {
-    console.log(`🚀 STARTUP: Server listening on 0.0.0.0:${port}`);
+  const server = app.listen(port, 'localhost', () => {
+    console.log(`🚀 STARTUP: Server listening on localhost:${port}`);
   });
 
   try {

@@ -17,6 +17,24 @@ const AddCourse: React.FC = () => {
   const [statusMsg, setStatusMsg] = useState<string>('')
   const [contentType, setContentType] = useState<string>('Lecture')
 
+  const [searchCourses, setSearchCourses] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchLibrary = async () => {
+      try {
+        const res = await api.get('/api/courses'); // Assuming this returns all courses
+        setSearchCourses(res.data);
+      } catch (err) {
+        console.error("Failed to load course library", err);
+      }
+    };
+    fetchLibrary();
+  }, []);
+  const [searchQuery, setSearchQuery] = useState('');
+  const filteredCourses = searchCourses.filter(course => {
+    if (!searchQuery) return true;
+    return course.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     if (!state.courseTitle.trim()) {
@@ -123,45 +141,93 @@ const AddCourse: React.FC = () => {
           </div>
         </div>
 
-        {/* COURSE REQUIREMENTS */}
-        <div className='flex flex-col gap-2'>
-          <p className='font-bold text-gray-700'>Course Prerequisites</p>
+        {/* COURSE PREREQUISITES */}
+        <div className="bg-white p-8 rounded-[30px] shadow-sm border border-gray-100 mb-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-800">Course Prerequisites</h2>
+            <p className="text-sm text-gray-500">Select courses that must be completed before this one.</p>
+          </div>
 
-          {/* The Flex-Wrap container makes them sit side-by-side */}
-          <div className='flex flex-wrap gap-2 w-full'>
-            {allCourses.length === 0 ? (
-              <p className='text-sm text-gray-400 italic'>No courses available</p>
-            ) : (
-              allCourses.map(course => {
-                const isChecked = state.courseRequirements.includes(String(course.id));
+          {/* Search & Browse Input Area */}
+          <div className="relative mb-4">
+            <input
+              type="text"
+              placeholder="Search or browse all courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2563eb] outline-none font-medium transition-all" />
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+            </span>
+          </div>
 
-                return (
-                  <label
-                    key={course.id}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer text-sm font-medium ${isChecked
-                        ? 'bg-blue-50 border-blue-400 text-blue-700 shadow-sm'
-                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}
-                  >
-                    <input
-                      type='checkbox'
-                      className="hidden" // Hide the actual box for a cleaner "button" look
-                      checked={isChecked}
-                      onChange={(e) => {
-                        if (e.target.checked) {
+          {/* RESULTS DROPDOWN */}
+          <div className="mb-8 flex flex-col">
+            <div className="flex justify-between items-center px-1 mb-2">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                {searchQuery ? `Search Results (${filteredCourses.length})` : "Browse All Courses"}
+              </span>
+            </div>
+
+            <div className="max-h-52 overflow-y-auto border border-gray-100 rounded-2xl bg-white shadow-inner p-2 custom-scrollbar">
+              {filteredCourses.length > 0 ? (
+                filteredCourses.map(course => {
+                  const isChecked = state.courseRequirements.includes(String(course.id));
+                  return (
+                    <button
+                      key={course.id}
+                      type="button"
+                      onClick={() => {
+                        if (!isChecked) {
                           setters.setCourseRequirements([...state.courseRequirements, String(course.id)]);
                         } else {
                           setters.setCourseRequirements(state.courseRequirements.filter(id => id !== String(course.id)));
                         }
                       }}
-                    />
-                    {/* Visual Indicator (Optional: adds a checkmark if you want) */}
-                    {isChecked && <span>✓</span>}
-                    {course.name}
-                  </label>
-                );
-              })
-            )}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl mb-1 transition-all ${isChecked ? 'bg-blue-50 text-[#2563eb]' : 'hover:bg-gray-50 text-gray-700'
+                        }`}>
+                      <span className="font-bold">{course.name}</span>
+                      {isChecked ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-black uppercase tracking-tighter">Required</span>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-gray-300 font-black uppercase tracking-tighter">Add +</span>
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="p-8 text-center text-gray-400 text-sm italic">
+                  No courses match your search.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* CURRENTLY SELECTED LIST (Tags) */}
+          <div className="flex flex-col gap-3">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] px-1">Selected Prerequisites</span>
+            <div className="flex flex-wrap gap-2 min-h-[50px] p-4 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+              {state.courseRequirements.length > 0 ? (
+                state.courseRequirements.map(reqId => {
+                  const course = allCourses.find(c => String(c.id) === String(reqId));
+                  return (
+                    <div key={reqId} className="flex items-center gap-2 bg-white border border-gray-200 pl-4 pr-2 py-1.5 rounded-full shadow-sm animate-in fade-in zoom-in duration-200">
+                      <span className="text-xs font-bold text-gray-700">{course?.name || 'Unknown Course'}</span>
+                      <button
+                        onClick={() => setters.setCourseRequirements(state.courseRequirements.filter(id => id !== reqId))}
+                        className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-500 transition-all">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex items-center text-gray-400 text-xs italic px-2">No prerequisites selected.</div>
+              )}
+            </div>
           </div>
         </div>
 

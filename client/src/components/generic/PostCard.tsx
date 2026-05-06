@@ -6,7 +6,7 @@ import FileAttachment from '../FileAttachment';
 import ReactionBar from './ReactionBar';
 import { useState } from 'react';
 import api from '../../api/axiosInstance';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 import UserBadge from '../UserBadge';
 
 const EMPTY_REACTIONS: ReactionSummary = {

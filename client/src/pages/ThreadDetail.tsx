@@ -1,7 +1,7 @@
 import { useState, useEffect, type SubmitEvent } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axiosInstance';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { type Post, type Attachment } from '../types/post';
 import { type Thread } from '../types/thread'
 import PostCard from '../components/generic/PostCard';

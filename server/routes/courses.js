@@ -617,7 +617,7 @@ router.get('/:courseId', async (req, res) => {
             description: course.description,
             thumbnail: course.thumbnail,
             modules: mappedModules,
-            completionBadgeId: course.completionBadgeId,
+            badge: course.completionBadge,
             requirements: course.requirements ? course.requirements.map(reqCourse => ({ id: reqCourse.id, name: reqCourse.name })) : []
         };
 

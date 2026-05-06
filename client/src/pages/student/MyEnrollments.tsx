@@ -24,7 +24,23 @@ const MyEnrollments: React.FC = () => {
     const fetchEnrollments = async () => {
       try {
         const res = await api.get('/api/courses/my-enrollments');
-        setEnrollments(res.data);
+        const rawData = res.data;
+        const resolvedData = await Promise.all(
+          rawData.map(async (enrol: EnrollmentData) => {
+            try {
+              if (!enrol.thumbnail) return enrol;
+
+              const urlRes = await api.get('/api/upload/file-url', {
+                params: { fileKey: enrol.thumbnail }
+              });
+              return { ...enrol, thumbnail: urlRes.data.presignedUrl };
+            } catch (err) {
+              console.error("Error resolving thumbnail for:", enrol.name);
+              return enrol;
+            }
+          })
+        );
+        setEnrollments(resolvedData);
       } catch (err) {
         console.error(err);
       } finally {

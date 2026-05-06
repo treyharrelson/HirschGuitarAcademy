@@ -4,7 +4,7 @@ import api from '../api/axiosInstance';
 import { type Thread } from '../types/thread';
 import VisibilityToggle from '../components/generic/VisibilityToggle';
 import NewThreadModal from '../components/generic/NewThreadModal';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 interface MemberUser {
     id: number;

@@ -11,7 +11,7 @@ interface AuthContextType {
 }
 
 // create container to hold auth data
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // provides auth context to the whole app
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -22,16 +22,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const response = await api.get('/api/me', {
-                    validateStatus: (status) => status === 200 || status === 401
-                });
+                const response = await api.get('/api/me');
+
                 if (response.status === 200 && response.data?.success) {
                     setUser(response.data.user);
-                } else {
-                    setUser(null);
                 }
             } catch (err: any) {
-                setUser(null);
+                // ONLY logout if the error is specifically "Unauthorized"
+                if (err.response?.status === 401) {
+                    setUser(null);
+                } else {
+                    // For 500 errors or network issues, keep the user logged in 
+                    // but maybe show a "Server Error" toast/notification
+                    console.error("Server or Network Error:", err.message);
+                }
             } finally {
                 setLoading(false);
             }
@@ -59,14 +63,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             {children}
         </AuthContext.Provider>
     );
-}
-
-// custom hook to use the auth context
-export function useAuth() {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-
-    return context;
 }

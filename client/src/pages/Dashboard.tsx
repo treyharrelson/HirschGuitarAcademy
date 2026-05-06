@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import api from '../api/axiosInstance';
@@ -19,6 +19,7 @@ function Dashboard() {
     const [feedLoading, setFeedLoading] = useState(true);
 
     const loadFeed = async (currentOffset = 0, append = false) => {
+        if (!user) return;
         try {
             const response = await api.get('/api/threads/feed/posts', {
                 params: { limit: LIMIT, offset: currentOffset }
@@ -50,28 +51,20 @@ function Dashboard() {
     }
 
     useEffect(() => {
+        if (loading || !user) return;
         loadFeed(0, false);
-
-        const es = new EventSource(`${api.defaults.baseURL}/api/threads/stream`, { withCredentials: true });
-
+        const es = new EventSource(`${api.defaults.baseURL}/api/threads/stream`, {
+            withCredentials: true
+        });
         es.onmessage = (e) => {
             const { type, post } = JSON.parse(e.data);
-
-            // thread post from a followed thread
-            if (type === 'new_post') {
-                setFeedPosts(prev => prev.some(p => p.id === post.id) ? prev : [post, ...prev]);
-            }
-
-            // global announcement post (new thread created, or manual global post)
-            if (type === 'new_global_post') {
+            if (type === 'new_post' || type === 'new_global_post') {
                 setFeedPosts(prev => prev.some(p => p.id === post.id) ? prev : [post, ...prev]);
             }
         };
-
         es.onerror = () => console.warn('SSE connection lost, browser will retry...');
-
         return () => es.close();
-    }, []);
+    }, [user, loading]);
 
     // show loading while checking auth
     if (loading) {
@@ -135,10 +128,10 @@ function Dashboard() {
                                                         post.announcedThread
                                                             ? handleFollowFromPost
                                                             : undefined
-                                                    }/>
+                                                    } />
                                             ))}
                                         </div>
-                                    )} 
+                                    )}
                             {feedHasMore && !feedLoading && (
                                 <button
                                     onClick={handleLoadMore}
