@@ -28,6 +28,7 @@ const CourseView: React.FC = () => {
     const [showBadgePopup, setShowBadgePopup] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
+
     const isInstructor = user?.role === 'instructor' || user?.role === 'admin';
 
     const flattenedLectures = useMemo(() => {
@@ -128,6 +129,7 @@ const CourseView: React.FC = () => {
     const handleNext = () => {
         if (isProcessing) return;
         setIsProcessing(true);
+
         if (!selectedLecture) {
             if (flattenedLectures.length > 0) setSelectedLecture(flattenedLectures[0]);
             setIsProcessing(false);
@@ -268,6 +270,7 @@ const CourseView: React.FC = () => {
                     </div>
                 </div>
             </div>
+
             {/* SIDEBAR CONTAINER */}
             <div className={`fixed top-25 right-0 w-80 border-l bg-slate-50 transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="p-6 pr-0 bg-slate-900 text-white">
@@ -279,10 +282,11 @@ const CourseView: React.FC = () => {
                         className={`w-full text-left py-3 px-6 font-bold text-sm border-b transition-colors ${!selectedLecture ? 'bg-sky-600 text-white' : 'hover:bg-slate-200'}`}
                     >
                         🏠 Course Description
-                    </button>{
-                        course?.modules.map(mod => renderSidebarItem(mod))}
+                    </button>
+                    {course?.modules.map(mod => renderSidebarItem(mod))}
                 </div>
             </div>
+
             {showBadgePopup && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div className="bg-white rounded-[40px] p-10 max-w-sm w-full text-center shadow-2xl animate-in fade-in zoom-in duration-300">
